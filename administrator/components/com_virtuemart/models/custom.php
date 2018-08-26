@@ -42,9 +42,15 @@ class VirtueMartModelCustom extends VmModel {
 	/** @return autorized Types of data **/
 	static function getCustomTypes () {
 
+	// {DST
+	// 	'I' => 'COM_VIRTUEMART_CUSTOM_INT',
+	//	'F' => 'COM_VIRTUEMART_CUSTOM_FLOAT',
+	// }DST
 		return array('S' => 'COM_VIRTUEMART_CUSTOM_STRING',
 			'P' => 'COM_VIRTUEMART_CUSTOM_PROPERTY',
 			'B' => 'COM_VIRTUEMART_CUSTOM_BOOLEAN',
+			'I' => 'COM_VIRTUEMART_CUSTOM_INT',
+			'F' => 'COM_VIRTUEMART_CUSTOM_FLOAT',
 			'D' => 'COM_VIRTUEMART_DATE',
 			'T' => 'COM_VIRTUEMART_TIME',
 			'M' => 'COM_VIRTUEMART_IMAGE',
@@ -483,6 +489,18 @@ class VirtueMartModelCustom extends VmModel {
 				'selectType'	=> array(0, 'int'),
 				'multiplyPrice'	=> array('', 'string')
 			);
+		// {DST
+		} else if($type=='I'){
+			$varsToPush = array(
+				'addEmpty'		=> array(0, 'int'),
+				'selectType'	=> array(0, 'int')
+			);
+		} else if($type=='F'){
+			$varsToPush = array(
+				'addEmpty'		=> array(0, 'int'),
+				'selectType'	=> array(0, 'int')
+			);
+		// }DST
 		} else if($type=='M'){
 			$varsToPush = array(
 				'width'		=> array('', 'string'),

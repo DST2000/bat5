@@ -654,6 +654,28 @@ class VirtueMartModelCustomfields extends VmModel {
 				}
 
 				break;
+			// {DST
+			// /* integer and float */
+			case 'I':
+			case 'F':
+
+				if($field->is_list){
+					$options = array();
+					$values = explode (';', $field->custom_value);
+
+					foreach ($values as $key => $val) {
+						$options[] = array('value' => $val, 'text' => $val);
+					}
+
+					$currentValue = $field->customfield_value;
+					return $priceInput . '</td><td>'.JHtml::_ ('select.genericlist', $options, 'field[' . $row . '][customfield_value]', NULL, 'value', 'text', $currentValue) ;
+				} else{
+					return $priceInput . '</td><td><input type="number" value="' . vmText::_($field->customfield_value) . '" name="field[' . $row . '][customfield_value]" />';
+					break;
+				}
+
+				break;
+			// }DST
 			// Property
 			case 'P':
 				$options = array();
