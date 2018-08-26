@@ -26,7 +26,11 @@ class JFormFieldScustom extends JFormField {
 
 		$cModel = VmModel::getModel('custom');
 		$cModel->_noLimit = true;
-		$q = 'SELECT `virtuemart_custom_id` AS value, custom_title AS text FROM `#__virtuemart_customs` WHERE custom_parent_id="0" AND field_type = "S" ';
+		// {DST
+		//$q = 'SELECT `virtuemart_custom_id` AS value, custom_title AS text FROM `#__virtuemart_customs` WHERE custom_parent_id="0" AND field_type = "S" ';
+		$q = 'SELECT `virtuemart_custom_id` AS value, custom_title AS text FROM `#__virtuemart_customs` WHERE custom_parent_id="0" 
+		AND ( field_type = "S" OR field_type = "I" OR field_type = "F") ';
+		// }DST
 		$q .= ' AND `published`=1';
 		$db = JFactory::getDBO();
 		$db->setQuery ($q);

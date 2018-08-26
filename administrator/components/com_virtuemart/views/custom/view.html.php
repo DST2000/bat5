@@ -192,7 +192,10 @@ class VirtuemartViewCustom extends VmViewAdmin {
 		$html .= VmHTML::row ('input', 'COM_VIRTUEMART_CUSTOM_LAYOUT_POS', 'layout_pos', $datas->layout_pos);
 		//$html .= VmHTML::row('booleanlist','COM_VIRTUEMART_CUSTOM_GROUP','custom_parent_id',$this->getCustomsList(),  $datas->custom_parent_id,'');
 		$html .= VmHTML::row ('booleanlist', 'COM_VIRTUEMART_CUSTOM_ADMIN_ONLY', 'admin_only', $datas->admin_only);
-		$typesWList = array('S','M');
+		// {DST
+		//$typesWList = array('S','M');
+		$typesWList = array('S','M','F','I');
+		// }DST
 		if(empty($datas->field_type) or in_array($datas->field_type,$typesWList)){
 			$opt = array( 0 => 'COM_VIRTUEMART_NO', 1 => 'COM_VIRTUEMART_YES', 2 => 'COM_VIRTUEMART_CUSTOM_ADMINLIST');
 			$html .= VmHTML::row ('select', 'COM_VIRTUEMART_CUSTOM_IS_LIST', 'is_list', $opt,$datas->is_list,'','value','text',false);
