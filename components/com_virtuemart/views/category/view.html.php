@@ -725,7 +725,7 @@ INNER JOIN #__virtuemart_product_categories as cat ON (pc.virtuemart_product_id=
 							// {DST
 							asort($unsortarray); // сортировка массива
 									foreach( $unsortarray as $elementofsortedarray ) {	
-											if ($elementofsortedarray%1 == '0') {
+											if ((float)$elementofsortedarray%1 === '0') {
 												$valueOptions[(string)$elementofsortedarray.'.0'] = (string)$elementofsortedarray;
 											} else {
 												$valueOptions[(string)$elementofsortedarray] = (string)$elementofsortedarray;
