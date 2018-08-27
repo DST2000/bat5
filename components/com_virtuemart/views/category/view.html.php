@@ -625,7 +625,69 @@ INNER JOIN #__virtuemart_product_categories as cat ON (pc.virtuemart_product_id=
 
 				}
 				// {DST
-				elseif(($selected->field_type=="I")||($selected->field_type=="F")) {
+				elseif($selected->field_type=="I") {
+
+					//if($selected->is_list) {
+						//if($selected->is_list == "1") {
+						$q2= 'SELECT pc.* FROM #__virtuemart_product_customfields  as pc ';
+						$q2 .= 'INNER JOIN #__virtuemart_products as p on (pc.virtuemart_product_id=p.virtuemart_product_id)';
+						if(!empty($this->categoryId)){
+							$q2 .= 'INNER JOIN #__virtuemart_product_categories as cat on (pc.virtuemart_product_id=cat.virtuemart_product_id)';
+						}
+						$q2 .= ' WHERE virtuemart_custom_id="'.$selected->virtuemart_custom_id.'" and p.published="1" ';
+						if(!empty($this->categoryId)){
+							$q2 .= ' and virtuemart_category_id="'.$this->categoryId.'" ';
+						}
+						$q2 .= ' GROUP BY `customfield_value`';
+
+						/*$q2 = 'SELECT * FROM `#__virtuemart_product_customfields` WHERE virtuemart_custom_id="'.$selected->virtuemart_custom_id.'" ';
+						if(!empty($this->categoryId)){
+							$q1 .= ' virtuemart_category_id="'.$this->categoryId.'" and';
+						}
+						$q2 = 'GROUP BY `customfield_value` ';*/
+						$db->setQuery( $q2 );
+						$Opts = $db->loadObjectList();
+						//vmdebug('getSearchCustom my  q2 '.str_replace('#__',$db->getPrefix(),$db->getQuery()) );
+						if($Opts){
+							// {DST
+							$unsortarray = array(); // массив для преобразования массива строк в массив чисел
+							// }DST
+							foreach( $Opts as $k => $v ) {
+								// {DST
+//								if(!isset($valueOptions[$v->customfield_value])) {
+//									$valueOptions[$v->customfield_value] = vmText::_($v->customfield_value);
+//								}
+								$unsortarray[] = (int)($v->customfield_value);
+								// }DST		
+							}
+							// {DST
+							asort($unsortarray); // сортировка массива
+									foreach( $unsortarray as $elementofsortedarray ) {								
+											$valueOptions[(string)$elementofsortedarray] = $elementofsortedarray;							
+									}
+							$valueOptions = array_merge(array($emptyOption), $valueOptions);
+							// }DST
+							
+
+							$v = '';
+							if(!empty($this->productModel->searchcustoms) and !empty($this->productModel->searchcustoms[$selected->virtuemart_custom_id])){
+								$v = $this->productModel->searchcustoms[$selected->virtuemart_custom_id];
+							}
+							//$v = $app->getUserStateFromRequest ('com_virtuemart.customfields.'.$selected->virtuemart_custom_id, 'customfields['.$selected->virtuemart_custom_id.']', '', 'string');
+							$this->searchCustomValues .= '<div class="vm-search-custom-values-group"><div class="vm-custom-title-select">' .  vmText::_( $selected->custom_title ).'</div>'.JHtml::_( 'select.genericlist', $valueOptions, 'customfields['.$selected->virtuemart_custom_id.']', 'class="inputbox vm-chzn-select changeSendForm"', 'virtuemart_custom_id', 'custom_title', $v ) . '</div>';
+						}
+
+						//vmdebug('getSearchCustom '.$q2,$Opts,$valueOptions);
+						/*} else if($selected->is_list == "2" and !empty($selected->custom_value)) {
+							$valueOptions = array();
+							$Opts = explode( ';', $selected->custom_value );
+							foreach( $Opts as $k => $v ) {
+								$valueOptions[$v] = $v;
+							}
+						}*/
+
+				}
+				elseif($selected->field_type=="F") {
 
 					//if($selected->is_list) {
 						//if($selected->is_list == "1") {
