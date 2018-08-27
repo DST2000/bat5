@@ -333,7 +333,13 @@ class VirtueMartModelProduct extends VmModel {
 			vmdebug('sortSearchListQuery',$this->searchcustoms);
 				foreach ($this->searchcustoms as $key => $searchcustom) {
 					if(empty($searchcustom)) continue;
-					$custom_search[] = '(pf.`virtuemart_custom_id`="' . (int)$key . '" and pf.`customfield_value` like "%' . $db->escape ($searchcustom, TRUE) . '%")';
+					// {DST
+					//$custom_search[] = '(pf.`virtuemart_custom_id`="' . (int)$key . '" and pf.`customfield_value` like "%' . $db->escape ($searchcustom, TRUE) . '%")';
+					$custom_search[] = 'p.virtuemart_product_id 
+									in (select virtuemart_product_id from #__virtuemart_product_customfields 
+									where `virtuemart_custom_id`="' . (int)$key . '" 
+									and `customfield_value` like "' . $db->escape ($searchcustom, TRUE) . '")';
+					// }DST
 					//$custom_search_value[] = 'pf.`customfield_value` like "%' . $db->escape ($searchcustom, TRUE) . '%"';
 					//$custom_search_key[] = 'pf.`virtuemart_custom_id`="' . (int)$key . '"';
 				}
@@ -349,7 +355,10 @@ class VirtueMartModelProduct extends VmModel {
 
 			if(!empty($custom_search)){
 				$this->searchcustoms = true;
-				$where[] = " ( " . implode (' OR ', $custom_search) . " ) ";
+				// {DST
+				//$where[] = " ( " . implode (' OR ', $custom_search) . " ) ";
+				$where[] = " ( " . implode (' AND ', $custom_search) . " ) ";
+				// }DST				
 				//$where[] = " ( " . implode (' AND ', $custom_search_value) . " AND (".implode (' OR ', $custom_search_key).")) ";
 				if($this->searchAllCats){
 					$virtuemart_category_id = FALSE;
