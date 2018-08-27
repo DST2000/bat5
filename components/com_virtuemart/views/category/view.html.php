@@ -663,7 +663,7 @@ INNER JOIN #__virtuemart_product_categories as cat ON (pc.virtuemart_product_id=
 							// {DST
 							asort($unsortarray); // сортировка массива
 									foreach( $unsortarray as $elementofsortedarray ) {								
-											$valueOptions[(string)$elementofsortedarray] = $elementofsortedarray;							
+											$valueOptions[(string)$elementofsortedarray.'.0'] = (string)$elementofsortedarray;							
 									}
 							$valueOptions = array_merge(array($emptyOption), $valueOptions);
 							// }DST
@@ -725,7 +725,7 @@ INNER JOIN #__virtuemart_product_categories as cat ON (pc.virtuemart_product_id=
 							// {DST
 							asort($unsortarray); // сортировка массива
 									foreach( $unsortarray as $elementofsortedarray ) {								
-											$valueOptions[(string)$elementofsortedarray] = $elementofsortedarray;							
+											$valueOptions[(string)$elementofsortedarray] = (string)$elementofsortedarray;							
 									}
 							$valueOptions = array_merge(array($emptyOption), $valueOptions);
 							// }DST

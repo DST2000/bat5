@@ -334,11 +334,20 @@ class VirtueMartModelProduct extends VmModel {
 				foreach ($this->searchcustoms as $key => $searchcustom) {
 					if(empty($searchcustom)) continue;
 					// {DST
+// {DST
+//if (($key) == "4") {
+//	$custom_search[] = 'p.virtuemart_product_id 
+//									in (select virtuemart_product_id FROM #__virtuemart_product_customfields 
+//									WHERE `virtuemart_custom_id`="' . (int)$key . '" 
+//									AND `customfield_value` BETWEEN "' . $db->escape ((-1+(int)$searchcustom), TRUE) . '"  AND "'. $db->escape (( 1 +(int)$searchcustom  ), TRUE) . '")';
+//									continue;
+//}
+// }DST
 					//$custom_search[] = '(pf.`virtuemart_custom_id`="' . (int)$key . '" and pf.`customfield_value` like "%' . $db->escape ($searchcustom, TRUE) . '%")';
 					$custom_search[] = 'p.virtuemart_product_id 
-									in (select virtuemart_product_id from #__virtuemart_product_customfields 
-									where `virtuemart_custom_id`="' . (int)$key . '" 
-									and `customfield_value` like "' . $db->escape ($searchcustom, TRUE) . '")';
+									IN (select virtuemart_product_id FROM #__virtuemart_product_customfields 
+									WHERE `virtuemart_custom_id`="' . (int)$key . '" 
+									AND `customfield_value` LIKE "%' . $db->escape ($searchcustom, TRUE) . '%")';
 					// }DST
 					//$custom_search_value[] = 'pf.`customfield_value` like "%' . $db->escape ($searchcustom, TRUE) . '%"';
 					//$custom_search_key[] = 'pf.`virtuemart_custom_id`="' . (int)$key . '"';
