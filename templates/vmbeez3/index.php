@@ -50,6 +50,9 @@ if (in_array($option, $bootstrap))
 }
 
 $this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
+// {DST
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/bootstrap.min.css');
+// }DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/print.css', 'text/css', 'print');
@@ -105,9 +108,10 @@ require __DIR__ . '/jsstrings.php';
 		<!--[if lt IE 9]><script src="<?php echo JUri::root(true); ?>/media/jui/js/html5.js"></script><![endif]-->
 	</head>
 	<body id="shadow">
-		<div id="all" <?php if ($templateparams->get('change_content_width')) {
+		<div id="all" <?php /* if ($templateparams->get('change_content_width')) {
 			echo ' style="max-width: ' . $this->params->get('content_width') . 'px"';
-			} ?>
+			} */ ?>
+			class="container"
 			>
 			<div id="back">
 				<header id="header">
@@ -152,7 +156,7 @@ require __DIR__ . '/jsstrings.php';
 					<div id="breadcrumbs">
 						<jdoc:include type="modules" name="position-2" />
 					</div>
-
+					<jdoc:include type="component" />
 					<?php
 					$r = $templateparams->get('nav2cont_ratio','25');
 					if ($navposition == 'left' and $showleft) :
@@ -179,8 +183,10 @@ require __DIR__ . '/jsstrings.php';
 							<?php endif; ?>
 
 							<jdoc:include type="message" />
-							<jdoc:include type="component" />
-
+							<!-- {DST 
+							 type="component" 
+							}DST -->
+							
 						</div><!-- end main -->
 					</div><!-- end wrapper -->
 
