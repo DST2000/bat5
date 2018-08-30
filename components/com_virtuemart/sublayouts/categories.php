@@ -51,12 +51,15 @@ if(VmConfig::get ('ajax_category', false)){
 
 	    // Show the horizontal seperator
 	    if ($iCol == 1 && $iCategory > $categories_per_row) { ?>
-	    <div class="horizontal-separator"></div>
+		<?php
+		// {DST
+	    /* <div class="horizontal-separator"></div> */
+		// }DST
+		?>
 	    <?php }
 
 	    // this is an indicator wether a row needs to be opened or not
 	    if ($iCol == 1) { ?>
-  <div class="row">
         <?php }
 
         // Show the vertical separator
@@ -70,16 +73,24 @@ if(VmConfig::get ('ajax_category', false)){
         $caturl = JRoute::_ ( 'index.php?option=com_virtuemart&view=category&virtuemart_category_id=' . $category->virtuemart_category_id , FALSE);
 
           // Show Category ?>
-    <div class="category floatleft<?php echo $category_cellwidth . $show_vertical_separator ?>">
+	<?php
+	// {DST
+	/* <div class="category floatleft<?php echo $category_cellwidth . $show_vertical_separator ?>"> */
+	// }DST  
+	?>
+    <div class="category">
       <div class="spacer">
         <h2>
-          <a href="<?php echo $caturl ?>" title="<?php echo vmText::_($category->category_name) ?>" <?php echo $ajaxUpdate?> >
+          <a href="<?php echo $caturl ?>" title="<?php echo vmText::_($category->category_name) ?>" class="btn btn-info" <?php echo $ajaxUpdate?> >
           <?php echo vmText::_($category->category_name) ?>
-          <br />
+			</a>
+<!--          <br />-->
           <?php // if ($category->ids) {
-            echo $category->images[0]->displayMediaThumb('class="browseCategoryImage"',false);
+			// {DST
+			//echo $category->images[0]->displayMediaThumb('class="browseCategoryImage"',false);
+			// }DST  
           //} ?>
-          </a>
+          
         </h2>
       </div>
     </div>
@@ -89,7 +100,7 @@ if(VmConfig::get ('ajax_category', false)){
 	    // Do we need to close the current row now?
         if ($iCol == $categories_per_row) { ?>
     <div class="clear"></div>
-	</div>
+	
 		    <?php
 		    $iCol = 1;
 	    } else {

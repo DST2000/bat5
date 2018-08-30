@@ -1229,7 +1229,7 @@ a:hover .vm-img-desc{
 
 .vm-search-custom-values-group {
   display: block;
-  float: left;
+  /*float: left; */
   background-color: #f2f2f2;
   margin: 4px;
   padding: 4px;

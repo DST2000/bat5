@@ -51,7 +51,7 @@ if (in_array($option, $bootstrap))
 
 $this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
 // {DST
-$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/bootstrap.min.css');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/jui/bootstrap.min.css');
 // }DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css', 'text/css', 'screen');
