@@ -78,7 +78,7 @@ span.vm-price-desc {
 }
 
 .vm3pr-3 .product-price {
-  min-height: 56px;
+  min-height: 36px;
 }
 
 .vm3pr-4 .product-price {
@@ -859,7 +859,7 @@ ul.VMmenu,.VMmenu ul,.VMmenu li{
   display: inline-block;
 }
 
-.vendor-store-desc,.category-view,.featured-view,.discontinued-view,.latest-view,.topten-view,.recent-view,.related-products-view,.browse-view,.order-view{
+.vendor-store-desc,.featured-view,.discontinued-view,.latest-view,.topten-view,.recent-view,.related-products-view,.browse-view,.order-view{
   margin-bottom: 25px;
 }
 
@@ -1083,7 +1083,7 @@ td.orders-key{
 .product-fields .product-field-type-P{
   clear: both;
   border-bottom: 1px solid #EEEEEE;
-  margin-top: 18px;
+  /* margin-top: 18px; */
 }
 
 .product-field-type-P .product-fields-title{
@@ -1230,9 +1230,9 @@ a:hover .vm-img-desc{
 .vm-search-custom-values-group {
   display: block;
   /*float: left; */
-  background-color: #f2f2f2;
-  margin: 4px;
-  padding: 4px;
+ /* background-color: #f2f2f2;
+  margin: 4px; */
+  padding: 2px;
 }
 
 span.vm-search-descr {
@@ -1275,7 +1275,7 @@ div.product_horizon div.product {
 }
 
 .vm-product-descr-container-0 {
-  min-height: 50px;
+  min-height: 20px;
   margin-bottom: 6px;
 }
 

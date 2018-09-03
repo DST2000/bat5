@@ -78,7 +78,7 @@ if ($this->showcategory and empty($this->keyword)) {
 		// }DST
 		echo ShopFunctionsF::renderVmSubLayout('categories',array('categories'=>$this->category->children, 'categories_per_row'=>$this->categories_per_row));
 		// {DST
-		//echo '</div>';
+		echo '</div>';
 		// }DST
 	}
 }
@@ -168,7 +168,7 @@ jQuery(".changeSendForm")
 } ?>
 <div class="browse-view <?php
 	// {DST
-					if (!$this->showsearch or $this->keyword == false) {
+					if ($this->showsearch) {
 						echo 'col-xs-12 col-sm-6 col-md-8 col-lg-9';
 					} else {
 						echo 'col-xs-12 col-sm-6 offset-sm-6 col-md-8 offset-md-4 col-lg-9 offset-lg-3';	

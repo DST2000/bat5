@@ -79,7 +79,7 @@ if(VmConfig::get ('ajax_category', false)){
 	// }DST  
 	?>
     <div class="category">
-      <div class="spacer">
+<!--      <div class="spacer">-->
         <h2>
           <a href="<?php echo $caturl ?>" title="<?php echo vmText::_($category->category_name) ?>" class="btn btn-info" <?php echo $ajaxUpdate?> >
           <?php echo vmText::_($category->category_name) ?>
@@ -92,7 +92,7 @@ if(VmConfig::get ('ajax_category', false)){
           //} ?>
           
         </h2>
-      </div>
+<!--      </div>-->
     </div>
 	    <?php
 	    $iCategory ++;

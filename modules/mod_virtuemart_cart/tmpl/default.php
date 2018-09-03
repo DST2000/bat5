@@ -18,7 +18,7 @@ if ($show_product_list) {
 			<?php if ($show_price and $currencyDisplay->_priceConfig['salesPrice'][0]) { ?>
 				<div class="subtotal_with_tax" style="float: right;"></div>
 			<?php } ?>
-			<div class="customProductData"></div><br>
+			<div class="customProductData"></div>
 			</div>
 		</div>
 	</div>
@@ -33,7 +33,7 @@ if ($show_product_list) {
 				  <div class="subtotal_with_tax" style="float: right;"><?php echo $product['subtotal_with_tax'] ?></div>
 				<?php } ?>
 				<?php if ( !empty($product['customProductData']) ) { ?>
-					<div class="customProductData"><?php echo $product['customProductData'] ?></div><br>
+					<div class="customProductData"><?php echo $product['customProductData'] ?></div>
 
 				<?php } ?>
 
