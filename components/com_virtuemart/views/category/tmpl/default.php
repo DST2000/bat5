@@ -78,7 +78,7 @@ if ($this->showcategory and empty($this->keyword)) {
 		// }DST
 		echo ShopFunctionsF::renderVmSubLayout('categories',array('categories'=>$this->category->children, 'categories_per_row'=>$this->categories_per_row));
 		// {DST
-		echo '</div>';
+		//echo '</div>';
 		// }DST
 	}
 }
@@ -107,6 +107,7 @@ if ($this->showcategory and empty($this->keyword)) {
 			<div class="clear"></div>
 		</div> <!-- end of orderby-displaynumber -->
 		<?php } 
+		// {DST
 		echo '</div>';
 		/* .row */
 		// }DST
@@ -114,13 +115,15 @@ if (!empty($this->products) or ($this->showsearch or $this->keyword !== false)) 
 ?>
 
 <?php
-
+		// {DST
+		echo '<div class="row">';
+		// }DST
 if ($this->showsearch or $this->keyword !== false) {
 	//id taken in the view.html.php could be modified
 	$category_id  = vRequest::getInt ('virtuemart_category_id', 0); ?>
 
 	<!--BEGIN Search Box -->
-	<div class="row">
+
 	<div class="virtuemart_search col-xs-12 col-sm-6 col-md-4 col-lg-3">
 		<form action="<?php echo JRoute::_ ('index.php?option=com_virtuemart&view=category&limitstart=0', FALSE); ?>" method="get">
 			<?php if(!empty($this->searchCustomList)) { ?>
@@ -148,7 +151,7 @@ if ($this->showsearch or $this->keyword !== false) {
 			<input type="hidden" name="Itemid" value="<?php echo $this->Itemid; ?>"/>
 		</form>
 	</div>
-	</div>
+
 	<!-- End Search Box -->
 <?php
 	/*if($this->keyword !== false){
@@ -163,7 +166,15 @@ jQuery(".changeSendForm")
 
 	vmJsApi::addJScript('sendFormChange',$j);
 } ?>
-<div class="browse-view">
+<div class="browse-view <?php
+	// {DST
+					if (!$this->showsearch or $this->keyword == false) {
+						echo 'col-xs-12 col-sm-6 col-md-8 col-lg-9';
+					} else {
+						echo 'col-xs-12 col-sm-6 offset-sm-6 col-md-8 offset-md-4 col-lg-9 offset-lg-3';	
+					}
+					// }DST
+			?>">
 
 
 
@@ -192,7 +203,12 @@ jQuery(".changeSendForm")
 }
 ?>
 </div>
-
+		<?php	
+		// {DST
+		echo '</div>';
+		/* .row */
+		// }DST
+		?>
 <?php } ?>
 </div>
 
