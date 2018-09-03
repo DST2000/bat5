@@ -74,11 +74,17 @@ class CsviHelperSef
 	public function __construct(CsviHelperSettings $settings, CsviHelperTemplate $template, CsviHelperLog $log)
 	{
 		$this->domainname = $settings->get('hostname');
-
+			// {DST
+			echo ("we are hire");
+			echo '<pre>';
+			echo ($this->domainname);
+			echo '</pre>';
+			//exit();
+			// }DST
 		// Make sure we have a valid domain name
 		if (filter_var($this->domainname, FILTER_VALIDATE_URL) === false)
 		{
-			throw new CsviException(JText::_('COM_CSVI_NO_VALID_DOMAIN_NAME_SET'));
+			//throw new CsviException(JText::_('COM_CSVI_NO_VALID_DOMAIN_NAME_SET'));
 		}
 
 		$this->template   = $template;
