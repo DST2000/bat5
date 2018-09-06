@@ -2254,10 +2254,12 @@ vmdebug('my prices',$data);
 			$order = $this->getOrder($id);
 
 			$invoice= $invM->hasInvoice($id);
-			if ($invoice) {
+			// {DST
+			/* if ($invoice) {
 				$removedOrderMsgs [$order['details']['BT']->order_number]= 'COM_VIRTUEMART_ORDER_NOT_ALLOWED_TO_DELETE';
 				continue;
-			}
+			} */
+			// }DST	
 
 			if(!empty($order['items'])){
 				foreach($order['items'] as $it){
