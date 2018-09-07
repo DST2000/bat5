@@ -17,7 +17,7 @@ class JConfig {
 	public $password = '';
 	public $db = 'bat5';
 	public $dbprefix = 'xl9ks_';
-	public $live_site = '';
+	public $live_site = 'http://bat5/';
 	public $secret = '9pXICA5rHRpD8Qfw';
 	public $gzip = '0';
 	public $error_reporting = 'default';
