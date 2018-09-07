@@ -94,7 +94,9 @@ if($templateparams->get('fontsizeselect')){
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/hide.js');
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/respond.src.js');
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/template.js');
-
+// {DST
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/bootstrap.min.js');
+// }DST
 require __DIR__ . '/jsstrings.php';
 ?>
 <!DOCTYPE html>
