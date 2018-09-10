@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,36 +37,11 @@ class JFormFieldCsviVirtuemartProductCategories extends JFormFieldCsviForm
 	 * @return  array  An array of users.
 	 *
 	 * @since   4.0
-	 *
-	 * @todo    Change to autoloader
-	 * @todo    Use the VirtueMart helper
 	 */
 	protected function getOptions()
 	{
-		$languageCode = $this->form->getValue('language', false);
-
-		if (!$languageCode)
-		{
-			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_virtuemart/helper/com_virtuemart_config.php';
-
-			$helperConfig = new Com_VirtuemartHelperCom_Virtuemart_Config;
-
-			$language     = $helperConfig->get('active_languages');
-			$languageCode = '';
-
-			if (is_array($language) && array_key_exists(0, $language))
-			{
-				$languageCode = strtolower(str_replace('-', '_', $language[0]));
-			}
-
-			// Check if no language is set in VirtueMart, take the default Joomla! frontend language
-			if ('' === $languageCode)
-			{
-				$languageCode = strtolower(str_replace('-', '_', JComponentHelper::getParams('com_languages')->get('site')));
-			}
-		}
-
-		$lang = strtolower(str_replace('-', '_', $languageCode));
+		$conf = JFactory::getConfig();
+		$lang = strtolower(str_replace('-', '_', $this->form->getValue('language', '', $conf->get('language'))));
 
 		require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_virtuemart/helper/categorylist.php';
 		$categoryList = new Com_VirtuemartHelperCategoryList;

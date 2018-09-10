@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Export
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -86,14 +86,14 @@ class CsviHelperFileExportXmlYandex
 		$this->contents .= '<shop>' . chr(10);
 
 		// Get the XML channel header
-		$this->contents .= '<name>' . $this->settings->get('ya_name') . '</name>' . chr(10);
-		$this->contents .= '<company>' . $this->settings->get('ya_company') . '</company>' . chr(10);
-		$this->contents .= '<url>' . $this->settings->get('ya_link') . '</url>' . chr(10);
+		$this->contents .= '<name>' . $this->settings->get('yandex.ya_name') . '</name>' . chr(10);
+		$this->contents .= '<company>' . $this->settings->get('yandex.ya_company') . '</company>' . chr(10);
+		$this->contents .= '<url>' . $this->settings->get('yandex.ya_link') . '</url>' . chr(10);
 		$this->contents .= '<currencies>' . chr(10);
 		$this->contents
-			.= '<currency id="' . $this->settings->get('ya_currency')
-			. '" rate="' . $this->settings->get('ya_currency_rate')
-			. '" plus="' . $this->settings->get('ya_currency_plus') . '"/>' . chr(10);
+			.= '<currency id="' . $this->settings->get('yandex.ya_currency')
+			. '" rate="' . $this->settings->get('yandex.ya_currency_rate')
+			. '" plus="' . $this->settings->get('yandex.ya_currency_plus') . '"/>' . chr(10);
 		$this->contents .= '</currencies>' . chr(10);
 
 		return $this->contents;
@@ -140,7 +140,7 @@ class CsviHelperFileExportXmlYandex
 		}
 
 		$cats .= '</categories>' . chr(10);
-		$cats .= '<local_delivery_cost>' . $this->settings->get('ya_delivery_cost') . '</local_delivery_cost>';
+		$cats .= '<local_delivery_cost>' . $this->settings->get('yandex.ya_delivery_cost') . '</local_delivery_cost>';
 
 		return $cats;
 	}
@@ -155,14 +155,9 @@ class CsviHelperFileExportXmlYandex
 	 *
 	 * @since   6.0
 	 */
-	public function NodeStart($product_id = null, $type = "vendor.model")
+	public function NodeStart($product_id, $type = "vendor.model")
 	{
-		$this->contents = '';
-
-		if ($product_id)
-		{
-			$this->contents = '<offer id="' . $product_id . '">' . chr(10);
-		}
+		$this->contents = '<offer id="' . $product_id . '">' . chr(10);
 
 		return $this->contents;
 	}
@@ -170,21 +165,13 @@ class CsviHelperFileExportXmlYandex
 	/**
 	 * Closes an XML item node.
 	 *
-	 * @param   int  $product_id  The ID of the product.
-	 *
 	 * @return  string  The XML node data.
 	 *
 	 * @since   6.0
 	 */
-	public function NodeEnd($product_id = null)
+	public function NodeEnd()
 	{
-		$this->contents = '';
-
-		// Only when there is a product id we need this node
-		if ($product_id)
-		{
-			$this->contents = '</offer>' . chr(10);
-		}
+		$this->contents = '</offer>' . chr(10);
 
 		return $this->contents;
 	}

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Plugin.Fieldcopy
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,7 +37,7 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 	 */
 	public function getName()
 	{
-		return array('value' => $this->id, 'text' => 'CSVI Field Combine');
+		return array('value' => $this->id, 'text' => 'CSVI Field combine');
 	}
 
 	/**
@@ -51,9 +51,9 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 	 */
 	public function getSingleName($plugin)
 	{
-		if ($plugin === $this->id)
+		if ($plugin == $this->id)
 		{
-			return 'CSVI Field Combine';
+			return 'CSVI Field combine';
 		}
 	}
 
@@ -66,13 +66,10 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 	 * @return  string  The rendered form with plugin options.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  RuntimeException
-	 * @throws  InvalidArgumentException
 	 */
-	public function getForm($plugin, $options = array())
+	public function getForm($plugin, $options=array())
 	{
-		if ($plugin === $this->id)
+		if ($plugin == $this->id)
 		{
 			// Load the language files
 			$lang = JFactory::getLanguage();
@@ -80,22 +77,23 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 			$lang->load('plg_csvirules_fieldcombine', JPATH_ADMINISTRATOR, null, true);
 
 			// Add the form path for this plugin
-			JForm::addFormPath(JPATH_PLUGINS . '/csvirules/fieldcombine/');
+			FOFForm::addFormPath(JPATH_PLUGINS . '/csvirules/fieldcombine/');
 
 			// Load the helper that renders the form
 			$helper = new CsviHelperCsvi;
 
 			// Instantiate the form
-			$form = JForm::getInstance('fieldcombine', 'form_fieldcombine');
+			$form = FOFForm::getInstance('fieldcombine', 'form_fieldcombine');
 
 			// Bind any existing data
 			$form->bind(array('pluginform' => $options));
 
 			// Create some dummies
-			$input = new JInput;
+			$input = new FOFInput;
+			$model = new FOFModel;
 
 			// Render the form
-			return $helper->renderCsviForm($form, $input);
+			return $helper->renderMyForm($form, $model, $input);
 		}
 	}
 
@@ -103,7 +101,7 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 	 * Run the rule.
 	 *
 	 * @param   string            $plugin    The ID of the plugin.
-	 * @param   object            $settings  The plugin settings set for the field.
+	 * @param   array             $settings  The plugin settings set for the field.
 	 * @param   array             $field     The field being process.
 	 * @param   CsviHelperFields  $fields    A CsviHelperFields object.
 	 *
@@ -121,11 +119,6 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 				// Check if we have a source value
 				if ($settings->source)
 				{
-					if (!isset($settings->combine_empty))
-					{
-						$settings->combine_empty = 0;
-					}
-
 					// Load the friendly field names that need to be combined
 					$updates = explode(',', $settings->source);
 
@@ -147,7 +140,7 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 
 						$value = $fields->get($update, '', $fieldcounter[$update]);
 
-						if ($settings->combine_empty || $value)
+						if ($value)
 						{
 							$values[] = $value;
 						}
@@ -172,12 +165,6 @@ class PlgCsvirulesFieldcombine extends RantaiPluginDispatcher
 							if (isset($oldField->column_header))
 							{
 								$columnHeader = $oldField->column_header;
-							}
-
-							// For import purposes, check the XML node as well, so we can be more flexible
-							if ($columnHeader === '' && isset($oldField->xml_node))
-							{
-								$columnHeader = $oldField->xml_node;
 							}
 
 							$haystack = array(strtolower($columnHeader), strtolower($oldField->field_name));

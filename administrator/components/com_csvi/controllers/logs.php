@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Logs
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -19,23 +19,21 @@ defined('_JEXEC') or die;
  * @since       6.0
  */
 
-class CsviControllerLogs extends JControllerLegacy
+class CsviControllerLogs extends FOFController
 {
 	/**
-	 * Proxy for getModel.
+	 * Public constructor of the Controller class
 	 *
-	 * @param   string  $name    The model name. Optional.
-	 * @param   string  $prefix  The class prefix. Optional.
-	 * @param   array   $config  The array of possible config values. Optional.
-	 *
-	 * @return  JModel
-	 *
-	 * @since   6.6.0
+	 * @param   array  $config  Optional configuration parameters
 	 */
-	public function getModel($name = 'Logs', $prefix = 'CsviModel', $config = array('ignore_request' => true))
+	public function __construct($config = array())
 	{
-		return parent::getModel($name, $prefix, $config);
+		parent::__construct();
+
+		// Redirects
+		$this->registerTask('remove_all', 'remove');
 	}
+
 
 	/**
 	 * Cancel the operation.
@@ -50,81 +48,30 @@ class CsviControllerLogs extends JControllerLegacy
 	}
 
 	/**
-	 * Get the log details
-	 *
-	 * @return  void.
-	 *
-	 * @since   6.6.0
-	 *          
-	 * @throws  Exception
-	 */
-	public function logdetails()
-	{
-		$jinput = JFactory::getApplication()->input;
-		$cids = $jinput->get('cid', array(), 'array');
-		$this->setRedirect('index.php?option=com_csvi&view=logdetails&run_id=' . $cids[0]);
-	}
-
-	/**
 	 * Download a debug log file.
 	 *
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *          
-	 * @throws  Exception
 	 */
+
 	public function downloadDebug()
 	{
-		/** @var CsviModelLogs $model */
-		$model = $this->getModel();
-		$model->downloadDebug();
+		$this->getThisModel()->downloadDebug();
 	}
 
 	/**
-	 * delete a debug log file.
+	 * Read a logfile from disk and show it in a popup.
 	 *
-	 * @return  void.
+	 * @return  bool  True if task can be performed | False if task cannot be performed.
 	 *
 	 * @since   3.0
-	 *          
-	 * @throws Exception
 	 */
-	public function delete()
+	public function logReader()
 	{
-		// Check for request forgeries.
-		JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
+		$this->layout = 'logreader';
 
-		try
-		{
-			/** @var CsviModelLogs $model */
-			$model   = $this->getModel();
-			$results = $model->delete();
-
-			if (0 !== count($results))
-			{
-				foreach ($results as $type => $messages)
-				{
-					foreach ($messages as $msg)
-					{
-						if ($type === 'ok')
-						{
-							$this->setMessage($msg);
-						}
-						elseif ($type === 'nok')
-						{
-							$this->setMessage($msg, 'error');
-						}
-					}
-				}
-			}
-
-			$this->setRedirect('index.php?option=com_csvi&view=logs');
-		}
-		catch (Exception $e)
-		{
-			JFactory::getApplication()->redirect('index.php?option=com_csvi&view=logs', $e->getMessage(), 'error');
-		}
+		return parent::read();
 	}
 
 	/**
@@ -133,43 +80,40 @@ class CsviControllerLogs extends JControllerLegacy
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
-	public function deleteAll()
+	public function remove()
 	{
-		// Check for request forgeries.
-		JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
+		$model = $this->getThisModel();
+		$results = array();
 
-		try
+		switch ($this->getTask())
 		{
-			/** @var CsviModelLogs $model */
-			$model   = $this->getModel();
-			$results = $model->deleteAll();
+			case 'remove':
+				$results = $model->getDelete();
+				break;
+			case 'remove_all':
+				$results = $model->getDeleteAll();
+				break;
+		}
 
-			if ($results)
+		if (!empty($results))
+		{
+			foreach ($results as $type => $messages)
 			{
-				foreach ($results as $type => $messages)
+				foreach ($messages as $msg)
 				{
-					foreach ($messages as $msg)
+					if ($type == 'ok')
 					{
-						if ($type === 'ok')
-						{
-							$this->setMessage($msg);
-						}
-						elseif ($type === 'nok')
-						{
-							$this->setMessage($msg, 'error');
-						}
+						$this->setMessage($msg);
+					}
+					elseif ($type == 'nok')
+					{
+						$this->setMessage($msg, 'error');
 					}
 				}
 			}
+		}
 
-			$this->setRedirect('index.php?option=com_csvi&view=logs');
-		}
-		catch (Exception $e)
-		{
-			JFactory::getApplication()->redirect('index.php?option=com_csvi&view=logs', $e->getMessage(), 'error');
-		}
+		$this->setRedirect('index.php?option=com_csvi&view=logs');
 	}
 }

@@ -59,8 +59,6 @@ VALUES
   ('multi_variant_title', 'multi_variant_title', 'product', 'com_virtuemart', 'import'),
   ('multi_variant_fields', 'multi_variant_fields', 'product', 'com_virtuemart', 'import'),
   ('vendor_name', 'vendor_name', 'product', 'com_virtuemart', 'import'),
-  ('media_published', 'media_published', 'product', 'com_virtuemart', 'import'),
-  ('product_as_derived', 'product_as_derived', 'product', 'com_virtuemart', 'import'),
 
   /* VirtueMart Category import */
   ('skip', 'skip', 'category', 'com_virtuemart', 'import'),
@@ -79,7 +77,6 @@ VALUES
   ('file_title', 'file_title', 'category', 'com_virtuemart', 'import'),
   ('file_description', 'file_description', 'category', 'com_virtuemart', 'import'),
   ('file_meta', 'file_meta', 'category', 'com_virtuemart', 'import'),
-  ('media_published', 'media_published', 'category', 'com_virtuemart', 'import'),
 
   /* VirtueMart Manufacturer Categories import */
   ('skip', 'skip', 'manufacturercategory', 'com_virtuemart', 'import'),
@@ -107,7 +104,6 @@ VALUES
   ('file_description', 'file_description', 'manufacturer', 'com_virtuemart', 'import'),
   ('file_meta', 'file_meta', 'manufacturer', 'com_virtuemart', 'import'),
   ('file_ordering', 'file_ordering', 'manufacturer', 'com_virtuemart', 'import'),
-  ('media_published', 'media_published', 'manufacturer', 'com_virtuemart', 'import'),
 
   /* VirtueMart rating import */
   ('skip', 'skip', 'rating', 'com_virtuemart', 'import'),
@@ -137,9 +133,6 @@ VALUES
   ('virtuemart_country_id', 'virtuemart_country_id', 'order', 'com_virtuemart', 'import'),
   ('shipment_element', 'shipment_element', 'order', 'com_virtuemart', 'import'),
   ('order_status_name', 'order_status_name', 'order', 'com_virtuemart', 'import'),
-  ('customer_notified', 'customer_notified', 'order', 'com_virtuemart', 'import'),
-  ('comments', 'comments', 'order', 'com_virtuemart', 'import'),
-  ('order_status_code', 'order_status_code', 'order', 'com_virtuemart', 'import'),
 
   /* VirtueMart order item import */
   ('skip', 'skip', 'orderitem', 'com_virtuemart', 'import'),
@@ -202,11 +195,6 @@ VALUES
   ('slug', 'slug', 'category', 'com_virtuemart', 'export'),
   ('file_url', 'file_url', 'category', 'com_virtuemart', 'export'),
   ('file_url_thumb', 'file_url_thumb', 'category', 'com_virtuemart', 'export'),
-  ('file_title', 'file_title', 'category', 'com_virtuemart', 'export'),
-  ('file_description', 'file_description', 'category', 'com_virtuemart', 'export'),
-  ('file_meta', 'file_meta', 'category', 'com_virtuemart', 'export'),
-  ('file_ordering', 'file_ordering', 'category', 'com_virtuemart', 'export'),
-  ('file_lang', 'file_lang', 'category', 'com_virtuemart', 'export'),
 
   /* VirtueMart calculation rule export */
   ('currency_code_3', 'currency_code_3', 'calc', 'com_virtuemart', 'export'),
@@ -229,11 +217,6 @@ VALUES
   ('mf_category_name', 'mf_category_name', 'manufacturer', 'com_virtuemart', 'export'),
   ('file_url', 'file_url', 'manufacturer', 'com_virtuemart', 'export'),
   ('file_url_thumb', 'file_url_thumb', 'manufacturer', 'com_virtuemart', 'export'),
-  ('file_title', 'file_title', 'manufacturer', 'com_virtuemart', 'export'),
-  ('file_description', 'file_description', 'manufacturer', 'com_virtuemart', 'export'),
-  ('file_meta', 'file_meta', 'manufacturer', 'com_virtuemart', 'export'),
-  ('file_ordering', 'file_ordering', 'manufacturer', 'com_virtuemart', 'export'),
-  ('file_lang', 'file_lang', 'manufacturer', 'com_virtuemart', 'export'),
 
   /* VirtueMart Medias export */
   ('custom', 'custom', 'media', 'com_virtuemart', 'export'),
@@ -351,6 +334,7 @@ VALUES
   ('override', 'override', 'product', 'com_virtuemart', 'export'),
   ('product_override_price', 'product_override_price', 'product', 'com_virtuemart', 'export'),
   ('product_currency', 'product_currency', 'product', 'com_virtuemart', 'export'),
+  ('custom_shipping', 'custom_shipping', 'product', 'com_virtuemart', 'export'),
   ('basepricewithtax', 'basepricewithtax', 'product', 'com_virtuemart', 'export'),
   ('discountedpricewithouttax', 'discountedpricewithouttax', 'product', 'com_virtuemart', 'export'),
   ('pricebeforetax', 'pricebeforetax', 'product', 'com_virtuemart', 'export'),
@@ -380,7 +364,7 @@ VALUES
   ('custom_disabler', 'custom_disabler', 'product', 'com_virtuemart', 'export'),
   ('custom_override', 'custom_override', 'product', 'com_virtuemart', 'export'),
 
-  /* VirtueMart Google Merchant export */
+  /* VirtueMart Product export */
   ('custom', 'custom', 'google', 'com_virtuemart', 'export'),
   ('product_price', 'product_price', 'google', 'com_virtuemart', 'export'),
   ('shopper_group_name', 'shopper_group_name', 'google', 'com_virtuemart', 'export'),
@@ -651,17 +635,6 @@ INSERT IGNORE INTO `#__csvi_availablefields` (csvi_name, component_name, compone
      TRIM(custom_title),
      TRIM(custom_title),
      'product',
-     'com_virtuemart',
-     'export'
-   FROM `#__virtuemart_customs`
-   WHERE field_type IN ('S', 'I', 'B', 'D', 'T', 'M', 'Y', 'X')
-  );
-
-  INSERT IGNORE INTO `#__csvi_availablefields` (csvi_name, component_name, component_table, component, action)
-  (SELECT
-     TRIM(custom_title),
-     TRIM(custom_title),
-     'google',
      'com_virtuemart',
      'export'
    FROM `#__virtuemart_customs`

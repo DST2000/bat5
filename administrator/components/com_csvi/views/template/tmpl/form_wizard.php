@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Template
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -22,24 +22,15 @@ if ($this->extraHelp)
 <div class="row-fluid">
 	<div class="<?php echo $class; ?>">
 		<div class="span2">
-			<?php echo $this->loadTemplate('steps', true); ?>
+			<?php echo $this->loadTemplate('steps'); ?>
 		</div>
 		<div class="span10">
 			<div class="step_explanation">
 				<h3><?php echo JText::_('COM_CSVI_WIZARD_STEP_EXPLANATION'); ?></h3>
-				<?php
-					if ($this->action === 'export' && count($this->fields) === 0)
-					{
-						echo JText::_('COM_CSVI_TEMPLATE_EXPLAIN_' . $this->action . '_STEP_NO_FIELDS');
-					}
-					else
-					{
-						echo JText::_('COM_CSVI_TEMPLATE_EXPLAIN_' . $this->action . '_STEP' . $this->step);
-					}
-				?>
+				<?php echo JText::_('COM_CSVI_TEMPLATE_EXPLAIN_' . $this->action . '_STEP' . $this->step); ?>
 			</div>
 			<hr />
-			<?php echo $this->loadTemplate('step' . $this->step, true); ?>
+			<?php echo $this->loadTemplate('step' . $this->step); ?>
 		</div>
 	</div>
 	<?php
@@ -50,8 +41,7 @@ if ($this->extraHelp)
 		}
 	?>
 </div>
-<input type="hidden" name="step" id="step" value="<?php echo ++$this->step; ?>" />
-<input type="hidden" name="id" value="<?php echo $this->item->csvi_template_id; ?>" />
+<input type="hidden" name="step" value="<?php echo ++$this->step; ?>" />
 
 <script type="text/javascript">
 	var token = '<?php echo JSession::getFormToken(); ?>';
@@ -94,17 +84,9 @@ if ($this->extraHelp)
 		}
 		else
 		{
-			// Reset the steps if the user wants to edit the template itself
-			if (task == 'template.edit')
+			if (document.formvalidator.isValid(document.id('adminForm')))
 			{
-				document.adminForm.step.value = 0;
-			}
-
-			var form = document.getElementById('adminForm');
-
-			if (document.formvalidator.isValid(form))
-			{
-				Joomla.submitform(task, form);
+				Joomla.submitform(task, document.getElementById('adminForm'));
 			}
 		}
 	}

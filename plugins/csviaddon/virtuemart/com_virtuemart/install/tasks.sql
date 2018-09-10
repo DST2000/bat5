@@ -102,7 +102,7 @@ INSERT IGNORE INTO `#__csvi_tasks` (`task_name`, `action`, `component`, `url`, `
 ('order', 'import', 'com_virtuemart', 'index.php?option=com_virtuemart&view=orders', 'source,file,order,fields,limit.advancedUser'),
 ('orderadvanced', 'export', 'com_virtuemart', 'index.php?option=com_virtuemart&view=orders', 'source,orderadvanced_file,custom_order,orderadvanced_layout,fields,limit.advancedUser'),
 ('snelstart', 'export', 'com_virtuemart', 'index.php?option=com_virtuemart&view=orders', 'source,snelstart_file,custom_order,snelstart_layout,fields,limit.advancedUser'),
-('google', 'export', 'com_virtuemart', 'index.php?option=com_virtuemart&view=product', 'source,google_file,custom_product,fields,limit.advancedUser'),
+('google', 'export', 'com_virtuemart', 'index.php?option=com_virtuemart&view=product', 'source,google_file,layout,custom_product,fields,limit.advancedUser'),
 ('yandex', 'export', 'com_virtuemart', 'index.php?option=com_virtuemart&view=product', 'source,yandex_file,layout,custom_product,fields,limit.advancedUser'),
 ('orderitem', 'export', 'com_virtuemart', NULL, 'source,file,layout,custom_orderitem,fields,limit.advancedUser'),
 ('orderitem', 'import', 'com_virtuemart', NULL, 'source,file,order_item,fields,limit.advancedUser'),

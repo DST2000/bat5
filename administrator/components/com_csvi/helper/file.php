@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  File
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -59,7 +59,7 @@ abstract class CsviHelperFile
 	 * @var    Resource
 	 * @since  3.0
 	 */
-	protected $fp;
+	protected $fp = null;
 
 	/**
 	 * Internal line pointer
@@ -75,7 +75,7 @@ abstract class CsviHelperFile
 	 * @var    array
 	 * @since  3.0
 	 */
-	protected $data;
+	protected $data = null;
 
 	/**
 	 * Sets to true if a file has been closed
@@ -91,7 +91,7 @@ abstract class CsviHelperFile
 	 * @var    CsviHelperTemplate
 	 * @since  6.0
 	 */
-	protected $template;
+	protected $template = null;
 
 	/**
 	 * Holds the logger
@@ -99,7 +99,7 @@ abstract class CsviHelperFile
 	 * @var    CsviHelperLog
 	 * @since  6.0
 	 */
-	protected $log;
+	protected $log = null;
 
 	/**
 	 * Holds the CSVI helper
@@ -107,7 +107,7 @@ abstract class CsviHelperFile
 	 * @var    CsviHelperCsvi
 	 * @since  6.0
 	 */
-	protected $helper;
+	protected $helper = null;
 
 	/**
 	 * Holds the JInput helper
@@ -115,7 +115,7 @@ abstract class CsviHelperFile
 	 * @var    JInput
 	 * @since  6.0
 	 */
-	protected $input;
+	protected $input = null;
 
 	/**
 	 * Holds the CSVI fields helper
@@ -123,7 +123,7 @@ abstract class CsviHelperFile
 	 * @var    CsviHelperFields
 	 * @since  6.0
 	 */
-	protected $fields;
+	protected $fields = null;
 
 	/**
 	 * Construct the class and its settings.
@@ -158,16 +158,16 @@ abstract class CsviHelperFile
 	/**
 	 * Close the file.
 	 *
-	 * @param   boolean  $removeFolder  Specify if the temporary folder should be removed
+	 * @param   boolean  $removefolder  Specify if the temporary folder should be removed
 	 *
 	 * @return  void.
 	 *
 	 * @since   3.0
 	 */
-	public function closeFile($removeFolder = true)
+	public function closeFile($removefolder=true)
 	{
 		// Delete the uploaded folder
-		if ($removeFolder)
+		if ($removefolder)
 		{
 			$this->removeFolder();
 		}
@@ -183,7 +183,7 @@ abstract class CsviHelperFile
 	protected function removeFolder()
 	{
 		$folder = JPath::clean(dirname($this->filename), '/');
-		$pos    = strpos($folder, CSVIPATH_TMP);
+		$pos = strpos($folder, CSVIPATH_TMP);
 
 		if ($pos !== false)
 		{

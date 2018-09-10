@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Imports
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -23,8 +23,8 @@ abstract class RantaiImportEngine
 	/**
 	 * A state object
 	 *
-	 * @var    object
-	 * @since  6.0
+	 * @var    string
+	 * @since  12.2
 	 */
 	protected $state;
 
@@ -159,14 +159,7 @@ abstract class RantaiImportEngine
 		$this->state = new JObject;
 
 		// Set the Joomla version
-		if (file_exists(JPATH_LIBRARIES . '/cms/version/version.php'))
-		{
-			require_once JPATH_LIBRARIES . '/cms/version/version.php';
-		}
-		else
-		{
-			require_once JPATH_LIBRARIES . '/src/Version.php';
-		}
+		require_once JPATH_LIBRARIES . '/cms/version/version.php';
 	}
 
 	/**
@@ -208,8 +201,6 @@ abstract class RantaiImportEngine
 	 * @param   string  $name  The name of the variable to get
 	 *
 	 * @return  mixed  The value of the variable
-	 *
-	 * @since   6.0
 	 */
 	public function __get($name)
 	{
@@ -229,7 +220,7 @@ abstract class RantaiImportEngine
 	 */
 	protected function getState($key = null, $default = null, $filter_type = 'raw')
 	{
-		if (strlen($key) === 0)
+		if (empty($key))
 		{
 			return null;
 		}
@@ -270,9 +261,7 @@ abstract class RantaiImportEngine
 	 * @param   string  $prefix   The class prefix. Optional.
 	 * @param   array   $options  Configuration array for model. Optional.
 	 *
-	 * @return  Table  A Table object
-	 *
-	 * @throws  CsviException
+	 * @return  FOFTable  A FOFTable object
 	 *
 	 * @since   6.0
 	 */
@@ -283,7 +272,6 @@ abstract class RantaiImportEngine
 		{
 			// Get the component name
 			$component = $this->template->get('component');
-			$extension = substr($component, 4);
 
 			// Set the prefix if needed
 			if (empty($prefix))
@@ -292,16 +280,16 @@ abstract class RantaiImportEngine
 			}
 
 			// Set the table path
-			$options['tablepath'] = JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component . '/table';
+			$options['tablepath'] = JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component . '/table';
 
 			// Add extras to the options
-			$options['template']     = $this->template;
-			$options['log']          = $this->log;
-			$options['helper']       = $this->helper;
+			$options['template'] = $this->template;
+			$options['log'] = $this->log;
+			$options['helper'] = $this->helper;
 			$options['helperconfig'] = $this->helperconfig;
 
 			// Load the table file
-			require_once JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component . '/table/' . strtolower($name) . '.php';
+			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component . '/table/' . strtolower($name) . '.php';
 
 			// Create the table name
 			$tblName = $prefix . $name;

@@ -2,9 +2,9 @@
 /**
  * Layout blocks
  *
- * @author 		RolandD Cyber Produksi
- * @link 		https://csvimproved.com
- * @copyright 	Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author 		Roland Dalmulder
+ * @link 		http://www.csvimproved.com
+ * @copyright 	Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @version 	$Id: default_subscription.php 2273 2013-01-03 16:33:30Z RolandD $
  */

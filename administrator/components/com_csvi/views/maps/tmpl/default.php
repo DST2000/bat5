@@ -3,96 +3,71 @@
  * @package     CSVI
  * @subpackage  Maps
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
-JHtml::addIncludePath(JPATH_COMPONENT . '/helpers/html');
-JHtml::_('bootstrap.tooltip');
-JHtml::_('behavior.multiselect');
-JHtml::_('formbehavior.chosen');
 
-$listOrder  = $this->escape($this->state->get('list.ordering'));
-$listDirn   = $this->escape($this->state->get('list.direction'));
-
-$loggeduser = JFactory::getUser();
-$canEdit   = $this->canDo->get('core.edit');
-$canChange = $loggeduser->authorise('core.edit.state', 'com_csvi');
 ?>
-<form action="<?php echo JRoute::_('index.php?option=com_csvi&view=maps'); ?>"
-	method="post" name="adminForm" id="adminForm" class="form-horizontal">
-<div id="j-sidebar-container" class="span2">
-	<?php echo $this->sidebar; ?>
-</div>
-<div id="j-main-container" class="span10">
-	<?php
-	// Search tools bar
-	echo JLayoutHelper::render('joomla.searchtools.default', array('view' => $this));
-	?>
-	<?php if (empty($this->items)) : ?>
-		<div class="alert alert-no-items">
-			<?php echo JText::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
-		</div>
-	<?php else : ?>
-			<table class="table table-striped" id="itemsList">
+<div class="row-fluid">
+	<form action="<?php echo JRoute::_('index.php?option=com_csvi&view=maps'); ?>" method="post" name="adminForm" id="adminForm">
+		<input type="hidden" name="task" value="browse" />
+		<input type="hidden" name="boxchecked" value="0" />
+		<input type="hidden" name="mapid" id="mapid" value="0" />
+		<input type="hidden" name="filter_order" id="filter_order" value="<?php echo $this->lists->order ?>" />
+		<input type="hidden" name="filter_order_Dir" id="filter_order_Dir" value="<?php echo $this->lists->order_Dir ?>" />
+		<input type="hidden" name="<?php echo JFactory::getSession()->getFormToken();?>" value="1" />
+		<div id="availablefieldslist" style="text-align: left;">
+			<table class="table table-condensed table-striped">
 				<thead>
 				<tr>
-					<th width="1%" class="nowrap center">
-						<?php echo JHtml::_('grid.checkall'); ?>
+					<th width="20">
+						<input type="checkbox" name="toggle" value="" onclick="Joomla.checkAll(this);" />
 					</th>
-					<th>
-						<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_MAP_TEMPLATE_NAME_LABEL', 'title', $listDirn, $listOrder); ?>
+					<th class="title">
+						<?php echo JHtml::_('grid.sort', 'COM_CSVI_MAP_TEMPLATE_NAME_LABEL', 'name', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
 					</th>
-					<th>
+					<th class="title">
 						<?php echo JText::_('COM_CSVI_MAP_OPTIONS'); ?>
 					</th>
-					</tr>
+				</tr>
 				</thead>
 				<tfoot>
-				<tr>
-					<td colspan="15">
-						<div class="pull-left">
-							<?php
-							if ($this->pagination->total > 0)
-							{
-								echo $this->pagination->getListFooter();
-							}
-							?>
-						</div>
-						<div class="pull-right"><?php echo $this->pagination->getResultsCounter(); ?></div>
-					</td>
-				</tr>
+					<tr>
+						<td colspan="10"><?php echo $this->pagination->getListFooter(); ?></td>
+					</tr>
 				</tfoot>
 				<tbody>
-				<?php foreach ($this->items as $i => $item) : ?>
-					<tr>
-						<td class="center">
-							<?php if ($canEdit || $canChange) : ?>
-								<?php echo JHtml::_('grid.id', $i, $item->csvi_map_id); ?>
-							<?php endif; ?>
-						</td>
-						<td>
-							<?php
-								echo JHtml::_('link', 'index.php?option=com_csvi&view=map&layout=edit&csvi_map_id=' . $item->csvi_map_id, $item->title);
-							?>
-						</td>
-						<td>
-							<?php echo JHtml::_('link', 'index.php?option=com_csvi&view=maps',
-								JText::_('COM_CSVI_MAP_CREATE_TEMPLATE'), 'onclick="showForm(' . $item->csvi_map_id . '); return false;"'); ?>
-					</tr>
-				<?php endforeach; ?>
+				<?php
+				if ($this->items) {
+					foreach ($this->items as $i => $item) {
+						?>
+						<tr>
+							<td width="20">
+								<?php
+									echo JHtml::_('grid.id', $i, $item->csvi_map_id);
+								?>
+							</td>
+							<td>
+								<?php
+									echo JHtml::_('link', 'index.php?option=com_csvi&view=map&id=' . $item->csvi_map_id, $item->title);
+				                ?>
+							</td>
+							<td>
+								<?php echo JHtml::_('link', 'index.php?option=com_csvi&view=maps', JText::_('COM_CSVI_MAP_CREATE_TEMPLATE'), 'onclick="showForm(' . $item->csvi_map_id . '); return false;"'); ?>
+						</tr>
+						<?php
+					}
+				}
+				?>
 				</tbody>
 			</table>
-	<?php endif; ?>
+		</div>
+	</form>
 </div>
-	<input type="hidden" name="task" value="" />
-	<input type="hidden" name="boxchecked" value="0" />
-	<input type="hidden" name="mapid" id="mapid" value="0" />
-	<?php echo JHtml::_('form.token'); ?>
-</form>
 
 <?php
 
@@ -153,7 +128,7 @@ $canChange = $loggeduser->authorise('core.edit.state', 'com_csvi');
 				url: 'index.php',
 				dataType: 'json',
 				type: 'get',
-				data: 'option=com_csvi&task=maps.createtemplate&format=json&id='+mapid+'&templateName='+jQuery('#template_name').val(),
+				data: 'option=com_csvi&view=maps&task=createtemplate&format=json&id='+mapid+'&templateName='+jQuery('#template_name').val(),
 				success: function(data)
 				{
 					jQuery('#template_name').val('');

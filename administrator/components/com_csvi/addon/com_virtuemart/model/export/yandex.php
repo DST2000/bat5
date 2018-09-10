@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -76,7 +76,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 	 * @var    Com_VirtuemartHelperCom_Virtuemart_Config
 	 * @since  6.0
 	 */
-	protected $helperConfig = null;
+	protected $helperconfig = null;
 
 	/**
 	 * Export the data.
@@ -863,12 +863,11 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
-			$records = $this->db->getIterator();
+			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->db->getNumRows();
+			$logcount = $this->csvidb->getNumRows();
 
 			if ($logcount > 0)
 			{
@@ -879,13 +878,8 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 				// Add the offers
 				$this->addExportContent('<offers>' . chr(10));
 
-				foreach ($records as $record)
+				while ($record = $this->csvidb->getRow())
 				{
-					if (in_array($this->exportFormat, $this->nodeformats))
-					{
-						$this->addExportContent($this->exportclass->NodeStart($record->virtuemart_product_id));
-					}
-
 					$this->log->incrementLinenumber();
 
 					// Reset the prices
@@ -997,8 +991,8 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 									// Check if we need to create a dynamic image name
 									if (substr($image, -3) == '-_-')
 									{
-										$width = $this->helperConfig->get('img_width', 90);
-										$height = $this->helperConfig->get('img_height', 90);
+										$width = $this->helperconfig->get('img_width', 90);
+										$height = $this->helperconfig->get('img_height', 90);
 
 										// Remove marker
 										$image = substr($image, 0, -3);
@@ -1174,11 +1168,11 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 									if ($category_id > 0)
 									{
 										// Let's create a SEF URL
-										$url = 'option=com_virtuemart&view=productdetails&virtuemart_product_id='
+										$_SERVER['QUERY_STRING'] = 'option=com_virtuemart&view=productdetails&virtuemart_product_id='
 											. $record->virtuemart_product_id . '&virtuemart_category_id='
 											. $category_id . '&Itemid='
 											. $this->template->get('vm_itemid', 1, 'int');
-										$fieldvalue = $this->sef->getSefUrl('index.php?' . $url);
+										$fieldvalue = $this->sef->getSiteRoute('index.php?' . $_SERVER['QUERY_STRING']);
 									}
 									else
 									{
@@ -1504,22 +1498,13 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 								$this->db->setQuery($query);
 								$titles = $this->db->loadColumn();
 
-								$fieldvalue = '';
-								$images = array();
-
 								if (is_array($titles))
 								{
 									$fieldvalue = implode('|', $titles);
-
-									if ($fieldname === 'file_url' || $fieldname === 'file_url_thumb')
-									{
-										foreach ($titles as $i => $title)
-										{
-											$images[] = $this->domainname . '/' . $title;
-										}
-
-										$fieldvalue = implode('|', $images);
-									}
+								}
+								else
+								{
+									$fieldvalue = '';
 								}
 								break;
 							case 'file_ordering':
@@ -1717,11 +1702,6 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 
 					// Output the contents
 					$this->writeOutput();
-
-					if (in_array($this->exportFormat, $this->nodeformats))
-					{
-						$this->addExportContent($this->exportclass->NodeEnd($record->virtuemart_product_id));
-					}
 				}
 
 				$this->addExportContent('</offers>' . chr(10));

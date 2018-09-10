@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -184,8 +184,7 @@ class Com_VirtuemartModelExportOrderitem extends CsviModelExports
 
 			if ($daterange != '')
 			{
-				$jdate       = JFactory::getDate();
-				$currentDate = $this->db->quote($jdate->format('Y-m-d'));
+				$jdate = JFactory::getDate();
 
 				switch ($daterange)
 				{
@@ -196,27 +195,27 @@ class Com_VirtuemartModelExportOrderitem extends CsviModelExports
 						}
 						break;
 					case 'yesterday':
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') = DATE_SUB(' . $currentDate . ', INTERVAL 1 DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)');
 						break;
 					case 'thisweek':
 						// Get the current day of the week
 						$dayofweek = $jdate->__get('dayofweek');
 						$offset = $dayofweek - 1;
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= ' . $currentDate);
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= CURDATE()');
 						break;
 					case 'lastweek':
 						// Get the current day of the week
 						$dayofweek = $jdate->__get('dayofweek');
 						$offset = $dayofweek + 6;
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofweek . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= DATE_SUB(CURDATE(), INTERVAL ' . $dayofweek . ' DAY)');
 						break;
 					case 'thismonth':
 						// Get the current day of the week
 						$dayofmonth = $jdate->__get('day');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= ' . $currentDate);
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= CURDATE()');
 						break;
 					case 'lastmonth':
 						// Get the current day of the week
@@ -237,8 +236,8 @@ class Com_VirtuemartModelExportOrderitem extends CsviModelExports
 						$daysinmonth = date('t', mktime(0, 0, 0, $month, 25, $year));
 						$offset = ($daysinmonth + $dayofmonth) - 1;
 
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_order_items.created_on') . ') <= DATE_SUB(CURDATE(), INTERVAL ' . $dayofmonth . ' DAY)');
 						break;
 					case 'thisquarter':
 						// Find out which quarter we are in
@@ -416,16 +415,15 @@ class Com_VirtuemartModelExportOrderitem extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
-			$records = $this->db->getIterator();
+			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->db->getNumRows();
+			$logcount = $this->csvidb->getNumRows();
 
 			if ($logcount > 0)
 			{
-				foreach ($records as $record)
+				while ($record = $this->csvidb->getRow())
 				{
 					$this->log->incrementLinenumber();
 

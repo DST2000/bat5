@@ -1,75 +1,37 @@
 /**
 * CSVI JavaScript
 *
+* CSVI
+*
 * @copyright Copyright (C) 2006 - @year@ RolandD Cyber Produksi. All rights reserved.
 * @version $Id: csvi.js 2858 2015-03-23 15:48:59Z Roland $
  */
 
 var Csvi = {
 	// Retrieve the template types for the given component
-	loadTasks: function(fname)
-	{
-		fname = fname || 'jform';
-		var action = jQuery("#" + fname + "_action").val();
-		var component = jQuery("#" + fname + "_component").val();
-		var customTable = jQuery('#jform_custom_table_chzn');
-
-		if (component !== 'com_csvi')
-		{
-			customTable.addClass('hidden');
-		}
-		else
-		{
-			customTable.removeClass('hidden');
-		}
-
-		jQuery.ajax({
-			async: false,
-			url: 'index.php',
-			dataType: 'json',
-			data: 'option=com_csvi&task=task.loadtasks&format=json&action='+action+'&component='+component,
-			success: function(result)
-			{
-				jQuery('#' + fname + '_operation > option').remove();
-				jQuery.each(result.data, function(value, name) {
-					jQuery('#' + fname + '_operation').append(jQuery('<option></option>').val(value).html(name));
-				});
-
-				var operation = jQuery('#' + fname + '_operation');
-				operation.trigger("liszt:updated");  // Old chosen version
-				operation.trigger("chosen:updated"); // New chosen version
-			},
-			error: function(result, status, statusText) {
-				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+result.responseText);
-			}
-		});
-	},
-
-	// Retrieve the template override for the given component
-	loadOverrides: function()
+	loadTasks: function()
 	{
 		var action = jQuery("#jform_action").val();
 		var component = jQuery("#jform_component").val();
-		if (component !== 'com_csvi') jQuery('#jform_custom_table_chzn').addClass('hidden');
-		else jQuery('#jform_custom_table_chzn').removeClass('hidden');
+		if (component != 'com_csvi') jQuery('#jform_custom_table').hide();
+		else jQuery('#jform_custom_table').show();
 		jQuery.ajax({
 			async: false,
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=template.loadoverrides&format=json&action='+action+'&component='+component,
+			data: 'option=com_csvi&view=tasks&task=loadtasks&format=json&action='+action+'&component='+component,
 			success: function(data)
 			{
-				var override = jQuery('#jform_override');
-				override.find('option').remove();
-				jQuery.each(data.data, function(value, name) {
-					override.append(jQuery('<option></option>').val(value).html(name));
+				jQuery('#jform_operation > option').remove();
+				jQuery.each(data, function(value, name) {
+					jQuery('#jform_operation').append(jQuery('<option></option>').val(value).html(name));
 				});
 
-				override.trigger('liszt:updated');  // Old chosen version
-				override.trigger('chosen:updated'); // New chosen version
+				jQuery("#jform_operation").trigger("liszt:updated");  // Old chosen version
+				jQuery("#jform_operation").trigger("chosen:updated"); // New chosen version
 			},
 			error: function(data, status, statusText) {
-				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.messages);
+				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText);
 			}
 		});
 	},
@@ -81,7 +43,7 @@ var Csvi = {
 				async: false,
 				url: 'index.php',
 				dataType: 'json',
-				data: 'option=com_csvi&task=exports.'+task+'&format=json&template_type='+template_type+'&table_name='+table_name,
+				data: 'option=com_csvi&view=export&task='+task+'&format=json&template_type='+template_type+'&table_name='+table_name,
 				success: function(data) {
 					switch (task) {
 						case 'loadtables':
@@ -104,7 +66,7 @@ var Csvi = {
 			async: false,
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=about.createfolder&format=json&folder='+folder,
+			data: 'option=com_csvi&view=about&task=createfolder&format=json&folder='+folder,
 			success: function(data)
 			{
 				switch (data.result)
@@ -129,7 +91,7 @@ var Csvi = {
 	showExportSource: function()
 	{
 		// Hide all selected options
-		jQuery('#localfield, #ftpfield, #emailfield, #databasefield').hide();
+		jQuery('#localfield, #ftpfield, #emailfield').hide();
 
 		// Load the selected options
 		jQuery('select#jform_exportto :selected').each(function(index, selected)
@@ -150,99 +112,64 @@ var Csvi = {
 				case 'toemail':
 					jQuery('#emailfield').show();
 					break;
-				case 'todatabase':
-					jQuery('#databasefield').show();
-					break;
 			}
 		});
+
+		return;
 	},
 
 	showImportSource: function(source)
 	{
-		var ftpfield = jQuery('#ftpfield');
-		var urlfield = jQuery('#urlfield');
-		var testurlbutton = jQuery('#testurlbutton');
-		var databasefield = jQuery('#databasefield');
-		var testpathbutton = jQuery('.testpathbutton');
-		var importupload = jQuery('.importupload');
-
 		switch (source)
 		{
 			// Import options
 			case 'fromserver':
-				ftpfield.hide();
-				urlfield.hide();
-				testurlbutton.hide();
-				databasefield.hide();
-				testpathbutton.show();
-				jQuery('.importupload, .importurl, .databasefield, .textfield').parent().parent().hide();
+				jQuery('#ftpfield').hide();
+				jQuery('#testurlbutton').hide();
+				jQuery('.testpathbutton').show();
+				jQuery('.importupload, .importurl').parent().parent().hide();
 				jQuery('.importserver').parent().parent().show();
 				break;
 			case 'fromurl':
-				urlfield.show();
-				ftpfield.hide();
-				testpathbutton.hide();
-				databasefield.hide();
-				jQuery('.importupload, .importserver, .ftpfield, .textfield, .databasefield').parent().parent().hide();
+				jQuery('#ftpfield').hide();
+				jQuery('#testurlbutton').show();
+				jQuery('.testpathbutton').hide();
+				jQuery('.importupload, .importserver').parent().parent().hide();
 				jQuery('.importurl').parent().parent().show();
 				break;
 			case 'fromftp':
-				ftpfield.show();
-				urlfield.hide();
-				testurlbutton.hide();
-				testpathbutton.hide();
-				databasefield.hide();
-				jQuery('.importupload, .importserver, .importurl, .textfield, .databasefield').parent().parent().hide();
-				jQuery('.ftpfield').parent().parent().show();
+				jQuery('#ftpfield').show();
+				jQuery('#testurlbutton').hide();
+				jQuery('.testpathbutton').hide();
+				jQuery('.importupload, .importserver, .importurl').parent().parent().hide();
 				break;
 			case 'fromupload':
-				ftpfield.hide();
-				urlfield.hide();
-				testurlbutton.hide();
-				testpathbutton.hide();
-				databasefield.hide();
-				jQuery('.importserver, .ftpfield, .importurl, .textfield, .databasefield').parent().parent().hide();
-				importupload.parent().parent().show();
-				break;
-			case 'fromtextfield':
-				ftpfield.hide();
-				urlfield.hide();
-				testurlbutton.hide();
-				testpathbutton.hide();
-				databasefield.hide();
-				jQuery('.importserver, .ftpfield, .importurl, .databasefield').parent().parent().hide();
-				break;
-			case 'fromdatabase':
-				ftpfield.hide();
-				urlfield.hide();
-				testurlbutton.hide();
-				testpathbutton.hide();
-				jQuery('.importserver, .ftpfield, .importurl, .textfield').parent().parent().hide();
-				importupload.hide();
-				databasefield.show();
-				databasefield.parent().parent().show();
+				jQuery('#ftpfield').hide();
+				jQuery('#testurlbutton').hide();
+				jQuery('.testpathbutton').hide();
+				jQuery('.importserver, .ftpfield, .importurl').parent().parent().hide();
+				jQuery('.importupload').parent().parent().show();
 				break;
 		}
+
+		return;
 	},
 
 	showFields: function(show, target)
 	{
-		var items = '';
-		show = parseInt(show);
-
-		if (show === 1)
+		if (show == 1)
 		{
 			// Create array of options
-			items = target.split(' ');
+			var items = target.split(' ');
 
 			for (i=0; i < items.length; i++)
 			{
 				// Check for a class
-				if (items[i].charAt(0) === '.')
+				if (items[i].charAt(0) == '.')
 				{
 					jQuery(items[i]).parent().parent().show();
 				}
-				else if (items[i].charAt(0) === '#')
+				else if (items[i].charAt(0) == '#')
 				{
 					jQuery(items[i]).show();
 				}
@@ -251,20 +178,21 @@ var Csvi = {
 		else
 		{
 			// Create array of options
-			items = target.split(' ');
+			var items = target.split(' ');
 
-			for (var i=0; i < items.length; i++)
+			for (i=0; i < items.length; i++)
 			{
 				// Check for a class
-				if (items[i].charAt(0) === '.')
+				if (items[i].charAt(0) == '.')
 				{
 					jQuery(items[i]).parent().parent().hide();
 				}
-				else if (items[i].charAt(0) === '#')
+				else if (items[i].charAt(0) == '#')
 				{
 					jQuery(items[i]).hide();
 				}
 			}
+
 		}
 
 		return;
@@ -281,7 +209,7 @@ var Csvi = {
 			url: 'index.php',
 			dataType: 'json',
 			cache: false,
-			data: 'option=com_csvi&task=exports.getdata&function=getorderuser&format=json&filter='+searchfilter+'&component='+component,
+			data: 'option=com_csvi&view=exports&task=getdata&function=getorderuser&format=json&filter='+searchfilter+'&component='+component,
 			success: function(data) {
 				jQuery("#ajaxuserloading").remove();
 				jQuery("#selectuserid tbody").remove();
@@ -347,7 +275,7 @@ var Csvi = {
 			url: 'index.php',
 			dataType: 'json',
 			cache: false,
-			data: 'option=com_csvi&task=exports.getdata&function=getorderproduct&format=json&filter='+searchfilter+'&component='+component,
+			data: 'option=com_csvi&view=exports&task=getdata&function=getorderproduct&format=json&filter='+searchfilter+'&component='+component,
 			success: function(data) {
 				jQuery("#ajaxproductloading").remove();
 				jQuery("#selectproductsku tbody").remove();
@@ -464,14 +392,6 @@ var Csvi = {
 	{
 		if (jQuery('#jform_export_site').attr('type') !== 'hidden')
 		{
-			jQuery('#layout_nav').closest('li').hide();
-
-			// Show XML layout tab only if its XML export
-			if (site == 'xml')
-			{
-				jQuery('#layout_nav').closest('li').show();
-			}
-
 			switch (site) {
 				case 'xml':
 				case 'html':
@@ -479,7 +399,7 @@ var Csvi = {
 						async: false,
 						url: 'index.php',
 						dataType: 'json',
-						data: 'option=com_csvi&task=exports.loadsites&format=json&exportsite=' + site,
+						data: 'option=com_csvi&view=exports&task=loadsites&format=json&exportsite=' + site,
 						success: function (data) {
 							if (data) {
 								jQuery('#jform_export_site > option').remove();
@@ -514,20 +434,16 @@ var Csvi = {
 			async: false,
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=exports.getdata&function=loadcategorytree&format=json&filter='+lang+'&component='+component,
+			data: 'option=com_csvi&view=exports&task=getdata&function=loadcategorytree&format=json&filter='+lang+'&component='+component,
 			success: function(data)
 			{
 				if (data)
 				{
-					var productCategories = jQuery('#jform_product_categories');
-					productCategories.find('option').remove();
+					jQuery('#jform_product_categories > option').remove();
 					jQuery.each(data, function(key, item) {
-						productCategories.append(jQuery('<option></option>').val(item.value).html(item.text));
-					});
-					productCategories.find('option:first').attr("selected", "true");
-
-					productCategories.trigger("liszt:updated");  // Old chosen version
-					productCategories.trigger("chosen:updated"); // New chosen version
+						jQuery('#jform_product_categories').append(jQuery('<option></option>').val(item.value).html(item.text));
+					})
+					jQuery("#jform_product_categories > option:first").attr("selected", "true");
 				}
 			},
 			error: function(data, status, statusText)
@@ -542,21 +458,17 @@ var Csvi = {
 			async: false,
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=exports.getdata&function=loadmanufacturers&format=json&filter='+lang+'&component='+component,
+			data: 'option=com_csvi&view=exports&task=getdata&function=loadmanufacturers&format=json&filter='+lang+'&component='+component,
 			success: function(data)
 			{
 				if (data)
 				{
-					var manufacturers = jQuery('#jform_manufacturers');
-					manufacturers.find('option').remove();
+					jQuery('#jform_manufacturers > option').remove();
 					jQuery.each(data, function(key, item)
 					{
-						manufacturers.append(jQuery('<option></option>').val(item.value).html(item.text));
-					});
-					manufacturers.find('option:first').attr('selected', 'true');
-
-					manufacturers.trigger('liszt:updated');  // Old chosen version
-					manufacturers.trigger('chosen:updated'); // New chosen version
+						jQuery('#jform_manufacturers').append(jQuery('<option></option>').val(item.value).html(item.text));
+					})
+					jQuery("#jform_manufacturers > option:first").attr("selected", "true");
 				}
 			},
 			error: function(data, status, statusText)
@@ -567,46 +479,21 @@ var Csvi = {
 	},
 
 	testFtp: function(action) {
-		var ftphost = jQuery('#jform_ftphost').val(),
-		ftpport = jQuery('#jform_ftpport').val(),
-		ftpusername = jQuery('#jform_ftpusername').val(),
-		ftppass = jQuery('#jform_ftppass').val(),
-		ftproot = jQuery('#jform_ftproot').val(),
-		ftpfile = jQuery('#jform_ftpfile').val(),
-		sftp	= jQuery('#jform_sftp1').is(':checked') ? 1 : 0;
-
+		var ftphost = jQuery('#jform_ftphost').val();
+		var ftpport = jQuery('#jform_ftpport').val();
+		var ftpusername = jQuery('#jform_ftpusername').val();
+		var ftppass = jQuery('#jform_ftppass').val();
+		var ftproot = jQuery('#jform_ftproot').val();
+		var ftpfile = jQuery('#jform_ftpfile').val();
 		jQuery
 			.ajax({
 				async : false,
 				url : 'index.php',
 				type : 'post',
 				dataType : 'json',
-				data : 'option=com_csvi&task=template.testftp&format=json&ftphost='+ftphost+'&ftpport='+ftpport+'&ftpusername='+ftpusername+'&ftppass='+ftppass+'&ftproot='+ftproot+'&ftpfile='+ftpfile+'&action='+action+'&sftp='+sftp,
-				success : function(response) {
-					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), response.data);
-				},
-				error : function(data, status, statusText) {
-					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText)
-				}
-			});
-	},
-
-	testConnection: function(action) {
-		var dbusername = jQuery('#jform_database_username').val();
-		var dbpassword = jQuery('#jform_database_password').val();
-		var dburl = jQuery('#jform_database_host').val();
-		var dbportno = jQuery('#jform_database_portno').val();
-		var dbname = jQuery('#jform_database_name').val();
-		var dbtable = jQuery('#jform_database_table').val();
-		jQuery
-			.ajax({
-				async : false,
-				url : 'index.php',
-				type : 'post',
-				dataType : 'json',
-				data : 'option=com_csvi&task=template.testdbconnection&format=json&dbusername='+dbusername+'&dbpassword='+dbpassword+'&dburl='+dburl+'&dbportno='+dbportno+'&dbname='+dbname+'&dbtable='+dbtable+'&'+'&action='+action,
-				success : function(response) {
-					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), response.data);
+				data : 'option=com_csvi&view=template&task=testftp&format=json&ftphost='+ftphost+'&ftpport='+ftpport+'&ftpusername='+ftpusername+'&ftppass='+ftppass+'&ftproot='+ftproot+'&ftpfile='+ftpfile+'&action='+action+'&'+token+'=1',
+				success : function(data) {
+					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), data.message);
 				},
 				error : function(data, status, statusText) {
 					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText)
@@ -616,12 +503,6 @@ var Csvi = {
 
 	testURL: function(action) {
 		var testurl = jQuery('#jform_urlfile').val();
-		var testuser = jQuery('#jform_urlusername').val();
-		var testuserfield = jQuery('#jform_urlusernamefield').val();
-		var testpass = jQuery('#jform_urlpass').val();
-		var testpassfield = jQuery('#jform_urlpassfield').val();
-		var testmethod = jQuery('#jform_urlmethod').val();
-		var testcredentialtype = jQuery('#jform_urlcredential').val();
 
 		jQuery
 			.ajax({
@@ -629,9 +510,9 @@ var Csvi = {
 				url : 'index.php',
 				type : 'post',
 				dataType : 'json',
-				data : 'option=com_csvi&task=template.testurl&format=json&testurl='+testurl+'&testuser='+testuser+'&testuserfield='+testuserfield+'&testpass='+testpass+'&testpassfield='+testpassfield+'&testmethod='+testmethod+'&testcredentialtype='+testcredentialtype,
-				success : function(response) {
-					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), response.data);
+				data : 'option=com_csvi&view=template&task=testurl&format=json&testurl='+testurl+'&'+token+'=1',
+				success : function(data) {
+					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), data.message);
 				},
 				error : function(data, status, statusText) {
 					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText)
@@ -647,9 +528,9 @@ var Csvi = {
 				url : 'index.php',
 				type : 'post',
 				dataType : 'json',
-				data : 'option=com_csvi&task=template.testpath&format=json&testpath='+testpath,
-				success : function(response) {
-					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), response.data);
+				data : 'option=com_csvi&view=template&task=testpath&format=json&testpath='+testpath+'&'+token+'=1',
+				success : function(data) {
+					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_INFORMATION'), data.message);
 				},
 				error : function(data, status, statusText) {
 					Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText)
@@ -663,11 +544,10 @@ var Csvi = {
 			async : false,
 			url : 'index.php',
 			dataType : 'html',
-			data : 'option=com_csvi&task=rule.loadpluginform&tmpl=component&plugin='+plugin,
+			data : 'option=com_csvi&view=rule&task=loadpluginform&tmpl=component&plugin='+plugin,
 			success : function(data) {
 				jQuery('#pluginfields').html('<div id="'+plugin+'">'+data+'</div>');
 				jQuery('.help-block').hide();
-				jQuery("select").chosen();
 			},
 			error : function(data, status, statusText) {
 				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText);
@@ -693,81 +573,6 @@ var Csvi = {
 					+ '</div>'
 					+ '</div>';
 		jQuery(modal).modal('show');
-	},
-
-	loadCustomAvailableFields: function () {
-		var tablename = jQuery('#jform_table_name').val(),
-			fieldName = jQuery('#jform_field_name'),
-			selectedField = fieldName.val();
-
-		// Get the arguments for Custom Table export
-		if (arguments.length > 0)
-		{
-			var tablenamerow = arguments[0].id;
-			var fieldnamesplit = arguments[0].id.split('-');
-			var counter = fieldnamesplit[0];
-			tablename = jQuery('#' + tablenamerow).val();
-			fieldName = jQuery('#' + counter + '-jform_' + arguments[1] + '_field_name');
-		}
-
-		jQuery.ajax({
-			async: false,
-			url: 'index.php',
-			dataType: 'json',
-			data: 'option=com_csvi&task=templatefield.customtablecolumns&tablename='+tablename+'&format=json',
-			success: function(data)
-			{
-				// Empty the list
-				fieldName.empty();
-
-				// Add the new options
-				jQuery.each(data.data.columns, function(val, text)
-				{
-					fieldName.append(jQuery('<option></option>').attr('value', val).text(text));
-				});
-
-				// Set the original field name as selected
-				fieldName.val(selectedField);
-
-				// Update the chosen list
-				fieldName.trigger('liszt:updated');
-				fieldName.trigger('chosen:updated'); // New chosen version
-			},
-			error: function(data, status, statusText) {
-				fieldName.empty();
-				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText);
-			}
-		});
-	},
-	loadCustomTableColumns: function (element) {
-		// Get the field list
-		var field = jQuery('#' + element.id).closest('td').next().find('.customfield');
-
-		jQuery.ajax({
-			async: true,
-			url: 'index.php',
-			dataType: 'json',
-			data: 'option=com_csvi&task=template.gettablecolumns&tablename=' + element.value + '&format=json',
-			success: function(data)
-			{
-				// Empty the list
-				field.empty();
-
-				// Add the new options
-				jQuery.each(data.data.columns, function(val, text)
-				{
-					field.append(jQuery('<option></option>').attr('value', val).text(text));
-				});
-
-				// Update the chosen list
-				field.trigger('liszt:updated');
-				field.trigger('chosen:updated'); // New chosen version
-			},
-			error: function(data, status, statusText) {
-				field.empty();
-				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText);
-			}
-		});
 	}
 };
 
@@ -775,20 +580,19 @@ var CsviMaint = {
 	loadOptions: function(operation) {
 		var component = jQuery('#component').val();
 		var operation = jQuery('#operation').val();
-		var optionField = jQuery('#optionfield');
 
 		jQuery.ajax({
 			async: false,
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=maintenance.read&subtask=options&component='+component+'&operation='+operation+'&format=json',
+			data: 'option=com_csvi&view=maintenance&task=read&subtask=options&component='+component+'&operation='+operation+'&format=json',
 			success: function(data) {
-					optionField.empty().append(data.data.options);
+					jQuery('#optionfield').empty().append(data.options);
 
 					// Update the chosen list
-					jQuery("#optionfield select").chosen({"disable_search_threshold":10});
-					optionField.trigger("liszt:updated");
-					optionField.trigger("chosen:updated"); // New chosen version
+					jQuery("#optionfield select").chosen();
+					jQuery("#optionfield").trigger("liszt:updated");
+					jQuery("#optionfield").trigger("chosen:updated"); // New chosen version
 			},
 			error: function(data, status, statusText) {
 				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText);
@@ -799,22 +603,20 @@ var CsviMaint = {
 	loadOperation: function() {
 		jQuery('#optionfield').empty();
 		var component = jQuery('#component').val();
-		var operation = jQuery('#operation');
-
 		jQuery.ajax({
 			async: false,
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=maintenance.read&subtask=operations&component='+component+'&format=json',
+			data: 'option=com_csvi&view=maintenance&task=read&subtask=operations&component='+component+'&format=json',
 			success: function(data)
 			{
 				// Empty the list
-				operation.empty();
+				jQuery('#operation').empty();
 
 				// Add the new options
-				jQuery.each(data.data.options, function(val, text)
+				jQuery.each(data.options, function(val, text)
 				{
-					operation.append(jQuery('<option></option>').attr('value', val).text(text));
+					jQuery('#operation').append(jQuery('<option></option>').attr('value', val).text(text));
 				});
 
 				// Add any specific confirmation message
@@ -824,11 +626,11 @@ var CsviMaint = {
 				}
 
 				// Update the chosen list
-				operation.trigger("liszt:updated");
-				operation.trigger("chosen:updated"); // New chosen version
+				jQuery("#operation").trigger("liszt:updated");
+				jQuery("#operation").trigger("chosen:updated"); // New chosen version
 			},
 			error: function(data, status, statusText) {
-				operation.empty();
+				jQuery('#operation').empty();
 				Csvi.showModalDialog(Joomla.JText._('COM_CSVI_ERROR'), statusText+'<br /><br />'+data.responseText);
 			}
 		});
@@ -841,7 +643,6 @@ var CsviTemplates = {
 		var component = jQuery('#jform_options_component').val();
 		var template_type = jQuery('#jform_options_operation').val();
 		var table_name = jQuery('#jform_custom_table').val();
-
 		jQuery.ajax({
 				async: false,
 				url: 'index.php',
@@ -990,19 +791,9 @@ jQuery(document).ready
 		});
 
 		// Avoid enter key to load showmodaldialog function
-		jQuery("#editTemplate input").bind("keypress", function (e) {
+		jQuery("#adminForm").bind("keypress", function (e) {
 			if (e.keyCode == 13) {
 				return false;
 			}
 		});
-
-		// If importing is from external database, show template fields mapping accordingly
-		if (jQuery('#jform_fromdatabase').val() == 0)
-		{
-			jQuery('.control-group label[for="jform_source_field"]').parent().remove();
-		}
-		else
-		{
-			jQuery('.control-group label[for="jform_xml_node"]').parent().remove();
-		}
 	});

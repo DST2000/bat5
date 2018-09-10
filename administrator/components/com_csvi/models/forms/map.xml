@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <form cron="false">
-	<fieldset name="map">
-		<field name="csvi_map_id"
-		       type="hidden" />
-
+	<fields name="jform">
 		<field name="title"
 			type="text"
 			required="true"
@@ -26,7 +23,7 @@
 			label="COM_CSVI_AUTO_DELIMITER_LABEL"
 			description="COM_CSVI_AUTO_DELIMITER_DESC"
 			labelclass="control-label"
-			class="input-small advancedSelect"
+			class="input-small"
 			default="1">
 			<option value="1">JYES</option>
 			<option value="0">JNO</option>
@@ -52,22 +49,12 @@
 			   class="input-mini"
 			   maxlength="1" />
 
-		<field name="im_mac"
-		       type="list"
-		       size="1"
-		       class="input-small advancedSelect"
-		       default="0">
-			<option value="1">JYES</option>
-			<option value="0">JNO</option>
-		</field>
-
 		<field name="action"
 			   type="list"
 			   label="COM_CSVI_MAP_ACTION_LABEL"
 			   description="COM_CSVI_MAP_ACTION_DESC"
 			   size="1"
 			   default="import"
-			   class="advancedSelect"
 			   labelclass="control-label"
 			   onchange="Csvi.loadTasks();">
 			<option value="import">COM_CSVI_IMPORT</option>
@@ -80,7 +67,6 @@
 			   description="COM_CSVI_MAP_COMPONENT_DESC"
 			   size="1"
 			   default=""
-			   class="advancedSelect"
 			   labelclass="control-label"
 			   onchange="Csvi.loadTasks();">>
 			<option value="">COM_CSVI_SELECT_COMPONENT</option>
@@ -92,7 +78,6 @@
 			   description="COM_CSVI_MAP_OPERATION_DESC"
 			   size="1"
 			   default=""
-			   class="advancedSelect"
 			   labelclass="control-label">
 			<option value="">COM_CSVI_SELECT_OPERATION</option>
 		</field>
@@ -104,5 +89,5 @@
 		   class="input-mini"
 		   labelclass="control-label"
 		   default="0" />
-	</fieldset>
+	</fields>
 </form>

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Imports
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -23,7 +23,7 @@ class RantaiModel
 	/**
 	 * JDatabase handler
 	 *
-	 * @var    JDatabaseDriver
+	 * @var    CsviDatabase
 	 * @since  6.0
 	 */
 	protected $db = null;
@@ -179,12 +179,14 @@ class RantaiModel
 	 */
 	protected function loadTemplate($template_id)
 	{
-		if (!$template_id)
+		if ($template_id)
+		{
+			$this->template = new CsviHelperTemplate($template_id, $this->csvihelper);
+		}
+		else
 		{
 			throw new Exception(JText::_('COM_CSVI_NO_TEMPLATE_SPECIFIED'));
 		}
-
-		$this->template = new CsviHelperTemplate($template_id);
 
 		return true;
 	}
@@ -240,8 +242,6 @@ class RantaiModel
 	 * @return  mixed  True on success | Throws exception on failure.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  RuntimeException
 	 */
 	public function storeLinesProcessed()
 	{
@@ -252,27 +252,6 @@ class RantaiModel
 		$this->db->setQuery($query)->execute();
 
 		return true;
-	}
-
-	/**
-	 * Get the statistics of import.
-	 *
-	 * @return  array Details of imported data.
-	 *
-	 * @since   6.6.0
-	 *
-	 * @throws  RuntimeException
-	 * @throws  InvalidArgumentException
-	 */
-	public function getStatistics()
-	{
-		// Load the log details model
-		require_once JPATH_ROOT . '/administrator/components/com_csvi/models/logdetails.php';
-		$model = new CsviModelLogdetails;
-
-		$result = $model->getStats($this->log->getLogId());
-
-		return $result->resultstats;
 	}
 
 	/**
@@ -287,17 +266,16 @@ class RantaiModel
 		// Load the component helpers
 		JLoader::import('joomla.filesystem.file');
 		$component = $this->template->get('component');
-		$extension = substr($component, 4);
 
 		// Load the helper
-		if (JFile::exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component . '/helper/' . $component . '.php'))
+		if (JFile::exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component . '/helper/' . $component . '.php'))
 		{
 			$helperName = ucfirst($component) . 'Helper' . ucfirst($component);
 			$this->helper = new $helperName($this->template, $this->log, $this->fields, $this->db);
 		}
 
 		// Load the config helper
-		if (JFile::exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component . '/helper/' . $component . '_config.php'))
+		if (JFile::exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component . '/helper/' . $component . '_config.php'))
 		{
 			$helperName = ucfirst($component) . 'Helper' . ucfirst($component) . '_config';
 			$this->helperconfig = new $helperName;
@@ -374,26 +352,19 @@ class RantaiModel
 		{
 			return false;
 		}
-
-		$files = JFolder::files($this->processfolder);
-
-		if (empty($files))
+		else
 		{
-			// There are no more files to process, remove the folder if needed
-			$pos = strpos($this->processfolder, CSVIPATH_TMP);
+			$files = JFolder::files($this->processfolder);
 
-			if ($pos !== false)
+			if (!empty($files))
 			{
-				if (JFolder::exists($this->processfolder))
-				{
-					JFolder::delete($this->processfolder);
-				}
+				return true;
 			}
-
-			return false;
+			else
+			{
+				return false;
+			}
 		}
-
-		return true;
 	}
 
 	/**
@@ -419,39 +390,16 @@ class RantaiModel
 		$this->db->setQuery($query)->execute();
 
 		// Remove the temporary folder
-		JLoader::import('joomla.filesystem.folder');
-
 		if (JFolder::exists($this->processfolder))
 		{
 			JFolder::delete($this->processfolder);
 		}
 
 		// Trigger any plugins to run after import completes
-		$options    = array();
-		$options[]  = $this->template->getSettings();
+		$options = array();
+		$options[] = $this->template->getSettings();
 		$dispatcher = new RantaiPluginDispatcher;
 		$dispatcher->importPlugins('csvi', $this->db);
 		$dispatcher->trigger('onImportComplete', $options);
-	}
-
-	/**
-	 * Get administrator active template.
-	 *
-	 * @return  string  Name of administrator template.
-	 *
-	 * @since   6.6.0
-	 *
-	 * @throws  RuntimeException
-	 */
-	public function getAdminTemplate()
-	{
-		$query = $this->db->getQuery(true)
-			->select('template')
-			->from('#__template_styles')
-			->where($this->db->quoteName('client_id') . ' = 1')
-			->where($this->db->quoteName('home') . ' = 1');
-		$this->db->setQuery($query)->execute();
-
-		return $this->db->loadResult();
 	}
 }

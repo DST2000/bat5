@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Tasks
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,29 +18,32 @@ defined('_JEXEC') or die;
  * @subpackage  Tasks
  * @since       6.0
  */
-class CsviControllerTasks extends JControllerAdmin
+class CsviControllerTasks extends FOFController
 {
 	/**
-	 * The prefix to use with controller messages.
+	 * Load the available tasks.
 	 *
-	 * @var    string
-	 * @since  7.2.1
+	 * @return  void.
+	 *
+	 * @since   6.0
 	 */
-	protected $text_prefix = 'COM_CSVI_TASKS';
-	/**
-	 * Proxy for getModel.
-	 *
-	 * @param   string  $name    The model name. Optional.
-	 * @param   string  $prefix  The class prefix. Optional.
-	 * @param   array   $config  The array of possible config values. Optional.
-	 *
-	 * @return  JModel
-	 *
-	 * @since   6.6.0
-	 */
-	public function getModel($name = 'Task', $prefix = 'CsviModel', $config = array('ignore_request' => true))
+	public function loadTasks()
 	{
-		return parent::getModel($name, $prefix, $config);
+		$helper = new CsviHelperCsvi;
+		$jinput = JFactory::getApplication()->input;
+		$model = $this->getThisModel();
+		$action = $jinput->get('action');
+		$component = $jinput->get('component');
+
+		// Load the language files
+		$helper->loadLanguage($component);
+
+		$operations = $model->loadTasks($action, $component);
+		array_unshift($operations, JText::_('COM_CSVI_MAKE_CHOICE'));
+
+		echo json_encode($operations);
+
+		jexit();
 	}
 
 	/**
@@ -52,22 +55,19 @@ class CsviControllerTasks extends JControllerAdmin
 	 */
 	public function reload()
 	{
-		try
+		$model = $this->getThisModel();
+
+		if ($model->reload())
 		{
-			/** @var CsviModelTasks $model */
-			$model = $this->getModel();
-
-			$model->reload();
-
-			$message     = JText::_('COM_CSVI_TEMPLATETYPE_RESET_SUCCESSFULLY');
-			$messageType = '';
+			$msg = JText::_('COM_CSVI_TEMPLATETYPE_RESET_SUCCESSFULLY');
+			$msgtype = '';
 		}
-		catch (Exception $e)
+		else
 		{
-			$message = $e->getMessage();
-			$messageType = 'error';
+			$msg = $this->getError();
+			$msgtype = 'error';
 		}
 
-		$this->setRedirect('index.php?option=com_csvi&view=tasks', $message, $messageType);
+		$this->setRedirect('index.php?option=com_csvi&view=tasks', $msg, $msgtype);
 	}
 }

@@ -3,13 +3,11 @@
  * @package     CSVI
  * @subpackage  Templates
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
-
-use Joomla\Registry\Registry;
 
 defined('_JEXEC') or die;
 
@@ -28,7 +26,7 @@ class CsviHelperTemplate
 	 * @var    JRegistry
 	 * @since  3.0
 	 */
-	private $settings;
+	private $settings = null;
 
 	/**
 	 * The name of the template
@@ -36,7 +34,7 @@ class CsviHelperTemplate
 	 * @var    string
 	 * @since  3.0
 	 */
-	private $name;
+	private $name = null;
 
 	/**
 	 * The ID of the template
@@ -44,7 +42,7 @@ class CsviHelperTemplate
 	 * @var    int
 	 * @since  3.0
 	 */
-	private $id;
+	private $id = null;
 
 	/**
 	 * If the template can be used for front-end/cron usage
@@ -89,14 +87,14 @@ class CsviHelperTemplate
 	/**
 	 * Construct the template helper.
 	 *
-	 * @param   int  $id  The ID of the template to load.
+	 * @param   int             $id      The ID of the template to load.
+	 * @param   CsviHelperCsvi  $helper  An instance of CsviHelperCsvi
+	 *
+	 * @throws  Exception
 	 *
 	 * @since   4.0
-	 *
-	 * @throws  CsviException
-	 * @throws  RuntimeException
 	 */
-	public function __construct($id)
+	public function __construct($id, CsviHelperCsvi $helper)
 	{
 		if ($id)
 		{
@@ -126,14 +124,13 @@ class CsviHelperTemplate
 
 			if ($template)
 			{
-				$options = new Registry;
+				$options = new JRegistry;
 				$options->loadArray(json_decode($template->settings, true));
 				$template->options = $options;
-				$template->csvi_template_id = (int) $template->csvi_template_id;
 
-				if ($template->csvi_template_id !== $this->id)
+				if ($template->csvi_template_id != $this->id)
 				{
-					throw new CsviException(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
+					throw new Exception(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
 				}
 
 				// Set the name
@@ -158,17 +155,16 @@ class CsviHelperTemplate
 				$this->enabled = $template->enabled;
 
 				// Load the language
-				$language = new CsviHelperLanguage;
-				$language->loadAddonLanguage($this->get('component'));
+				$helper->loadLanguage($this->get('component'));
 			}
 			else
 			{
-				throw new CsviException(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
+				throw new Exception(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
 			}
 		}
 		else
 		{
-			$this->settings = new Registry;
+			$this->settings = new JRegistry;
 		}
 	}
 
@@ -196,7 +192,7 @@ class CsviHelperTemplate
 		$value = $this->settings->get($name, '');
 
 		// Return the found value
-		if (is_array($value) && 0 === count($value))
+		if (is_array($value) && empty($value))
 		{
 			$value = $default;
 		}
@@ -212,28 +208,13 @@ class CsviHelperTemplate
 			{
 				case 'language':
 				case 'target_language':
-					if (in_array($this->settings->get('component'), array('com_virtuemart', 'com_productbuilder'), true))
+					if ($this->settings->get('component') == 'com_virtuemart' && is_string($value))
 					{
-						if (is_string($value))
-						{
-							$value = strtolower(str_replace('-', '_', $value));
-						}
-
-						// If no language set in the template, take the default language
-						if (!$value)
-						{
-							// Load all the helpers needed
-							$settings = new CsviHelperSettings($this->db);
-							$log      = new CsviHelperLog($settings, $this->db);
-							$fields   = new CsviHelperFields($this, $log, $this->db);
-							require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart.php';
-							$helperConfig = new Com_VirtuemartHelperCom_Virtuemart($this, $log, $fields, $this->db);
-							$value        = $helperConfig->getDefaultLanguage();
-						}
+						$value = strtolower(str_replace('-', '_', $value));
 					}
 					break;
 				case 'field_delimiter':
-					if (strtolower($value) === 't')
+					if (strtolower($value) == 't')
 					{
 						$value = "\t";
 					}
@@ -242,7 +223,7 @@ class CsviHelperTemplate
 		}
 
 		// Clean up and return
-		if (null === $filter && $mask === 0)
+		if (is_null($filter) && $mask == 0)
 		{
 			return $value;
 		}

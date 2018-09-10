@@ -20,6 +20,16 @@
 				   emptydescription="true">
 			</field>
 
+			<field name="publish_state"
+				   type="list"
+				   size="1"
+				   class="input-medium advancedSelect"
+				   default="">
+				<option value="">COM_CSVI_ALL_STATES</option>
+				<option value="1">COM_CSVI_PUBLISHED</option>
+				<option value="0">COM_CSVI_UNPUBLISHED</option>
+			</field>
+
 			<field name="recordstart"
 				   type="text"
 				   size="5"
@@ -63,11 +73,6 @@
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>
-
-			<field name="google_country"
-				   type="csvi.virtuemartcountry"
-				   size="1"
-				   class="input-large advancedSelect"/>
 		</fieldset>
 	</fields>
 </form>

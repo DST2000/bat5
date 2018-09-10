@@ -1,0 +1,252 @@
+@charset "utf-8";
+/* CSS Document */
+html, body {
+	height: 100%;
+}
+body {
+	background: #fff;
+	font-family: Open-Sans, sans-serif;
+	font-size: 16px;
+	font-weight: 400;
+	min-width: 320px;
+}
+
+/* < Тестовые страницы */
+
+.brandsample, 
+.brandsample-good,
+.akb-sample{
+	display:none;
+}
+
+.test {
+	padding-top: 10px;
+}
+/* > Тестовые страницы */
+
+/* <  блок бренда */
+.brand-box {
+/*	border: 1px solid #fc000f;*/
+}
+
+.brand-box >.row {
+	border: 1px solid #fc000f;
+}
+/* >  блок бренда */
+
+/* <  блок фильтра */
+.filter {
+	border: 1px solid #fc000f;
+	margin-bottom: 5%;
+}
+.filter input {
+	margin: 0 0 5% 10%;
+}
+/* >  блок фильтра */
+
+
+/*  < карточка товара */
+.price p {
+	line-height: 0.7;
+}
+
+/*  > карточна товара */
+
+
+
+/* < Переопределенние Bootstrap */
+.panel-body {
+    padding: 5px;
+}
+.panel-group {
+    margin-bottom: 3px;
+}
+/* > Переопределенние Bootstrap */
+
+/* < МЕНЮ*/
+/* #top-menu */
+#top-menu ul {
+	list-style-type: none;
+}
+/* позиции открываемого меню - меню */
+.dropdownMenu1 {
+	position: relative;
+	top: 5%;
+	left: -70%;
+}
+/* прокрутка пунктов меню*/
+.dropdown-menu-scroll {
+  overflow-x: auto;
+}
+/* позиции открываемого меню - аккумуляторы */
+.dropdownMenu2 {
+	position: relative;
+	top: 5%;
+	left: -90%;
+}
+/* позиции открываемого меню - масла */
+.dropdownMenu3 {
+	position: relative;
+	top: 5%;
+	left: -430%;
+}
+/*кнопка меню*/
+.btn-menu {
+	background: #fc000f;
+	border: 2px solid #000;
+	color: #fff;
+}
+
+/* Аккумуляторы*/
+.fa-battery-three-quarters, .fa-tint {
+	font-size: 34px;
+}
+/* кнопка поиск*/
+.fa-search{
+	position:absolute;
+	padding: 2px;
+	font-size: 35px;
+	margin: -35px 0 0 -35px;
+}
+/* кнопка корзина */
+.fa-shopping-cart{
+	padding-top: 10px; 
+	font-size: 55px ;
+	text-align: right;
+	transform: scale(-1, 1);
+}
+/* кнопка перейти вверх*/
+.fa-angle-double-up {
+	font-size: 45px;
+	text-align: right;
+	transform: scale(-1, 1);
+}
+.fa-angle-double-up:hover {
+	color: #D83224;
+}
+/* кнопка обратный звонок */
+.fa-phone-volume.large{
+	font-size: 55px;
+	transform: scale(-1, 1);
+} 
+.fa-phone-volume.large:hover {
+	color: #D83224;
+}
+
+
+.btn-circle {
+	width: 30px;
+	height: 30px;
+	text-align: center;
+	padding: 6px 0;
+	font-size: 12px;
+	line-height: 1.428571429;
+	border-radius: 15px;
+}
+.btn-circle.btn-lg {
+	width: 50px;
+	height: 50px;
+	padding: 10px 16px;
+	font-size: 18px;
+	line-height: 1.33;
+	border-radius: 25px;
+}
+.btn-circle.btn-xl {
+	width: 70px;
+	height: 70px;
+	padding: 10px 3px;
+	font-size: 19px;
+	line-height: 1.33;
+	border-radius: 50%;
+}
+.top-menu {
+	padding: 36px;
+}
+#top-menu {
+	background: #fff;
+}
+#top-menu h2 {
+	text-align: center;
+	text-transform: uppercase;
+	font-size: 20px;
+}
+#top-menu h3 {
+	text-transform: uppercase;
+	font-size: 18px;
+}
+#top-menu p {
+	text-align: center;
+}
+/* > МЕНЮ*/
+
+/* < BRANDS */
+/* растягивающиеся блоки*/
+.row-flex {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.brand {
+	padding: 10px;
+	border: 2px solid #fff;
+	border-radius: 5px;
+	text-transform: uppercase;
+}
+
+.brand-1 {
+	background: #DA0510;
+}
+.brand-2 {
+	background: #0154A4;
+}
+.brand-3 {
+	background: #fff;
+	border: 5px solid #67686B!important;
+}
+.brand-4 {
+	background: #F4F6F6;
+}
+.brand-5 {
+	background: #0AFDF9;
+}
+.brand-6 {
+	background: #110ABB;
+}
+.brand-7 {
+	background: #1D6428;
+}
+.brand-8 {
+	background: #BF14A3;
+}
+.brand-9 {
+	background: #B96A1A;
+}
+.brand-10 {
+	background: #7ED5C6;
+}
+.brand-11 {
+	background: #BCDEE7;
+}
+.brand-12 {
+	background: #006864;
+}
+
+/* > BRANDS */
+
+/* < подвал страницы */
+
+div.red-line {
+	display: block;
+	height: 118px;
+	background: #D83224;
+	padding: 0;
+	margin: 0 ;
+}
+
+div.spacer-20 
+{
+	height: 20px;
+	display: block;
+}
+/* > подвал страницы */
+

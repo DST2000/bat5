@@ -17,33 +17,15 @@
 			required="true" />
 
 			<field name="operation"
-			       type="list"
-			       required="true"
-			       class="advancedSelect"
-			       default="multiplication">
+				type="list"
+				required="true"
+				class="advancedSelect"
+				default="multiplication">
 				<option value="multiplication">COM_CSVI_MARGIN_MULTIPLICATION</option>
 				<option value="addition">COM_CSVI_MARGIN_ADDITION</option>
 				<option value="subtraction">COM_CSVI_MARGIN_SUBTRACTION</option>
 				<option value="division">COM_CSVI_MARGIN_DIVISION</option>
 			</field>
-
-			<field name="comparison"
-		       type="list"
-		       size="1"
-		       class="advancedSelect"
-		       default="text">
-			<option value="">COM_CSVI_PLUGINFORM_SELECT_COMPARISION</option>
-			<option value="equalto">COM_CSVI_PLUGINFORM_MARGIN_EQUALTO</option>
-			<option value="greaterthan">COM_CSVI_PLUGINFORM_MARGIN_GREATERTHAN</option>
-			<option value="greaterthanequalto">COM_CSVI_PLUGINFORM_MARGIN_GREATERTHAN_EQUALTO</option>
-			<option value="lessthan">COM_CSVI_PLUGINFORM_MARGIN_LESSTHAN</option>
-			<option value="lessthanequalto">COM_CSVI_PLUGINFORM_MARGIN_LESSTHAN_EQUALTO</option>
-			</field>
-
-			<field name="pricevalue"
-			       type="text"
-			       size="55"
-			        />
 		</fieldset>
 	</fields>
 </form>

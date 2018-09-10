@@ -3,19 +3,19 @@
  * @package     CSVI
  * @subpackage  Export
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
 
-JFactory::getDocument()->addScriptVersion(JUri::root() . 'administrator/components/com_csvi/assets/js/jquery.timers.js');
+JFactory::getDocument()->addScript(JURI::root() . 'administrator/components/com_csvi/assets/js/jquery.timers.js');
 ?>
 <div class="row-fluid">
 	<div class="span12">
-		<form method="post" action="<?php echo JRoute::_('index.php?option=com_csvi&view=exports');?>" id="adminForm" name="adminForm">
+		<form method="post" action="index.php?option=com_csvi&view=exports" id="adminForm" name="adminForm">
 			<h3><?php echo JText::sprintf('COM_CSVI_PROCESS_TEMPLATE_NAME', $this->template->getName()); ?></h3>
 			<div class="span2">
 				<span class="badge badge-info"><?php echo JText::_('COM_CSVI_RECORDS_PROCESSED'); ?></span>
@@ -72,7 +72,7 @@ function submitbutton(task)
 	}
 	else
 	{
-		Joomla.submitform(task);
+		submitform(task);
 	}
 }
 
@@ -84,7 +84,7 @@ function doExport()
 		url: 'index.php',
 		dataType: 'json',
 		cache: false,
-		data: 'option=com_csvi&task=exports.export&format=json&runId=<?php echo $this->runId; ?>',
+		data: 'option=com_csvi&view=exports&task=export&format=json&runId=<?php echo $this->runId; ?>',
 		success: function(data)
 		{
 			if (data)
@@ -122,13 +122,10 @@ function doExport()
 				}
 			}
 		},
-		error:function (request, error)
+		error:function (request, status, error)
 		{
-			var errorstring = Joomla.JText._('COM_CSVI_ERROR_DURING_PROCESS'),
-				languageString = errorstring.replace('%s', 'export');
-
 			showMsg(
-				languageString,
+				Joomla.JText._('COM_CSVI_ERROR_DURING_PROCESS'),
 				'Status error: ' + request.status + '<br />' +
 				'Status message: ' + request.statusText + '<br />' +
 				jQuery.trim(request.responseText) ,
@@ -138,7 +135,7 @@ function doExport()
 			jQuery('.ok-btn').on('click', function(e) {
 				e.preventDefault();
 				jQuery('#csviModal').modal('hide');
-				window.location = '<?php echo JUri::root(); ?>administrator/index.php?option=com_csvi&view=exports';
+				window.location = '<?php echo JURI::root(); ?>administrator/index.php?option=com_csvi&view=exports';
 			});
 		}
 	});

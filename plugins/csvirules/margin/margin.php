@@ -3,13 +3,15 @@
  * @package     CSVI
  * @subpackage  Plugin.Margin
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
+
+jimport('joomla.plugin.plugin');
 
 /**
  * Replaces values.
@@ -52,7 +54,7 @@ class plgCsvirulesMargin extends RantaiPluginDispatcher
 	 */
 	public function getSingleName($plugin)
 	{
-		if ($plugin === $this->id)
+		if ($plugin == $this->id)
 		{
 			return 'CSVI Margin';
 		}
@@ -67,14 +69,10 @@ class plgCsvirulesMargin extends RantaiPluginDispatcher
 	 * @return  string  The rendered form with plugin options.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  RuntimeException
-	 * @throws  InvalidArgumentException
-	 * @throws  UnexpectedValueException
 	 */
-	public function getForm($plugin, $options = array())
+	public function getForm($plugin, $options=false)
 	{
-		if ($plugin === $this->id)
+		if ($plugin == $this->id)
 		{
 			// Load the language files
 			$lang = JFactory::getLanguage();
@@ -82,22 +80,23 @@ class plgCsvirulesMargin extends RantaiPluginDispatcher
 			$lang->load('plg_csvirules_margin', JPATH_ADMINISTRATOR, null, true);
 
 			// Add the form path for this plugin
-			JForm::addFormPath(JPATH_PLUGINS . '/csvirules/margin/');
+			FOFForm::addFormPath(JPATH_PLUGINS . '/csvirules/margin/');
 
 			// Load the helper that renders the form
 			$helper = new CsviHelperCsvi;
 
 			// Instantiate the form
-			$form = JForm::getInstance('margin', 'form_margin');
+			$form = FOFForm::getInstance('margin', 'form_margin');
 
 			// Bind any existing data
 			$form->bind(array('pluginform' => $options));
 
 			// Create some dummies
-			$input = new JInput;
+			$input = new FOFInput();
+			$model = new FOFModel();
 
 			// Render the form
-			return $helper->renderCsviForm($form, $input);
+			return $helper->renderMyForm($form, $model, $input);
 		}
 	}
 
@@ -115,63 +114,34 @@ class plgCsvirulesMargin extends RantaiPluginDispatcher
 	 */
 	public function runRule($plugin, $settings, $field, $fields)
 	{
-		if ($plugin === $this->id && $settings)
+		if ($plugin == $this->id)
 		{
-			$value      = $field->value;
-			$clean      = str_replace(",", ".", $value);
-			$lastpos    = strrpos($clean, '.');
-			$value      = str_replace('.', '', substr($clean, 0, $lastpos)) . substr($clean, $lastpos);
-			$priceValue = (float) $settings->pricevalue;
-			$process    = false;
+			// Perform the margin
+			if (!empty($settings))
+			{
+				$margin = $settings->margin;
+				$value = $field->value;
 
-			if ($priceValue && $settings->comparison)
-			{
-				switch ($settings->comparison)
-				{
-					case 'equalto':
-						$process = $value === $priceValue;
-						break;
-					case 'greaterthan':
-						$process = $value > $priceValue;
-						break;
-					case 'greaterthanequalto':
-						$process = $value >= $priceValue;
-						break;
-					case 'lessthan':
-						$process = $value < $priceValue;
-						break;
-					case 'lessthanequalto':
-						$process = $value <= $priceValue;
-						break;
-				}
-			}
-			elseif (!$priceValue || !$settings->comparison)
-			{
-				$process = true;
-			}
-
-			if ($process)
-			{
 				// Check if we have a percentage
-				if ($settings->valuetype === 'percentage')
+				if ($settings->valuetype == 'percentage')
 				{
 					// Calculate the margin
-					$settings->margin = $settings->margin / 100 * $value;
+					$margin = (100 + $settings->margin) / 100;
 				}
 
 				switch ($settings->operation)
 				{
 					case 'multiplication':
-						$value = $value * $settings->margin;
+						$value = $field->value * $margin;
 						break;
 					case 'addition':
-						$value = $value + $settings->margin;
+						$value = $field->value + $margin;
 						break;
 					case 'subtraction':
-						$value = $value - $settings->margin;
+						$value = $field->value - $margin;
 						break;
 					case 'division':
-						$value = $value / $settings->margin;
+						$value = $field->value / $margin;
 						break;
 				}
 

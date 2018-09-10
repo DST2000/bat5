@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -45,6 +45,14 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	private $shipmentmethodShoppergroupTable = null;
 
 	/**
+	 * Set to true if the language tables exist
+	 *
+	 * @var    bool
+	 * @since  6.0
+	 */
+	private $tablesexist = true;
+
+	/**
 	 * Start the product import process.
 	 *
 	 * @return  bool  True on success | false on failure.
@@ -53,75 +61,83 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	 */
 	public function getStart()
 	{
-		// Process data
-		foreach ($this->fields->getData() as $fields)
+		// Only continue if all tables exist
+		if ($this->tablesexist)
 		{
-			foreach ($fields as $name => $details)
+			// Process data
+			foreach ($this->fields->getData() as $fields)
 			{
-				$value = $details->value;
-
-				switch ($name)
+				foreach ($fields as $name => $details)
 				{
-					case 'published':
-						switch ($value)
-						{
-							case 'n':
-							case 'no':
-							case 'N':
-							case 'NO':
-							case '0':
-								$value = 0;
-								break;
-							default:
-								$value = 1;
-								break;
-						}
+					$value = $details->value;
 
-						$this->setState($name, $value);
-						break;
-					default:
-						$this->setState($name, $value);
-						break;
+					switch ($name)
+					{
+						case 'published':
+							switch ($value)
+							{
+								case 'n':
+								case 'N':
+								case '0':
+									$value = 0;
+									break;
+								default:
+									$value = 1;
+									break;
+							}
+
+							$this->setState($name, $value);
+							break;
+						default:
+							$this->setState($name, $value);
+							break;
+					}
 				}
 			}
-		}
 
-		// Reset loaded state
-		$this->loaded = true;
+			// Reset loaded state
+			$this->loaded = true;
 
-		// Required fields are calc_kind, calc_value_mathop, calc_value
-		if ($this->getState('shipment_name', false))
-		{
-			// Bind the values
-			$this->shipmentmethodLangTable->bind($this->state);
-
-			if ($this->shipmentmethodLangTable->check())
+			// Required fields are calc_kind, calc_value_mathop, calc_value
+			if ($this->getState('shipment_name', false))
 			{
-				$this->setState('virtuemart_shipmentmethod_id', $this->shipmentmethodLangTable->virtuemart_shipmentmethod_id);
+				// Bind the values
+				$this->shipmentmethodLangTable->bind($this->state);
 
-				// Check if we have an existing item
-				if ($this->getState('virtuemart_shipmentmethod_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
+				if ($this->shipmentmethodLangTable->check())
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
-					$this->loaded = false;
-				}
-				else
-				{
-					// Load the current content data
-					$this->shipmentmethodTable->load($this->getState('virtuemart_shipmentmethod_id'));
-					$this->loaded = true;
+					$this->setState('virtuemart_shipmentmethod_id', $this->shipmentmethodLangTable->virtuemart_shipmentmethod_id);
+
+					// Check if we have an existing item
+					if ($this->getState('virtuemart_shipmentmethod_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
+					{
+						$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
+						$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
+						$this->loaded = false;
+					}
+					else
+					{
+						// Load the current content data
+						$this->shipmentmethodTable->load($this->getState('virtuemart_shipmentmethod_id'));
+						$this->loaded = true;
+					}
 				}
 			}
+			else
+			{
+				$this->loaded = false;
+
+				$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			}
+
+			return true;
 		}
 		else
 		{
-			$this->loaded = false;
+			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_LANG_TABLE_NOT_EXIST', $this->template->get('language')));
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			return false;
 		}
-
-		return true;
 	}
 
 	/**
@@ -390,9 +406,6 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  CsviException
-	 * @throws  RuntimeException
 	 */
 	public function loadTables()
 	{
@@ -401,30 +414,24 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		// Get the language to use
-		$language = $this->template->get('target_language');
-
-		if ($this->template->get('language') === $this->template->get('target_language'))
+		if ($this->template->get('language') == $this->template->get('target_language'))
 		{
-			$language = $this->template->get('language');
+			$lang = $this->template->get('language');
+		}
+		else
+		{
+			$lang = $this->template->get('target_language', 'general');
 		}
 
-		// Get the table name to check
-		$tableName = $this->db->getPrefix() . 'virtuemart_shipmentmethods_' . $language;
-
-		if (!in_array($tableName, $tables))
+		if (!in_array($this->db->getPrefix() . 'virtuemart_shipmentmethods_' . $lang, $tables))
 		{
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			$this->tablesexist = false;
+		}
+		else
+		{
+			$this->shipmentmethodLangTable = $this->getTable('ShipmentmethodLang');
 		}
 
-		$this->shipmentmethodLangTable = $this->getTable('ShipmentmethodLang');
 		$this->shipmentmethodShoppergroupTable = $this->getTable('ShipmentmethodShoppergroup');
 	}
 

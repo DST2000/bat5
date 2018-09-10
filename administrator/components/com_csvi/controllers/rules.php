@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Rules
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,67 +18,29 @@ defined('_JEXEC') or die;
  * @subpackage  Rules
  * @since       6.0
  */
-class CsviControllerRules extends JControllerAdmin
+class CsviControllerRules extends FOFController
 {
 	/**
-	 * The prefix to use with controller messages.
-	 *
-	 * @var    string
-	 * @since  7.2.1
-	 */
-	protected $text_prefix = 'COM_CSVI_RULES';
-	/**
-	 * Proxy for getModel.
-	 *
-	 * @param   string  $name    The model name. Optional.
-	 * @param   string  $prefix  The class prefix. Optional.
-	 * @param   array   $config  The array of possible config values. Optional.
-	 *
-	 * @return  JModel
-	 *
-	 * @since   6.6.0
-	 */
-	public function getModel($name = 'Rule', $prefix = 'CsviModel', $config = array('ignore_request' => true))
-	{
-		return parent::getModel($name, $prefix, $config);
-	}
-
-	/**
-	 * Duplicate one or more rules.
+	 * Load the plugin form.
 	 *
 	 * @return  void.
 	 *
-	 * @since   6.6.0
+	 * @since   6.0
 	 */
-	public function duplicate()
+	public function loadPluginForm()
 	{
-		// Check for request forgeries.
-		JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
+		// Load the plugins
+		$db = JFactory::getDbo();
+		$dispatcher = new RantaiPluginDispatcher;
+		$dispatcher->importPlugins('csvirules', $db);
+		$output = $dispatcher->trigger('getForm', array('id' => $this->input->get('plugin')));
 
-		$cid = array();
-		$id = $this->input->get('id', 0, 'int');
-
-		if ($id)
+		// Output the form
+		if (isset($output[0]))
 		{
-			$cid[0] = $id;
-		}
-		else
-		{
-			$cid = $this->input->get('cid', array(), 'array');
+			echo $output[0];
 		}
 
-		/** @var CsviModelRule $model */
-		$model = $this->getModel();
-
-		try
-		{
-			$model->createCopy($cid);
-
-			$this->setRedirect('index.php?option=com_csvi&view=rules', JText::_('COM_CSVI_RULE_COPIED'));
-		}
-		catch (Exception $e)
-		{
-			$this->setRedirect('index.php?option=com_csvi&view=rule', $e->getMessage(), 'error');
-		}
+		JFactory::getApplication()->close();
 	}
 }

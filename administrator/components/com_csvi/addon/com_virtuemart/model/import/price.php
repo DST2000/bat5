@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -26,7 +26,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 	 * @var    VirtueMartTableProductPrice
 	 * @since  6.0
 	 */
-	private $productPriceTable;
+	private $productPriceTable = null;
 
 	/**
 	 * The addon helper
@@ -34,7 +34,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 	 * @var    Com_VirtuemartHelperCom_Virtuemart
 	 * @since  6.0
 	 */
-	protected $helper;
+	protected $helper = null;
 
 	/**
 	 * CSVI fields
@@ -42,7 +42,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 	 * @var    CsviHelperImportfields
 	 * @since  6.0
 	 */
-	protected $fields;
+	protected $fields = null;
 
 	/**
 	 * Start the product import process.
@@ -74,37 +74,6 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 						break;
 					case 'product_currency':
 						$this->setState($name, $this->helper->getCurrencyId(strtoupper($value), $this->getState('virtuemart_vendor_id')));
-						break;
-					case 'product_override_price':
-						// Set the value only when there is one, else dont update even if its empty
-						if ($value)
-						{
-							$this->setState($name, $this->toPeriod($value));
-						}
-						break;
-					case 'override':
-						// Set the value only when there, else dont update even if its empty
-						if ($value)
-						{
-							switch ($value)
-							{
-								case 'y':
-								case 'yes':
-								case 'Y':
-								case 'YES':
-								case '1':
-									$value = 1;
-									break;
-								case '-1':
-									$value = '-1';
-									break;
-								default:
-									$value = 0;
-									break;
-							}
-
-							$this->setState($name, $value);
-						}
 						break;
 					case 'product_price':
 					case 'product_price_new':
@@ -139,7 +108,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 			{
 				if (strlen(trim($this->getState('shopper_group_name', ''))) > 0)
 				{
-					if ($this->getState('shopper_group_name') === '*')
+					if ($this->getState('shopper_group_name') == '*')
 					{
 						$this->setState('virtuemart_shoppergroup_id', 0);
 					}
@@ -278,9 +247,6 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 					}
 					else
 					{
-						// Bind the values
-						$this->productPriceTable->bind($this->state);
-
 						// Check if we need to change the product price
 						if ($this->getState('product_price_new', false))
 						{
@@ -298,7 +264,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 
 						if ($shopper_group_name_new)
 						{
-							if ($shopper_group_name_new === '*')
+							if ($shopper_group_name_new == '*')
 							{
 								$this->productPriceTable->virtuemart_shoppergroup_id = 0;
 							}

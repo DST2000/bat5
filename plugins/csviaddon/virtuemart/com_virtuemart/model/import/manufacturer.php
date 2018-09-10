@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -61,6 +61,14 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 	private $manufacturerCategoryLangTable;
 
 	/**
+	 * Set if language tables exist
+	 *
+	 * @var    bool
+	 * @since  6.0
+	 */
+	private $tablesExist = true;
+
+	/**
 	 * Here starts the processing.
 	 *
 	 * @return  bool  Akways returns true.
@@ -69,90 +77,97 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 	 */
 	public function getStart()
 	{
-		// Check for vendor ID
-		$this->setState('virtuemart_vendor_id', $this->helper->getVendorId());
-
-		// Process data
-		foreach ($this->fields->getData() as $fields)
+		// Only continue if all tables exist
+		if ($this->tablesExist)
 		{
-			foreach ($fields as $name => $details)
+			// Check for vendor ID
+			$this->setState('virtuemart_vendor_id', $this->helper->getVendorId());
+
+			// Process data
+			foreach ($this->fields->getData() as $fields)
 			{
-				$value = $details->value;
-
-				switch ($name)
+				foreach ($fields as $name => $details)
 				{
-					case 'published':
-					case 'media_published':
-						switch ($value)
-						{
-							case 'n':
-							case 'no':
-							case 'N':
-							case 'NO':
-							case '0':
-								$value = 0;
-								break;
-							default:
-								$value = 1;
-								break;
-						}
+					$value = $details->value;
 
-						$this->setState($name, $value);
-						break;
-					case 'mf_category_name':
-						$this->manufacturerCategoryLangTable->mf_category_name = $value;
-						break;
-					default:
-						$this->setState($name, $value);
-						break;
+					switch ($name)
+					{
+						case 'published':
+							switch ($value)
+							{
+								case 'n':
+								case 'N':
+								case '0':
+									$value = 0;
+									break;
+								default:
+									$value = 1;
+									break;
+							}
+
+							$this->setState('published', $value);
+							break;
+						case 'mf_category_name':
+							$this->manufacturerCategoryLangTable->mf_category_name = $value;
+							break;
+						default:
+							$this->setState($name, $value);
+							break;
+					}
 				}
 			}
-		}
 
-		// Reset loaded state
-		$this->loaded = true;
+			// Reset loaded state
+			$this->loaded = true;
 
-		$virtuemart_manufacturer_id = $this->getState('virtuemart_manufacturer_id', false);
-		$mf_name = $this->getState('mf_name', false);
+			$virtuemart_manufacturer_id = $this->getState('virtuemart_manufacturer_id', false);
+			$mf_name = $this->getState('mf_name', false);
 
-		if ($mf_name || $virtuemart_manufacturer_id)
-		{
-			// Check for the manufacturer ID
-			if (!$virtuemart_manufacturer_id && $mf_name)
+			if ($mf_name || $virtuemart_manufacturer_id)
 			{
-				$this->getManufacturerId();
+				// Check for the manufacturer ID
+				if (!$virtuemart_manufacturer_id && $mf_name)
+				{
+					$this->getManufacturerId();
+				}
+
+				// Bind the values
+				$this->manufacturerTable->bind($this->state);
+
+				if ($this->manufacturerTable->check())
+				{
+					$this->setState('virtuemart_manufacturer_id', $this->manufacturerTable->virtuemart_manufacturer_id);
+
+					// Check if we have an existing item
+					if ($this->getState('virtuemart_manufacturer_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
+					{
+						$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURER', $this->getState('mf_name')));
+						$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURER', $this->getState('mf_name')));
+						$this->loaded = false;
+					}
+					else
+					{
+						// Load the current manufacturer data
+						$this->manufacturerTable->load($this->getState('virtuemart_manufacturer_id', 0));
+						$this->loaded = true;
+					}
+				}
+			}
+			else
+			{
+				$this->loaded = false;
+
+				$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 			}
 
-			// Bind the values
-			$this->manufacturerTable->bind($this->state);
-
-			if ($this->manufacturerTable->check())
-			{
-				$this->setState('virtuemart_manufacturer_id', $this->manufacturerTable->virtuemart_manufacturer_id);
-
-				// Check if we have an existing item
-				if ($this->getState('virtuemart_manufacturer_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
-				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURER', $this->getState('mf_name')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURER', $this->getState('mf_name')));
-					$this->loaded = false;
-				}
-				else
-				{
-					// Load the current manufacturer data
-					$this->manufacturerTable->load($this->getState('virtuemart_manufacturer_id', 0));
-					$this->loaded = true;
-				}
-			}
+			return true;
 		}
 		else
 		{
-			$this->loaded = false;
+			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_LANG_TABLE_NOT_EXIST', $this->template->get('language')));
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			return false;
 		}
-
-		return true;
 	}
 
 	/**
@@ -188,7 +203,6 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 						if ($this->manufacturerCategoryLangTable->check(false))
 						{
 							$this->setState('virtuemart_manufacturercategories_id', $this->manufacturerCategoryLangTable->virtuemart_manufacturercategories_id);
-							$this->manufacturerTable->virtuemart_manufacturercategories_id = $this->manufacturerCategoryLangTable->virtuemart_manufacturercategories_id;
 						}
 					}
 
@@ -259,9 +273,6 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  CsviException
-	 * @throws  RuntimeException
 	 */
 	public function loadTables()
 	{
@@ -272,43 +283,29 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		// Get the language to use
-		$language = $this->template->get('target_language');
-
-		if ($this->template->get('language') === $this->template->get('target_language'))
+		if ($this->template->get('language') == $this->template->get('target_language'))
 		{
-			$language = $this->template->get('language');
+			$lang = $this->template->get('language');
+		}
+		else
+		{
+			$lang = $this->template->get('target_language');
 		}
 
-		if (!in_array($this->db->getPrefix() . 'virtuemart_manufacturers_' . $language, $tables))
+		if (!in_array($this->db->getPrefix() . 'virtuemart_manufacturers_' . $lang, $tables))
 		{
-			$tableName = $this->db->getPrefix() . 'virtuemart_manufacturers_' . $language;
-
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			$this->tablesExist = false;
 		}
-		elseif (!in_array($this->db->getPrefix() . 'virtuemart_manufacturercategories_' . $language, $tables))
+		elseif (!in_array($this->db->getPrefix() . 'virtuemart_manufacturercategories_' . $lang, $tables))
 		{
-			$tableName = $this->db->getPrefix() . 'virtuemart_manufacturercategories_' . $language;
-
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			$this->tablesExist = false;
 		}
-
-		$this->manufacturerLangTable = $this->getTable('ManufacturerLang');
-		$this->manufacturerCategoryLangTable = $this->getTable('ManufacturerCategoryLang');
+		else
+		{
+			$this->tablesExist = true;
+			$this->manufacturerLangTable = $this->getTable('ManufacturerLang');
+			$this->manufacturerCategoryLangTable = $this->getTable('ManufacturerCategoryLang');
+		}
 	}
 
 	/**
@@ -447,39 +444,23 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 
 					if (!empty($image))
 					{
-						$imgPath = $this->template->get('file_location_manufacturer_images', 'images/stories/virtuemart/manufacturer/');
+						$full_path = $this->template->get('file_location_manufacturer_images', 'images/stories/virtuemart/manufacturer/');
 
 						// Make sure the final slash is present
-						if (substr($imgPath, -1) != '/')
+						if (substr($full_path, -1) != '/')
 						{
-							$imgPath .= '/';
+							$full_path .= '/';
 						}
 
 						// Verify the original image
 						if ($imagehelper->isRemote($image))
 						{
 							$original = $image;
-							$full_path = $imgPath;
 						}
 						else
 						{
-							// Check if the image contains the image path
-							$dirname = dirname($image);
-
-							if (strpos($imgPath, $dirname) !== false)
-							{
-								// Collect rest of folder path if it is more than image default path
-								$imageLeftPath = str_replace($imgPath, '', $dirname . '/');
-								$image = basename($image);
-
-								if ($imageLeftPath)
-								{
-									$image = $imageLeftPath . $image;
-								}
-							}
-
 							// Create the original image path
-							$original = $imgPath . $image;
+							$original = $full_path . $image;
 
 							// Get subfolders
 							$path_parts = pathinfo($original);
@@ -498,10 +479,10 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 							}
 							else
 							{
-								$title                         = (isset($titles[$key])) ? $titles[$key] : $file_details['output_name'];
-								$description                   = (isset($descriptions[$key])) ? $descriptions[$key] : '';
-								$meta                          = (isset($metas[$key])) ? $metas[$key] : '';
-								$media                         = array();
+								$title = (isset($titles[$key])) ? $titles[$key] : $file_details['output_name'];
+								$description = (isset($descriptions[$key])) ? $descriptions[$key] : '';
+								$meta = (isset($metas[$key])) ? $metas[$key] : '';
+								$media = array();
 								$media['virtuemart_vendor_id'] = $this->getState('virtuemart_vendor_id');
 
 								if ($this->template->get('autofill'))
@@ -517,13 +498,13 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 									$media['file_meta'] = $meta;
 								}
 
-								$media['file_mimetype']         = $file_details['mime_type'];
-								$media['file_type']             = 'manufacturer';
+								$media['file_mimetype'] = $file_details['mime_type'];
+								$media['file_type'] = 'manufacturer';
 								$media['file_is_product_image'] = 0;
-								$media['file_is_downloadable']  = 0;
-								$media['file_is_forSale']       = 0;
-								$media['file_url']              = (empty($file_details['output_path'])) ? $file_details['output_name'] : $file_details['output_path'] . $file_details['output_name'];
-								$media['published']             = $this->getState('media_published', $this->getState('published', 0));
+								$media['file_is_downloadable'] = 0;
+								$media['file_is_forSale'] = 0;
+								$media['file_url'] = (empty($file_details['output_path'])) ? $file_details['output_name'] : $file_details['output_path'] . $file_details['output_name'];
+								$media['published'] = $this->getState('published');
 
 								// Create the thumbnail
 								if ($file_details['isimage'])
@@ -534,51 +515,18 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 									{
 										if (empty($thumb))
 										{
-											// Get the subfolder structure
-											$thumbPath = str_ireplace($imgPath, '', $full_path);
-											$thumb = 'resized/' . $thumbPath . basename($media['file_url']);
-										}
-										else
-										{
-											// Check if we are not overwriting any large images
-											$thumbPathParts = pathinfo($thumb);
-
-											if ($thumbPathParts['dirname'] === '.')
-											{
-												$this->log->addStats('incorrect', 'COM_CSVI_THUMB_OVERWRITE_FULL');
-												$thumb = false;
-											}
+											$thumb = 'resized/' . basename($media['file_url']);
 										}
 
-										$media['file_url_thumb'] = '';
-
-										if ($thumb)
-										{
-											// Check if the image contains the image path
-											$dirname = dirname($thumb);
-
-											if (strpos($imgPath . 'resized/', $dirname) !== false)
-											{
-												// Collect rest of folder path if it is more than image default path
-												$imageLeftPath = str_replace($imgPath, '', $dirname . '/');
-												$image = basename($image);
-
-												if ($imageLeftPath)
-												{
-													$thumb = $imageLeftPath . $image;
-												}
-											}
-
-											$media['file_url_thumb'] = $imagehelper->createThumbnail($media['file_url'], $imgPath, $thumb);
-										}
+										$media['file_url_thumb'] = $imagehelper->createThumbnail($media['file_url'], $this->template->get('file_location_product_images', 'path'), $thumb);
 									}
 									else
 									{
-										$media['file_url_thumb'] = empty($thumb) ? $media['file_url'] : $file_details['output_path'] . $thumb;
+										$media['file_url_thumb'] = (empty($thumb)) ? $media['file_url'] : $file_details['output_path'] . $thumb;
 
 										if (substr($media['file_url_thumb'], 0, 4) == 'http')
 										{
-											$this->log->add(JText::sprintf('COM_CSVI_RESET_THUMB_NOHTTP', $media['file_url_thumb']), false);
+											$this->log->add(JText::sprintf('COM_CSVI_RESET_THUMB_NOHTTP', $media['file_url_thumb']));
 											$media['file_url_thumb'] = '';
 										}
 									}
@@ -598,6 +546,18 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 								// Store the media data
 								if ($this->mediaTable->store())
 								{
+									if ($this->queryResult() == 'UPDATE')
+									{
+										$this->log->addStats('updated', 'COM_CSVI_UPDATE_MEDIA');
+									}
+									else
+									{
+										$this->log->addStats('added', 'COM_CSVI_ADD_MEDIA');
+									}
+
+									// Store the debug message
+									$this->log->add('COM_CSVI_MEDIA_QUERY', true);
+
 									// Watermark the image
 									if ($this->template->get('full_watermark', false) && $file_details['isimage'])
 									{
@@ -615,6 +575,7 @@ class Com_VirtuemartModelImportManufacturer extends RantaiImportEngine
 									{
 										if ($this->manufacturerMediaTable->store())
 										{
+											$this->log->add('COM_CSVI_STORE_MANUFACTURER_IMAGE_RELATION', true);
 											$ordering++;
 										}
 									}

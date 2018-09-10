@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -93,6 +93,25 @@ class PlgcsviaddonvirtuemartInstallerScript
 				if (!defined('CSVIPATH_DEBUG'))
 				{
 					define('CSVIPATH_DEBUG', JPath::clean($config->get('log_path'), '/'));
+				}
+
+				// Load the Maintenance model
+				require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/default.php';
+				require_once JPATH_ADMINISTRATOR . '/components/com_csvi/helper/settings.php';
+				require_once JPATH_ADMINISTRATOR . '/components/com_csvi/helper/log.php';
+				require_once JPATH_ADMINISTRATOR . '/components/com_csvi/helper/csvi.php';
+				$model = FOFModel::getTmpInstance('Maintenances', 'CsviModel');
+
+				$key = 0;
+				$continue = true;
+
+				// Update the available fields
+				while ($continue)
+				{
+					$result = $model->runOperation('com_csvi', 'updateavailablefields', $key);
+
+					$key = $result['key'];
+					$continue = $result['continue'];
 				}
 
 				// Enable the plugin

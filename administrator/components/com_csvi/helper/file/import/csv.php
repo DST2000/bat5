@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  File
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die();
@@ -26,7 +26,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 * @var    string
 	 * @since  6.0
 	 */
-	private $field_delimiter;
+	private $field_delimiter = null;
 
 	/**
 	 * Contains the text enclosure
@@ -34,7 +34,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 * @var    string
 	 * @since  6.0
 	 */
-	private $text_enclosure;
+	private $text_enclosure = null;
 
 	/**
 	 * Sets to true if a file delimiters have been checked
@@ -58,7 +58,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 * @var    CsviHelperImportFields
 	 * @since  6.0
 	 */
-	protected $fields;
+	protected $fields = null;
 
 	/**
 	 * Open the file to read.
@@ -70,11 +70,14 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	public function openFile()
 	{
 		// Open the csv file
-		if (file_exists($this->filename) && $this->fp = fopen($this->filename, 'r'))
+		if (file_exists($this->filename))
 		{
-			$this->closed = false;
+			if ($this->fp = fopen($this->filename, "r"))
+			{
+				$this->closed = false;
 
-			return true;
+				return true;
+			}
 		}
 
 		return false;
@@ -83,18 +86,18 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	/**
 	 * Close the file.
 	 *
-	 * @param   bool  $removeFolder  Specify if the temporary folder should be removed
+	 * @param   bool  $removefolder  Specify if the temporary folder should be removed
 	 *
 	 * @return  void.
 	 *
 	 * @since   3.0
 	 */
-	public function closeFile($removeFolder = true)
+	public function closeFile($removefolder = true)
 	{
 		fclose($this->fp);
 		$this->closed = true;
 
-		parent::closeFile($removeFolder);
+		parent::closeFile($removefolder);
 	}
 
 	/**
@@ -141,33 +144,31 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 * @return   mixed    array when column headers are found | false if column headers cannot be read.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  UnexpectedValueException
 	 */
 	public function loadColumnHeaders()
 	{
 		// Column headers are always the first line of the file
 		// 1. Store current position
-		$currentPosition = $this->getFilePos();
+		$curpos = $this->getFilePos();
 
-		if ($currentPosition > 0)
+		if ($curpos > 0)
 		{
 			// 2. Go to the beginning of the file
 			$this->setFilePos(0);
 		}
 
 		// 3. Read the line
-		$columnHeaders = $this->readNextLine(true);
+		$columnheaders = $this->ReadNextLine(true);
 
-		if ($currentPosition > 0)
+		if ($curpos > 0)
 		{
 			// 4. Set the position back
-			$this->setFilePos($currentPosition);
+			$this->setFilePos($curpos);
 		}
 
 		$this->linepointer++;
 
-		return $columnHeaders;
+		return $columnheaders;
 	}
 
 	/**
@@ -178,8 +179,6 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 * @return  array  Array with the line of data read | false if data cannot be read.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  UnexpectedValueException
 	 */
 	public function readNextLine($headers = false)
 	{
@@ -190,29 +189,29 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 		}
 
 		// Make sure we have delimiters
-		if ($this->field_delimiter === null)
+		if (is_null($this->field_delimiter))
 		{
 			return false;
 		}
 
 		// Load some settings
-		$columnHeaders = $this->fields->getAllFieldnames();
+		$columnheaders = $this->fields->getAllFieldnames();
 
 		// Check for a valid field delimiter
-		if ($this->field_delimiter)
+		if (!empty($this->field_delimiter))
 		{
 			// Ignore empty records
-			$csvData = array(0 => '');
+			$csvdata = array(0 => '');
 
-			while (is_array($csvData) && count($csvData) === 1 && $csvData[0] === '')
+			while (is_array($csvdata) && count($csvdata) == 1 && $csvdata[0] == '')
 			{
-				if ($this->text_enclosure !== null)
+				if (!is_null($this->text_enclosure))
 				{
-					$csvData = fgetcsv($this->fp, 0, $this->field_delimiter, $this->text_enclosure);
+					$csvdata = fgetcsv($this->fp, 0, $this->field_delimiter, $this->text_enclosure);
 				}
 				else
 				{
-					$csvData = fgetcsv($this->fp, 0, $this->field_delimiter);
+					$csvdata = fgetcsv($this->fp, 0, $this->field_delimiter);
 				}
 			}
 
@@ -220,18 +219,18 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 			$this->pointer = ftell($this->fp);
 
 			// Check if we can read the line correctly
-			if (!$this->checked_delimiter && count($csvData) === 1)
+			if (count($csvdata) == 1 && !$this->checked_delimiter)
 			{
 				$current_field = $this->field_delimiter;
 				$current_text = $this->text_enclosure;
 				$this->findDelimiters(true);
 
-				if ($current_field !== $this->field_delimiter)
+				if ($current_field != $this->field_delimiter)
 				{
 					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_UNEQUAL_FIELD_DELIMITER', $current_field, $this->field_delimiter));
 				}
 
-				if ($current_text !== $this->text_enclosure)
+				if ($current_text != $this->text_enclosure)
 				{
 					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_UNEQUAL_FIELD_DELIMITER', $current_field, $this->field_delimiter));
 				}
@@ -240,38 +239,38 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 				$this->text_enclosure = $current_text;
 			}
 
-			if ($csvData)
+			if ($csvdata)
 			{
 				// Do BOM check
-				if ($this->input->get('currentline', 0, 'int') === 1 || $this->input->get('currentline', null, null) === null)
+				if ($this->input->get('currentline', 0, 'int') == 1 || is_null($this->input->get('currentline', null, null)))
 				{
 					// Remove text delimiters as they are not recognized by fgetcsv
-					$csvData[0] = $this->removeTextDelimiters($this->checkBom($csvData[0]));
+					$csvdata[0] = $this->removeTextDelimiters($this->checkBom($csvdata[0]));
 				}
 
 				$this->linepointer++;
 
 				if ($headers)
 				{
-					return $csvData;
+					return $csvdata;
 				}
 				else
 				{
 					// Add the data to the fields
 					$counters = array();
 
-					foreach ($csvData as $key => $value)
+					foreach ($csvdata as $key => $value)
 					{
-						if (isset($columnHeaders[$key]))
+						if (isset($columnheaders[$key]))
 						{
-							if (!isset($counters[$columnHeaders[$key]]))
+							if (!isset($counters[$columnheaders[$key]]))
 							{
-								$counters[$columnHeaders[$key]] = 0;
+								$counters[$columnheaders[$key]] = 0;
 							}
 
-							$counters[$columnHeaders[$key]]++;
+							$counters[$columnheaders[$key]]++;
 
-							$this->fields->set($columnHeaders[$key], $value, $counters[$columnHeaders[$key]]);
+							$this->fields->set($columnheaders[$key], $value, $counters[$columnheaders[$key]]);
 						}
 					}
 
@@ -297,8 +296,6 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 * @return  bool  True if file can be processed | False if file cannot be processed.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  UnexpectedValueException
 	 */
 	public function processFile()
 	{
@@ -323,7 +320,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 *
 	 * @return  bool  True if delimiters found | False if delimiters not found.
 	 *
-	 * @throws  UnexpectedValueException
+	 * @throws  Exception
 	 *
 	 * @since   3.0
 	 */
@@ -331,10 +328,10 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	{
 		if (!$this->checked_delimiter)
 		{
-			if (!$force && !$this->template->get('auto_detect_delimiters', true))
+			if (!$this->template->get('auto_detect_delimiters', true) && !$force)
 			{
 				// Set the field delimiter
-				if (strtolower($this->template->get('field_delimiter')) === 't')
+				if (strtolower($this->template->get('field_delimiter')) == 't')
 				{
 					$this->field_delimiter = "\t";
 				}
@@ -344,7 +341,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 				}
 
 				// Set the text enclosure
-				$this->text_enclosure = $this->template->get('text_enclosure', '') ? $this->template->get('text_enclosure') : null;
+				$this->text_enclosure = ($this->template->get('text_enclosure', '')) ? $this->template->get('text_enclosure') : null;
 			}
 			else
 			{
@@ -358,7 +355,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 				$matches = array();
 				preg_match($pattern, $first_char, $matches);
 
-				if (count($matches) === 0)
+				if (count($matches) == 0)
 				{
 					// User is using text delimiter
 					$this->text_enclosure = $first_char;
@@ -375,9 +372,9 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 						$second_char = $first_char;
 					}
 
-					if ($first_char === $second_char)
+					if ($first_char == $second_char)
 					{
-						throw new UnexpectedValueException(JText::_('COM_CSVI_CANNOT_FIND_TEXT_DELIMITER'), false);
+						throw new Exception(JText::_('COM_CSVI_CANNOT_FIND_TEXT_DELIMITER'), false);
 					}
 					else
 					{
@@ -386,18 +383,18 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 				}
 				else
 				{
-					$totalCharacters = strlen($line);
+					$totalchars = strlen($line);
 
 					// 2. What field delimiter is being used
-					for ($i = 0; $i <= $totalCharacters; $i++)
+					for ($i = 0; $i <= $totalchars; $i++)
 					{
 						$current_char = substr($line, $i, 1);
 						preg_match($pattern, $current_char, $matches);
 
-						if (count($matches) === 0)
+						if (count($matches) == 0)
 						{
 							$this->field_delimiter = $current_char;
-							$i = $totalCharacters;
+							$i = $totalchars;
 						}
 					}
 				}
@@ -430,7 +427,7 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 		// Check the first three characters
 		if (strlen($data) > 3)
 		{
-			if (ord($data{0}) === 239 && ord($data{1}) === 187 && ord($data{2}) === 191)
+			if (ord($data{0}) == 239 && ord($data{1}) == 187 && ord($data{2}) == 191)
 			{
 				return substr($data, 3, strlen($data));
 			}
@@ -460,12 +457,14 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 */
 	private function removeTextDelimiters($data)
 	{
-		if (strpos($data, $this->text_enclosure) === 0 && strrpos($data, $this->text_enclosure) === 0)
+		if (substr($data, 0, 1) == $this->text_enclosure && substr($data, -1, 1) == $this->text_enclosure)
 		{
-			$data = str_replace($this->text_enclosure . $this->text_enclosure, $this->text_enclosure, substr($data, 1, -1));
+			return str_replace($this->text_enclosure . $this->text_enclosure, $this->text_enclosure, substr($data, 1, -1));
 		}
-
-		return $data;
+		else
+		{
+			return $data;
+		}
 	}
 
 	/**
@@ -490,12 +489,12 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 	 */
 	public function lineCount()
 	{
-		$lineCount = 0;
+		$linecount = 0;
 
 		if ($this->fp)
 		{
 			// Get the current location
-			$filePosition = $this->getFilePos();
+			$filepos = $this->getFilePos();
 
 			// Rewind the file to be sure we are at the start
 			$this->rewind();
@@ -504,14 +503,14 @@ class CsviHelperFileImportCsv extends CsviHelperFile
 			{
 				if (fgets($this->fp))
 				{
-					$lineCount++;
+					$linecount++;
 				}
 			}
 
 			// Set the file back to it's original position
-			$this->setFilePos($filePosition);
+			$this->setFilePos($filepos);
 		}
 
-		return $lineCount;
+		return $linecount;
 	}
 }

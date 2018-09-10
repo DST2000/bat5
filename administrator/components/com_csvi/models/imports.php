@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Import
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -25,7 +25,7 @@ class CsviModelImports extends CsviModelDefault
 	 *
 	 * @param   int  $template_id  The ID of the template to load
 	 *
-	 * @return  void.
+	 * @return  array  The field option objects.
 	 *
 	 * @since   6.0
 	 */
@@ -38,7 +38,9 @@ class CsviModelImports extends CsviModelDefault
 		$this->loadLanguageFiles();
 
 		// Load the template
-		$this->loadTemplate($template_id);
+		$this->loadTemplate($template_id, $this->helper);
+
+		return true;
 	}
 
 	/**
@@ -124,10 +126,9 @@ class CsviModelImports extends CsviModelDefault
 			$this->db->setQuery($query);
 			$csvi_log_id = $this->db->loadResult();
 
-			$date = new JDate(date('Y-m-d H:i:s', time()));
 			$query = $this->db->getQuery(true)
 				->update($this->db->quoteName('#__csvi_logs'))
-				->set($this->db->quoteName('end') . ' = ' . $this->db->quote($date->toSql()))
+				->set($this->db->quoteName('end') . ' = ' . $this->db->quote(JFactory::getDate()->toSql()))
 				->set($this->db->quoteName('run_cancelled') . ' = 1')
 				->where($this->db->quoteName('csvi_log_id') . ' = ' . (int) $csvi_log_id);
 			$this->db->setQuery($query)->execute();

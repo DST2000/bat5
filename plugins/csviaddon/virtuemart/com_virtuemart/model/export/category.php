@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -30,7 +30,6 @@ class Com_VirtuemartModelExportCategory extends CsviModelExports
 	 * @since   6.0
 	 *
 	 * @throws  CsviException
-	 * @throws  RuntimeException
 	 */
 	protected function exportBody()
 	{
@@ -63,30 +62,33 @@ class Com_VirtuemartModelExportCategory extends CsviModelExports
 					. ' ON ' .
 					$this->db->quoteName('l.virtuemart_category_id') . ' = ' . $this->db->quoteName('c.virtuemart_category_id')
 			);
-
 			$this->db->setQuery($query);
+			$cats = $this->db->loadObjectList();
 
-			try
+			// Check if there are any categories
+			if (empty($cats))
 			{
-				$cats = $this->db->loadObjectList();
-
-				// Check if there are any categories
-				if (empty($cats))
+				if (!is_null($this->csvidb->getErrorMsg()))
+				{
+					$this->addExportContent(JText::sprintf('COM_CSVI_ERROR_RETRIEVING_DATA', $this->csvidb->getErrorMsg()));
+					$this->log->addStats('incorrect', $this->csvidb->getErrorMsg());
+				}
+				else
 				{
 					$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
-					$this->writeOutput();
-
-					return false;
 				}
-			}
-			catch (Exception $e)
-			{
-				$this->addExportContent(JText::sprintf('COM_CSVI_ERROR_RETRIEVING_DATA', $e->getMessage()));
-				$this->log->addStats('incorrect', $e->getMessage());
 
 				$this->writeOutput();
 
 				return false;
+			}
+
+			$categories = array();
+
+			// Group all categories together according to their level
+			foreach ($cats as $cat)
+			{
+				$categories[$cat->pid][$cat->cid] = $cat->category_name;
 			}
 
 			// Build something fancy to only get the fieldnames the user wants
@@ -139,11 +141,6 @@ class Com_VirtuemartModelExportCategory extends CsviModelExports
 						break;
 					case 'file_url':
 					case 'file_url_thumb':
-					case 'file_title':
-					case 'file_description':
-					case 'file_meta':
-					case 'file_lang':
-					case 'file_ordering':
 						$userfields[] = $this->db->quoteName('#__virtuemart_category_medias.virtuemart_media_id');
 
 						if (array_key_exists($field->field_name, $groupbyfields))
@@ -237,16 +234,15 @@ class Com_VirtuemartModelExportCategory extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
-			$records = $this->db->getIterator();
+			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->db->getNumRows();
+			$logcount = $this->csvidb->getNumRows();
 
 			if ($logcount > 0)
 			{
-				foreach ($records as $record)
+				while ($record = $this->csvidb->getRow())
 				{
 					$this->log->incrementLinenumber();
 
@@ -275,53 +271,12 @@ class Com_VirtuemartModelExportCategory extends CsviModelExports
 								break;
 							case 'file_url':
 							case 'file_url_thumb':
-							case 'file_title':
-							case 'file_description':
-							case 'file_meta':
-							case 'file_lang':
-								$query = $this->db->getQuery(true)
-									->select($this->db->quoteName($fieldname))
-									->from($this->db->quoteName('#__virtuemart_medias', 'm'))
-									->leftJoin(
-										$this->db->quoteName('#__virtuemart_category_medias', 'c')
-										. ' ON ' . $this->db->quoteName('m.virtuemart_media_id') . ' = ' . $this->db->quoteName('c.virtuemart_media_id')
-									)
-									->where($this->db->quoteName('virtuemart_category_id') . ' = ' . (int) $record->virtuemart_category_id)
-									->where($this->db->quoteName('file_type') . ' = ' . $this->db->quote('category'))
-									->order('c.ordering');
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName($fieldname));
+								$query->from($this->db->quoteName('#__virtuemart_medias'));
+								$query->where($this->db->quoteName('virtuemart_media_id') . ' = ' . (int) $record->virtuemart_media_id);
 								$this->db->setQuery($query);
-								$titles = $this->db->loadColumn();
-								$this->log->add('Looking for category images');
-
-								$fieldvalue = '';
-
-								if (is_array($titles))
-								{
-									$fieldvalue = implode('|', $titles);
-								}
-
-								$this->log->add('Found images: ' . $fieldvalue);
-								break;
-							case 'file_ordering':
-								$query = $this->db->getQuery(true)
-									->select($this->db->quoteName('c.ordering'))
-									->from($this->db->quoteName('#__virtuemart_medias', 'm'))
-									->leftJoin(
-										$this->db->quoteName('#__virtuemart_category_medias', 'c')
-										. ' ON ' . $this->db->quoteName('m.virtuemart_media_id') . ' = ' . $this->db->quoteName('c.virtuemart_media_id')
-									)
-									->where($this->db->quoteName('virtuemart_category_id') . ' = ' . (int) $record->virtuemart_category_id)
-									->where($this->db->quoteName('file_type') . ' = ' . $this->db->quote('category'))
-									->order('c.ordering');
-								$this->db->setQuery($query);
-								$titles = $this->db->loadColumn();
-								$fieldvalue = '';
-
-								if (is_array($titles))
-								{
-									$fieldvalue = implode('|', $titles);
-								}
-
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'category_name':
 							case 'category_description':

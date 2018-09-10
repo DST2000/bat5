@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -98,11 +98,11 @@ class Com_VirtuemartHelperCom_Virtuemart
 	 * @param   CsviHelperTemplate  $template  An instance of CsviHelperTemplate.
 	 * @param   CsviHelperLog       $log       An instance of CsviHelperLog.
 	 * @param   CsviHelperFields    $fields    An instance of CsviHelperFields.
-	 * @param   JDatabaseDriver     $db        Database connector.
+	 * @param   JDatabase           $db        Database connector.
 	 *
 	 * @since   4.0
 	 */
-	public function __construct(CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperFields $fields, JDatabaseDriver $db)
+	public function __construct(CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperFields $fields, JDatabase $db)
 	{
 		$this->template = $template;
 		$this->log = $log;
@@ -413,7 +413,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 		$str = $lang->transliterate($name);
 
 		// Trim white spaces at beginning and end of alias and make lowercase
-		$str = trim(\Joomla\String\StringHelper::strtolower($str));
+		$str = trim(\Joomla\String\String::strtolower($str));
 
 		// Remove any duplicate whitespace, and ensure all characters are alphanumeric
 		$str = preg_replace('/(\s|[^A-Za-z0-9\-])+/', '-', $str);
@@ -471,10 +471,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 			->where($this->db->quoteName('order_status_name') . ' = ' . $this->db->quote($order_status_name));
 		$this->db->setQuery($query);
 
-		$orderStatusCode = $this->db->loadResult();
-		$this->log->add('Get the order status code');
-
-		return $orderStatusCode;
+		return $this->db->loadResult();
 	}
 
 	/**
@@ -496,7 +493,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 			->where($this->db->quoteName('virtuemart_vendor_id') . ' = ' . (int) $vendor_id);
 		$this->db->setQuery($query);
 		$currency_id = $this->db->loadResult();
-		$this->log->add('Get the currency ID');
+		$this->log->add(JText::_('COM_CSVI_DEBUG_GET_CURRENCY_ID'), true);
 
 		return $currency_id;
 	}
@@ -537,7 +534,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 
 			$this->db->setQuery($query);
 			$country_id = $this->db->loadResult();
-			$this->log->add('Get the country ID', true);
+			$this->log->add(JText::_('COM_CSVI_DEBUG_GET_COUNTRY_ID'), true);
 		}
 
 		return $country_id;
@@ -581,7 +578,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 
 			$this->db->setQuery($query);
 			$state_id = $this->db->loadResult();
-			$this->log->add('Get the state ID', true);
+			$this->log->add('COM_CSVI_DEBUG_GET_STATE_ID', true);
 		}
 
 		return $state_id;
@@ -787,8 +784,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 					return null;
 				}
 			}
-			else
-			{
+			else {
 				$catpaths = $this->constructCategoryPath($catids);
 
 				if (is_array($catpaths))
@@ -1006,8 +1002,6 @@ class Com_VirtuemartHelperCom_Virtuemart
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  RuntimeException
 	 */
 	public function unpublishBeforeImport(CsviHelperTemplate $template, CsviHelperLog $log, JDatabase $db)
 	{
@@ -1037,8 +1031,6 @@ class Com_VirtuemartHelperCom_Virtuemart
 	 * @return  int  The ID of the product SKU.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  RuntimeException
 	 */
 	public function getProductIdBySku($productSku)
 	{
@@ -1047,7 +1039,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 			->from($this->db->quoteName('#__virtuemart_products'))
 			->where($this->db->quoteName('product_sku') . ' = ' . $this->db->quote($productSku));
 		$this->db->setQuery($query);
-		$this->log->add('Find the product ID by SKU');
+		$this->log->add(JText::_('COM_CSVI_FIND_PRODUCT_SKU'), true);
 
 		return $this->db->loadResult();
 	}
@@ -1112,10 +1104,6 @@ class Com_VirtuemartHelperCom_Virtuemart
 				$this->icecat = new CsviHelperIcecat($this->template, $this->log, $this->db);
 			}
 
-			// Clean up any previous ICEcat data
-			$this->fields->clearIcecatData();
-			$fields = array();
-
 			// Check conditions
 			// 1. Do we have an MPN
 			$update_based_on = $this->template->get('update_based_on');
@@ -1174,35 +1162,5 @@ class Com_VirtuemartHelperCom_Virtuemart
 		}
 
 		return false;
-	}
-
-	/**
-	 * Get default language in virtuemart
-	 *
-	 * @return  string language code
-	 *
-	 * @since   6.5.7
-	 */
-	public function getDefaultLanguage()
-	{
-		require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_virtuemart/helper/com_virtuemart_config.php';
-
-		$helperConfig = new Com_VirtuemartHelperCom_Virtuemart_Config;
-
-		$language     = $helperConfig->get('active_languages');
-		$languageCode = '';
-
-		if (is_array($language) && array_key_exists(0, $language))
-		{
-			$languageCode = strtolower(str_replace('-', '_', $language[0]));
-		}
-
-		// Check if no language is set in VirtueMart, take the default Joomla! frontend language
-		if ('' === $languageCode)
-		{
-			$languageCode = strtolower(str_replace('-', '_', JComponentHelper::getParams('com_languages')->get('site')));
-		}
-
-		return $languageCode;
 	}
 }

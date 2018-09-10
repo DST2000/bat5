@@ -52,6 +52,7 @@ if (in_array($option, $bootstrap))
 $this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
 // {DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/jui/bootstrap.min.css');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/style.css');
 // }DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css', 'text/css', 'screen');
@@ -95,7 +96,8 @@ $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/respond.src.js');
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/template.js');
 // {DST
-$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/bootstrap.min.js');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/bootstrap.bundle.min.js');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/scripts.js');
 // }DST
 require __DIR__ . '/jsstrings.php';
 ?>

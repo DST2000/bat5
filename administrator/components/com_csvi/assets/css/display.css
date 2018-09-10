@@ -215,6 +215,14 @@ div.edittemplatefield {
     padding-top: 4px;
 }
 
+.save_template {
+	text-align: center;
+	font-size: 16px;
+	font-weight: bold;
+	color: #FF0000;
+	text-decoration: underline;
+}
+
 .reorder {
 	float: none;
 }
@@ -417,8 +425,4 @@ div.toolbar-list li {
 	margin-bottom: 0;
 	font-style: italic;
 	display: block;
-}
-
-div.modal-body {
-	padding: 10px;
 }

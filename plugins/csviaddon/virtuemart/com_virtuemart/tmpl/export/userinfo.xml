@@ -22,12 +22,12 @@
 			</field>
 
 			<field name="userinfomdatestart"
-				type="calendar"
+				type="csvicalendar"
 				format="%d-%m-%Y %H:%M:%S"
 				size="25" />
 
 			<field name="userinfomdateend"
-				type="calendar"
+				type="csvicalendar"
 				format="%d-%m-%Y %H:%M:%S"
 				size="25" />
 
@@ -49,16 +49,6 @@
 				<option value="">COM_CSVI_DONT_USE</option>
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
-			</field>
-
-			<field name="shopper_groups"
-			       type="Csvivirtuemart.Shoppergroup"
-			       size="7"
-			       multiple="true"
-			       class="input-xxlarge advancedSelect"
-			       default="none">
-				<option value="none">COM_CSVI_ALL_SHOPPERGROUPS</option>
-				<option value="no">COM_CSVI_NO_ASSIGNED_SHOPPERGROUPS</option>
 			</field>
 		</fieldset>
 	</fields>

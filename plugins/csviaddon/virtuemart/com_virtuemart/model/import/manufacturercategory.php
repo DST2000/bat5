@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,6 +37,14 @@ class Com_VirtuemartModelImportManufacturercategory extends RantaiImportEngine
 	private $manufacturerCategoryLangTable = null;
 
 	/**
+	 * Set if language tables exist
+	 *
+	 * @var    bool
+	 * @since  6.0
+	 */
+	private $tablesExist = true;
+
+	/**
 	 * Here starts the processing.
 	 *
 	 * @return  bool  Akways returns true.
@@ -45,75 +53,83 @@ class Com_VirtuemartModelImportManufacturercategory extends RantaiImportEngine
 	 */
 	public function getStart()
 	{
-		// Process data
-		foreach ($this->fields->getData() as $fields)
+		// Only continue if all tables exist
+		if ($this->tablesExist)
 		{
-			foreach ($fields as $name => $details)
+			// Process data
+			foreach ($this->fields->getData() as $fields)
 			{
-				$value = $details->value;
-
-				switch ($name)
+				foreach ($fields as $name => $details)
 				{
-					case 'published':
-						switch ($value)
-						{
-							case 'n':
-							case 'no':
-							case 'N':
-							case 'NO':
-							case '0':
-								$value = 0;
-								break;
-							default:
-								$value = 1;
-								break;
-						}
+					$value = $details->value;
 
-						$this->setState('published', $value);
-						break;
-					case 'mf_category_delete':
-						$this->setState('mf_category_delete', strtoupper($value));
-						break;
-					default:
-						$this->setState($name, $value);
-						break;
+					switch ($name)
+					{
+						case 'published':
+							switch ($value)
+							{
+								case 'n':
+								case 'N':
+								case '0':
+									$value = 0;
+									break;
+								default:
+									$value = 1;
+									break;
+							}
+
+							$this->setState('published', $value);
+							break;
+						case 'mf_category_delete':
+							$this->setState('mf_category_delete', strtoupper($value));
+							break;
+						default:
+							$this->setState($name, $value);
+							break;
+					}
 				}
 			}
-		}
 
-		// Reset loaded state
-		$this->loaded = true;
+			// Reset loaded state
+			$this->loaded = true;
 
-		// If we have no manufacturer category name we cannot continue
-		$mf_category_name = $this->getState('mf_category_name', false);
+			// If we have no manufacturer category name we cannot continue
+			$mf_category_name = $this->getState('mf_category_name', false);
 
-		if ($mf_category_name)
-		{
-			if ($this->getManufacturerCategoryId())
+			if ($mf_category_name)
 			{
-				// Check if we have an existing item
-				if ($this->getState('virtuemart_manufacturercategories_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
+				if ($this->getManufacturerCategoryId())
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURERCATEGORY', $mf_category_name));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURERCATEGORY', $mf_category_name));
-					$this->loaded = false;
-				}
-				else
-				{
-					// Load the current manufacturer data
-					$this->manufacturerCategoryTable->load($this->getState('virtuemart_manufacturercategories_id', 0));
-					$this->loaded = true;
+					// Check if we have an existing item
+					if ($this->getState('virtuemart_manufacturercategories_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
+					{
+						$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURERCATEGORY', $mf_category_name));
+						$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_MANUFACTURERCATEGORY', $mf_category_name));
+						$this->loaded = false;
+					}
+					else
+					{
+						// Load the current manufacturer data
+						$this->manufacturerCategoryTable->load($this->getState('virtuemart_manufacturercategories_id', 0));
+						$this->loaded = true;
+					}
 				}
 			}
+			else
+			{
+				$this->loaded = false;
+
+				$this->log->addStats('skipped', JText::_('COM_CSVI_NO_MANUFACTURERCATEGORY_PATH_SET'));
+			}
+
+			return true;
 		}
 		else
 		{
-			$this->loaded = false;
+			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_LANG_TABLE_NOT_EXIST', $this->template->get('language')));
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_NO_MANUFACTURERCATEGORY_PATH_SET'));
+			return false;
 		}
-
-		return true;
 	}
 
 	/**
@@ -217,9 +233,6 @@ class Com_VirtuemartModelImportManufacturercategory extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  CsviException
-	 * @throws  RuntimeException
 	 */
 	public function loadTables()
 	{
@@ -228,30 +241,25 @@ class Com_VirtuemartModelImportManufacturercategory extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		// Get the language to use
-		$language = $this->template->get('target_language');
-
-		if ($this->template->get('language') === $this->template->get('target_language'))
+		if ($this->template->get('language') == $this->template->get('target_language'))
 		{
-			$language = $this->template->get('language');
+			$lang = $this->template->get('language');
+		}
+		else
+		{
+			$lang = $this->template->get('target_language');
 		}
 
-		// Get the table name to check
-		$tableName = $this->db->getPrefix() . 'virtuemart_manufacturercategories_' . $language;
 
-		if (!in_array($tableName, $tables))
+		if (!in_array($this->db->getPrefix() . 'virtuemart_manufacturercategories_' . $lang, $tables))
 		{
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			$this->tablesExist = false;
 		}
-
-		$this->manufacturerCategoryLangTable = $this->getTable('ManufacturerCategoryLang');
+		else
+		{
+			$this->tablesExist = true;
+			$this->manufacturerCategoryLangTable = $this->getTable('ManufacturerCategoryLang');
+		}
 	}
 
 	/**

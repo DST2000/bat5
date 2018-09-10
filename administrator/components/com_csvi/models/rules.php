@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Rules
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,7 +18,7 @@ defined('_JEXEC') or die;
  * @subpackage  Rules
  * @since       6.0
  */
-class CsviModelRules extends JModelList
+class CsviModelRules extends FOFModel
 {
 	/**
 	 * The database class
@@ -26,204 +26,91 @@ class CsviModelRules extends JModelList
 	 * @var    JDatabaseDriver
 	 * @since  6.0
 	 */
-	protected $db;
+	protected $db = null;
 
 	/**
-	 * Construct the class.
+	 * Public class constructor
 	 *
-	 * @param   array  $config  An optional associative array of configuration settings.
-	 *
-	 * @since   6.0
+	 * @param   array  $config  The configuration array
 	 */
 	public function __construct($config = array())
 	{
-		if (empty($config['filter_fields']))
-		{
-			$config['filter_fields'] = array(
-				'ordering', 'a.ordering',
-				'csvi_rule_id', 'a.csvi_rule_id',
-				'name', 'a.name',
-				'action', 'a.action',
-				'plugin', 'a.plugin',
-			);
-		}
+		parent::__construct();
 
-		// Load the basics
 		$this->db = JFactory::getDbo();
-
-		parent::__construct($config);
 	}
 
 	/**
-	 * Method to auto-populate the model state.
+	 * Builds the SELECT query
 	 *
-	 * Note. Calling getState in this method will result in recursion.
+	 * @param   boolean  $overrideLimits  Are we requested to override the set limits?
 	 *
-	 * @param   string  $ordering   An optional ordering field.
-	 * @param   string  $direction  An optional direction (asc|desc).
-	 *
-	 * @return  void
-	 *
-	 * @since   6.6.0
+	 * @return  JDatabaseQuery
 	 */
-	protected function populateState($ordering = 'a.ordering', $direction = 'ASC')
-	{
-		// List state information.
-		parent::populateState($ordering, $direction);
-	}
-
-	/**
-	 * Method to get a store id based on the model configuration state.
-	 *
-	 * This is necessary because the model is used by the component and
-	 * different modules that might need different sets of data or different
-	 * ordering requirements.
-	 *
-	 * @param   string  $id  An identifier string to generate the store id.
-	 *
-	 * @return  string  A store id.
-	 *
-	 * @since   12.2
-	 */
-	protected function getStoreId($id = '')
-	{
-		// Add the list state to the store id.
-		$id .= ':' . $this->getState('list.start');
-		$id .= ':' . $this->getState('list.limit');
-		$id .= ':' . $this->getState('list.ordering');
-		$id .= ':' . $this->getState('list.direction');
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.action');
-
-		return md5($this->context . ':' . $id);
-	}
-
-	/**
-	 * Build an SQL query to load the list data.
-	 *
-	 * @return  JDatabaseQuery  The query to execute.
-	 *
-	 * @since   4.0
-	 *
-	 * @throws  RuntimeException
-	 */
-	protected function getListQuery()
+	public function buildQuery($overrideLimits = false)
 	{
 		// Get the parent query
-		$query = $this->db->getQuery(true)
-			->from($this->db->quoteName('#__csvi_rules', 'a'))
-			->leftJoin(
+		$query = parent::buildQuery($overrideLimits);
+
+		// Clean out some settings so we can reset them
+		$query->clear('select');
+		$query->clear('from');
+
+		// Setup the new settings
+		$query->select($this->db->quoteName('tbl') . '.*');
+		$query->from($this->db->quoteName('#__csvi_rules', 'tbl'));
+
+		// Join the user table to get the editor
+		$query->select($this->db->quoteName('u.name', 'editor'));
+		$query->leftJoin(
 				$this->db->quoteName('#__users', 'u')
-				. ' ON ' . $this->db->quoteName('a.locked_by') . ' = ' . $this->db->quoteName('u.id')
-			)
-			->select(
-				$this->db->quoteName(
-					array(
-						'csvi_rule_id',
-						'plugin',
-						'action',
-						'ordering',
-					)
-				)
-			)
-			->select($this->db->quoteName('a.name'))
-			->select($this->db->quoteName('u.name', 'editor'));
+				. ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('tbl.locked_by')
+			);
 
-		// Filter by search field
-		$search = $this->getState('filter.search');
+		// Add the filter
+		$name = $this->input->get('tbl_name', false);
 
-		if ($search)
+		if ($name)
 		{
-			$query->where($this->db->quoteName('a.name') . ' LIKE ' . $this->db->quote('%' . $search . '%'));
+			$query->where($this->db->quoteName('tbl.name') . ' LIKE ' . $this->db->quote('%' . $name . '%'));
 		}
-
-		// Filter by action
-		$action = $this->getState('filter.action');
-
-		if ($action)
-		{
-			$query->where($this->db->quoteName('a.action') . ' = ' . $this->db->quote($action));
-		}
-
-		// Filter by plugin
-		$plugin = $this->getState('filter.plugin');
-
-		if ($plugin)
-		{
-			$query->where($this->db->quoteName('a.plugin') . ' = ' . $this->db->quote($plugin));
-		}
-
-		// Add the list ordering clause.
-		$query->order(
-			$this->db->quoteName(
-				$this->db->escape(
-					$this->getState('list.ordering', 'a.ordering')
-				)
-			)
-			. ' ' . $this->db->escape($this->getState('list.direction', 'DESC'))
-		);
 
 		return $query;
 	}
 
 	/**
-	 * Get the list of items to show.
+	 * This method runs after an item has been gotten from the database in a read
+	 * operation. You can modify it before it's returned to the MVC triad for
+	 * further processing.
 	 *
-	 * @return  array  List of items to shown.
+	 * @param   FOFTable  &$record  The table instance we fetched
 	 *
-	 * @since   6.6.0
+	 * @return  void
 	 */
-	public function getItems()
+	protected function onAfterGetItem(&$record)
 	{
-		$items = parent::getItems();
+		// Get the plugin parameters
+		$record->pluginform = json_decode($record->plugin_params);
 
-		// Get the translated name
-		$dispatcher = new RantaiPluginDispatcher;
-		$dispatcher->importPlugins('csvirules', $this->db);
-		$pluginNames = array();
-
-		foreach ($items as $key => $item)
-		{
-			if (!array_key_exists($item->plugin, $pluginNames))
-			{
-				$singleName = $dispatcher->trigger('getSingleName', array($item->plugin));
-
-				if (array_key_exists(0, $singleName))
-				{
-					$pluginNames[$item->plugin] = $singleName[0];
-				}
-			}
-
-			if (array_key_exists($item->plugin, $pluginNames))
-			{
-				$item->plugin = $pluginNames[$item->plugin];
-				$items[$key] = $item;
-			}
-		}
-
-		return $items;
+		parent::onAfterGetItem($record);
 	}
 
 	/**
-	 * Check if rules plugins are disabled
+	 * This method runs before the $data is saved to the $table. Return false to
+	 * stop saving.
 	 *
-	 * @return  void.
+	 * @param   array     &$data   The data to save
+	 * @param   FOFTable  &$table  The table to save the data to
 	 *
-	 * @since   7.2.0
+	 * @return  boolean  Return false to prevent saving, true to allow it
 	 */
-	public function getRulesPluginStatus()
+	public function onBeforeSave(&$data, &$table)
 	{
-		$query = $this->db->getQuery(true)
-			->select($this->db->quoteName('extension_id'))
-			->from($this->db->quoteName('#__extensions'))
-			->where($this->db->quoteName('enabled') . ' = 0')
-			->where($this->db->quoteName('folder') . ' = ' . $this->db->quote('csvirules'));
-		$this->db->setQuery($query);
-		$pluginIds = $this->db->loadColumn();
-
-		if ($pluginIds)
+		if (isset($data['pluginform']))
 		{
-			JFactory::getApplication()->enqueueMessage(JText::_('COM_CSVI_RULES_PLUGINS_DISABLED'), 'message');
+			$data['plugin_params'] = json_encode($data['pluginform']);
 		}
+
+		return parent::onBeforeSave($data, $table);
 	}
 }

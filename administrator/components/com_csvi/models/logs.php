@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Model
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,7 +18,7 @@ defined('_JEXEC') or die;
  * @subpackage  Model
  * @since       6.0
  */
-class CsviModelLogs extends JModelList
+class CsviModelLogs extends FOFModel
 {
 	/**
 	 * The database class
@@ -26,7 +26,7 @@ class CsviModelLogs extends JModelList
 	 * @var    JDatabase
 	 * @since  6.0
 	 */
-	protected $db;
+	protected $db = null;
 
 	/**
 	 * Logger helper
@@ -34,7 +34,7 @@ class CsviModelLogs extends JModelList
 	 * @var    CsviHelperLog
 	 * @since  6.0
 	 */
-	protected $log;
+	protected $log = null;
 
 	/**
 	 * CSVI settings
@@ -42,141 +42,121 @@ class CsviModelLogs extends JModelList
 	 * @var    CsviHelperSettings
 	 * @since  6.0
 	 */
-	protected $settings;
+	protected $settings = null;
 
 	/**
-	 * The CSVI Language helper
+	 * The CSVI helper
 	 *
-	 * @var    CsviHelperLanguage
+	 * @var    CsviHelperCsvi
 	 * @since  6.0
 	 */
-	protected $language;
+	protected $csvihelper = null;
 
 	/**
-	 * An instance of JInput
+	 * Holds the log ID
 	 *
-	 * @var    JInput
-	 * @since  6.6.0
+	 * @var    int
+	 * @since  6.0
 	 */
-	private $input;
+	private $logid = null;
 
 	/**
 	 * Public class constructor
 	 *
 	 * @param   array  $config  The configuration array
-	 *
-	 * @since   6.0
-	 *
-	 * @throws  Exception
 	 */
 	public function __construct($config = array())
 	{
-		if (empty($config['filter_fields']))
-		{
-			$config['filter_fields'] = array(
-				'actiontypes', 'l.actiontypes',
-				'template_name', 'l.template_name',
-				'csvi_log_id', 'l.csvi_log_id',
-				'start', 'l.start',
-				'end', 'l.end',
-				'action_type', 'l.action_type',
-				'action', 'l.action',
-				'records', 'l.records',
-				'file_name', 'l.file_name',
-				'run_cancelled', 'l.run_cancelled',
-				'name', 'u.name',
-
-			);
-		}
+		parent::__construct();
 
 		// Initialise some values
 		$this->db = JFactory::getDbo();
 		$this->settings = new CsviHelperSettings($this->db);
 		$this->log = new CsviHelperLog($this->settings, $this->db);
-		$this->language = new CsviHelperLanguage;
-		$this->input = JFactory::getApplication()->input;
+		$this->csvihelper = new CsviHelperCsvi($this->log);
+	}
 
-		parent::__construct($config);
+	/**
+	 * Filter values.
+	 *
+	 * @return  object  Filters for the query.
+	 *
+	 * @since   6.0
+	 */
+	private function getFilterValues()
+	{
+		return (object) array(
+				'actiontype'	=> $this->getState('actiontype', '', 'string')
+		);
 	}
 
 	/**
 	 * Build an SQL query to load the list data.
 	 *
+	 * @param   bool  $overrideLimits  Set to override the list limits
+	 *
 	 * @return  object the query to execute
 	 *
 	 * @since   4.0
-	 *
-	 * @throws  RuntimeException
 	 */
-	protected function getListQuery()
+	public function buildQuery($overrideLimits = false)
 	{
-		$query = $this->db->getQuery(true)
-			->select(
-				$this->db->quoteName(
-					array(
-						'csvi_log_id',
-						'start',
-						'end',
-						'addon',
-						'action',
-						'action_type',
-						'template_name',
-						'records',
-						'file_name',
-						'run_cancelled'
-					)
-				)
-			)
-			->from($this->db->quoteName('#__csvi_logs', 'l'))
-			->select($this->db->quoteName('u.name', 'runuser'))
-			->leftJoin(
-				$this->db->quoteName('#__users', 'u') . ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('l.userid')
-			);
+		// Get the parent query
+		$query = parent::buildQuery($overrideLimits);
 
-		$actiontype = $this->getState('filter.actiontypes');
-
-		if ($actiontype)
-		{
-			$query->where($this->db->quoteName('action') . ' = ' . $this->db->quote($actiontype));
-		}
-
-		// Add the list ordering clause.
-		$query->order(
-			$this->db->quoteName(
-				$this->db->escape(
-					$this->getState('list.ordering', 'l.start')
-				)
-			)
-			. ' ' . $this->db->escape($this->getState('list.direction', 'DESC'))
+		// Join the user table to get the editor
+		$query->select($this->db->quoteName('u.name', 'runuser'));
+		$query->leftJoin(
+			$this->db->quoteName('#__users', 'u') . ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('#__csvi_logs.userid')
 		);
+
+		// Get the filters
+		$state = $this->getFilterValues();
+
+		if ($state->actiontype)
+		{
+			$query->where($this->db->quoteName('action') . ' = ' . $this->db->quote($state->actiontype));
+		}
 
 		return $query;
 	}
 
 	/**
-	 * Method to get an array of data items.
+	 * This method can be overriden to automatically do something with the
+	 * list results array. You are supposed to modify the list which was passed
+	 * in the parameters; DO NOT return a new array!
 	 *
-	 * @return  mixed  An array of data items on success, false on failure.
+	 * @param   array  &$resultArray  An array of objects, each row representing a record
 	 *
-	 * @since   6.6.0
+	 * @return  void
 	 */
-	public function getItems()
+	protected function onProcessList(&$resultArray)
 	{
-		$items = parent::getItems();
-
 		// Load the needed languages
 		$loaded = array();
 
-		foreach ($items as $item)
+		foreach ($resultArray as $details)
 		{
-			if ($item->addon && !in_array($item->addon, $loaded, true))
+			if ($details->addon && !in_array($details->addon, $loaded))
 			{
-				$loaded[] = $item->addon;
-				$this->language->loadAddonLanguage($item->addon);
+				$loaded[] = $details->addon;
+				$this->csvihelper->loadLanguage($details->addon);
 			}
 		}
+	}
 
-		return $items;
+	/**
+	 * Set the log ID
+	 *
+	 * @param   int  $id  The log ID to set
+	 *
+	 * @return  void
+	 *
+	 * @since   4.0
+	 */
+	public function setLogId($id)
+	{
+		$this->logid = $id;
 	}
 
 	/**
@@ -185,15 +165,12 @@ class CsviModelLogs extends JModelList
 	 * @return  void
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
-	 * @throws  RuntimeException
-	 * @throws  InvalidArgumentException
-	 * @throws  UnexpectedValueException
 	 */
 	public function storeLogResults()
 	{
-		$logresult = $this->log->getStats();
+		$jinput = JFactory::getApplication()->input;
+		$csvilog = $jinput->get('csvilog', null, null);
+		$logresult = $csvilog->getStats();
 		$details = array();
 		$logcount = array();
 
@@ -201,23 +178,23 @@ class CsviModelLogs extends JModelList
 		switch ($logresult['action'])
 		{
 			case 'import':
-				$logcount['import'] = $this->input->getInt('recordsprocessed', 0);
+				$logcount['import'] = $jinput->get('recordsprocessed', 0, 'int');
 				break;
 			case 'export':
-				$logcount['export'] = $this->input->getInt('logcount', 0);
+				$logcount['export'] = $jinput->get('logcount', 0, 'int');
 				break;
 			case 'maintenance':
-				$logcount['maintenance'] = $this->input->getInt('linesprocessed', 0);
+				$logcount['maintenance'] = $jinput->get('linesprocessed', 0, 'int');
 				break;
 		}
 
 		// Get the database connector
-		$logTable = $this->getTable('Log');
+		$rowlog = $this->getTable('Log');
 
 		// Check for an existing run ID
-		$logId = $this->log->getLogId();
+		$logid = $csvilog->getLogId();
 
-		if (!$logId)
+		if (!$logid)
 		{
 			// Get user ID
 			$my = JFactory::getUser();
@@ -244,49 +221,52 @@ class CsviModelLogs extends JModelList
 			$details['records'] = $logcount[$logresult['action']];
 
 			// Get the import filename
-			$details['file_name'] = $this->log->getFilename();
+			$details['file_name'] = $csvilog->getFilename();
 
 			// Bind the data
-			if (!$logTable->bind($details))
+			if (!$rowlog->bind($details))
 			{
 				throw new RuntimeException(JText::_('COM_CSVI_CANNOT_BIND_LOG_DATA', 0));
 			}
 
 			// Check the data
-			if (!$logTable->check())
+			if (!$rowlog->check())
 			{
 				throw new RuntimeException(JText::_('COM_CSVI_CANNOT_CHECK_LOG_DATA', 0));
 			}
 
 			// Store the data
-			if (!$logTable->store())
+			if (!$rowlog->store())
 			{
 				throw new RuntimeException(JText::_('COM_CSVI_CANNOT_STORE_LOG_DATA', 0));
 			}
 			else
 			{
-				$logId = $logTable->csvi_log_id;
-				$logTable->reset();
+				$logid = $rowlog->csvi_log_id;
+				$rowlog->reset();
+
+				// Clean up any old logs
+				$csvilog->cleanUpLogs();
 			}
 		}
 		else
 		{
-			$logTable->load($logId);
+			$rowlog->load($logid);
 
 			if (array_key_exists('action', $logresult) && isset($logcount[$logresult['action']]))
 			{
-				$logTable->records += $logcount[$logresult['action']];
+				$rowlog->records += $logcount[$logresult['action']];
 			}
 			else
 			{
-				$logTable->records = 0;
+				$rowlog->records = 0;
 			}
 
-			$logTable->store();
+			$rowlog->store();
 		}
 
 		// Store the log details
-		if (is_array($logresult) && 0 !== count($logresult))
+		if (is_array($logresult) && !empty($logresult))
 		{
 			$query = $this->db->getQuery(true)
 				->insert($this->db->quoteName('#__csvi_logdetails'))
@@ -311,7 +291,7 @@ class CsviModelLogs extends JModelList
 					{
 						$query->values(
 								$this->db->quote('0') . ', ' .
-								$logId . ',' .
+								$logid . ',' .
 								$linenr . ',' .
 								$this->db->quote(trim($stat['message'])) . ',' .
 								$this->db->quote($stat['result']) . ',' .
@@ -320,7 +300,7 @@ class CsviModelLogs extends JModelList
 					}
 
 					// Loop in increments of 100
-					if ($row === 100)
+					if ($row == 100)
 					{
 						$this->db->setQuery($query);
 						$this->db->execute();
@@ -338,7 +318,7 @@ class CsviModelLogs extends JModelList
 			}
 
 			// Clean up the statistics
-			$this->log->cleanStats();
+			$csvilog->cleanStats();
 		}
 	}
 
@@ -348,19 +328,17 @@ class CsviModelLogs extends JModelList
 	 * @return  array Array with the results of the deletion
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  RuntimeException
 	 */
-	public function delete()
+	public function getDelete()
 	{
 		jimport('joomla.filesystem.file');
-		$cids                 = $this->input->get('cid', array(), 'array');
-		$file_not_found       = 0;
-		$file_deleted         = 0;
-		$file_not_deleted     = 0;
-		$log_del              = 0;
-		$log_del_error        = 0;
-		$log_detail_del       = 0;
+		$cids = $this->input->get('cid', array(), 'array');
+		$file_not_found = 0;
+		$file_deleted = 0;
+		$file_not_deleted = 0;
+		$log_del = 0;
+		$log_del_error = 0;
+		$log_detail_del = 0;
 		$log_detail_del_error = 0;
 
 		// Make it an array
@@ -467,10 +445,8 @@ class CsviModelLogs extends JModelList
 	 * @return  array Array of results
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  RuntimeException
 	 */
-	public function deleteAll()
+	public function getDeleteAll()
 	{
 		$results = array();
 
@@ -498,7 +474,7 @@ class CsviModelLogs extends JModelList
 		if ($this->db->execute())
 		{
 			// Optimize the table
-			$q = 'OPTIMIZE TABLE ' . $this->db->quoteName('#__csvi_logdetails');
+			$q = "OPTIMIZE TABLE " . $this->db->quoteName('#__csvi_logdetails');
 			$this->db->setQuery($q)->execute();
 
 			$results['ok'][] = JText::_('COM_CSVI_DELETE_LOG_DATA_DETAILS_ALL_OK');
@@ -517,17 +493,16 @@ class CsviModelLogs extends JModelList
 	 * @return  array  Array of objects with statistics information.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  RuntimeException
 	 */
 	public function getStatsMessage()
 	{
-		$run_id = $this->input->get('run_id', false, 'int');
+		$jinput = JFactory::getApplication()->input;
+		$run_id = $jinput->get('run_id', false, 'int');
 
 		if (!$run_id)
 		{
 			/* Try to get it from the cid */
-			$cids = $this->input->get('cid', array(), 'array');
+			$cids = $jinput->get('cid', array(), 'array');
 
 			if (is_array($cids) && array_key_exists('0', $cids))
 			{
@@ -568,14 +543,13 @@ class CsviModelLogs extends JModelList
 	 * @return  void.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  Exception
 	 */
 	public function downloadDebug()
 	{
 		jimport('joomla.filesystem.file');
 		jimport('joomla.filesystem.archive');
-		$run_id = $this->input->get('run_id', 0, 'int');
+		$jinput = JFactory::getApplication()->input;
+		$run_id = $jinput->get('run_id', 0, 'int');
 		$filepath = CSVIPATH_DEBUG . '/';
 		$filename = 'com_csvi.log.' . $run_id . '.';
 		$filesize = filesize($filepath . $filename . 'php');
@@ -613,7 +587,7 @@ class CsviModelLogs extends JModelList
 			$UserBrowser = '';
 		}
 
-		$mime_type = ($UserBrowser === 'IE' || $UserBrowser === 'Opera') ? 'application/octetstream' : 'application/octet-stream';
+		$mime_type = ($UserBrowser == 'IE' || $UserBrowser == 'Opera') ? 'application/octetstream' : 'application/octet-stream';
 
 		// Clean the buffer
 		while (@ob_end_clean())
@@ -624,12 +598,12 @@ class CsviModelLogs extends JModelList
 		header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 
 		// Filesize gets corrupted because of server compression
-		if ($outputext === 'txt')
+		if ($outputext == 'txt')
 		{
 			header('Content-Length: ' . $filesize);
 		}
 
-		if ($UserBrowser === 'IE')
+		if ($UserBrowser == 'IE')
 		{
 			header('Content-Disposition: inline; filename="' . $filename . $outputext . '"');
 			header('Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0');
@@ -650,6 +624,36 @@ class CsviModelLogs extends JModelList
 
 		// Close the transmission
 		JFactory::getApplication()->close();
+	}
+
+	/**
+	 * Get the action types.
+	 *
+	 * @return  array  list of action types.
+	 *
+	 * @since   6.0
+	 */
+
+	public function getActionTypes()
+	{
+		$options = array();
+		$options[] = JHtml::_('select.option', '', JText::_('COM_CSVI_LOG_DONT_USE'));
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('action'))
+			->from($this->db->quoteName('#__csvi_logs'))
+			->group($this->db->quoteName('action'));
+		$this->db->setQuery($query);
+		$actions = $this->db->loadColumn();
+
+		if (!empty($actions))
+		{
+			foreach ($actions as $action)
+			{
+				$options[] = JHtml::_('select.option', $action, JText::_('COM_CSVI_' . $action));
+			}
+		}
+
+		return $options;
 	}
 
 	/**
@@ -737,49 +741,5 @@ class CsviModelLogs extends JModelList
 		}
 
 		return $log;
-	}
-
-	/**
-	 * Method to auto-populate the model state.
-	 *
-	 * Note. Calling getState in this method will result in recursion.
-	 *
-	 * @param   string  $ordering   An optional ordering field.
-	 * @param   string  $direction  An optional direction (asc|desc).
-	 *
-	 * @return  void
-	 *
-	 * @since   6.6.0
-	 */
-	protected function populateState($ordering = 'l.start', $direction = 'DESC')
-	{
-		// List state information.
-		parent::populateState($ordering, $direction);
-	}
-
-	/**
-	 * Method to get a store id based on the model configuration state.
-	 *
-	 * This is necessary because the model is used by the component and
-	 * different modules that might need different sets of data or different
-	 * ordering requirements.
-	 *
-	 * @param   string  $id  An identifier string to generate the store id.
-	 *
-	 * @return  string  A store id.
-	 *
-	 * @since   12.2
-	 */
-	protected function getStoreId($id = '')
-	{
-		// Add the list state to the store id.
-		$id .= ':' . $this->getState('list.start');
-		$id .= ':' . $this->getState('list.limit');
-		$id .= ':' . $this->getState('list.ordering');
-		$id .= ':' . $this->getState('list.direction');
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.actiontypes');
-
-		return md5($this->context . ':' . $id);
 	}
 }

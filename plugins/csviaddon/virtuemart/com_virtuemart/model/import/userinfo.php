@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -471,66 +471,30 @@ class Com_VirtuemartModelImportUserinfo extends RantaiImportEngine
 				// Get the shopper_group_id
 				if (!$this->getState('virtuemart_shoppergroup_id', false) && $this->getState('shopper_group_name'))
 				{
-					// Clean the table before inserting
-					$query->delete($this->db->quoteName('#__virtuemart_vmuser_shoppergroups'))
-						->where($this->db->quoteName('virtuemart_user_id') . ' = ' . (int) $this->userinfoTable->virtuemart_user_id);
+					$query = $this->db->getQuery(true)
+						->select($this->db->quoteName('virtuemart_shoppergroup_id'))
+						->from($this->db->quoteName('#__virtuemart_shoppergroups'))
+						->where($this->db->quoteName('shopper_group_name') . ' = ' . $this->db->quote($this->getState('shopper_group_name')));
+					$this->db->setQuery($query);
+					$this->setState('virtuemart_shoppergroup_id', $this->db->loadResult());
 
-					try
+					if (!$this->getState('virtuemart_shoppergroup_id', false))
 					{
-						$this->db->setQuery($query)->execute();
-						$this->log->add(JText::_('COM_CSVI_SHOPPER_GROUPS_DELETED'));
-					}
-					catch (Exception $e)
-					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHOPPER_GROUPS_NOT_DELETED', $e->getMessage()));
-					}
-					
-					// Get the shopper group names
-					$names = explode('|', $this->getState('shopper_group_name'));
-
-					foreach ($names as $name)
-					{
-						$virtuemart_shoppergroup_id = $this->helper->getShopperGroupId($name);
-
-						if ($virtuemart_shoppergroup_id)
-						{
-							$this->setState('virtuemart_shoppergroup_id', $virtuemart_shoppergroup_id);
-
-							// Bind the shopper group data
-							$this->vmuserShoppergroupTable->bind($this->state);
-							$this->vmuserShoppergroupTable->check();
-
-							try
-							{
-								$this->vmuserShoppergroupTable->store();
-							}
-							catch (Exception $e)
-							{
-								$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHOPPER_GROUP_NOT_ADDED', $e->getMessage()));
-							}
-						}
-						else
-						{
-							$this->log->add(JText::sprintf('COM_CSVI_SHOPPER_GROUP_NOT_FOUND',  $name), false);
-						}
+						$this->setState('virtuemart_shoppergroup_id', $this->helper->getDefaultShopperGroupID());
 					}
 				}
 				elseif (!$this->getState('virtuemart_shoppergroup_id', false) && !$this->getState('shopper_group_name', false))
 				{
 					$this->setState('virtuemart_shoppergroup_id', $this->helper->getDefaultShopperGroupID());
+				}
 
-					// Bind the shopper group data
-					$this->vmuserShoppergroupTable->bind($this->state);
-					$this->vmuserShoppergroupTable->check();
+				// Bind the shopper group data
+				$this->vmuserShoppergroupTable->bind($this->state);
+				$this->vmuserShoppergroupTable->check();
 
-					try
-					{
-						$this->vmuserShoppergroupTable->store();
-					}
-					catch (Exception $e)
-					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHOPPER_GROUP_NOT_ADDED', $e->getMessage()));
-					}
+				if (!$this->vmuserShoppergroupTable->store())
+				{
+					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHOPPER_GROUP_NOT_ADDED', $this->vmuserShoppergroupTable->getError()));
 				}
 
 				// See if there is any vmusers entry
@@ -588,13 +552,10 @@ class Com_VirtuemartModelImportUserinfo extends RantaiImportEngine
 					$this->vmuserTable->created_by = $this->userId;
 				}
 
-				try
+				// Store the vmusers data
+				if (!$this->vmuserTable->store())
 				{
-					$this->vmuserTable->store();
-				}
-				catch (Exception $e)
-				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_VMUSERS_NOT_ADDED', $e->getMessage()));
+					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_VMUSERS_NOT_ADDED', $this->vmuserTable->getError()));
 				}
 
 				return true;

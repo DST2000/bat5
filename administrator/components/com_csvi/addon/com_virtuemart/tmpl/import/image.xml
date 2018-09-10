@@ -70,20 +70,12 @@
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>
-			<field name="update_only_media_link"
-			       type="list"
-			       size="1"
-			       default="0"
-			       class="input-small advancedSelect"
-			       onchange="Csvi.showFields((this.value == 0) ? 1: 0, '.process-image .hidden-image #full_image #thumb_image #watermark_image');">
-				<option value="1">JYES</option>
-				<option value="0">JNO</option>
-			</field>
+
 			<field name="process_image"
 				   type="list"
 				   size="1"
 				   default="1"
-				   class="input-small process-image advancedSelect"
+				   class="input-small advancedSelect"
 				   onchange="Csvi.showFields(this.value, '.hidden-image #full_image #thumb_image #watermark_image');">
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>

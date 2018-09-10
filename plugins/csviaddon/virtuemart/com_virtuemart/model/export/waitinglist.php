@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -160,16 +160,15 @@ class Com_VirtuemartModelExportWaitinglist extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
-			$records = $this->db->getIterator();
+			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->db->getNumRows();
+			$logcount = $this->csvidb->getNumRows();
 
 			if ($logcount > 0)
 			{
-				foreach ($records as $record)
+				while ($record = $this->csvidb->getRow())
 				{
 					$this->log->incrementLinenumber();
 

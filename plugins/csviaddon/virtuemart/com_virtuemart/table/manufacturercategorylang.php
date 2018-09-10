@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -101,7 +101,7 @@ class VirtueMartTableManufacturerCategoryLang extends CsviTableDefault
 					}
 					else
 					{
-						$this->log->add('Manufacturer category does not exist');
+						$this->log->add('COM_CSVI_DEBUG_MANUFACTURERCATEGORY_NOT_EXISTS', true);
 
 						return false;
 					}
@@ -146,14 +146,14 @@ class VirtueMartTableManufacturerCategoryLang extends CsviTableDefault
 					}
 					else
 					{
-						$this->log->add('Manufacturer category does not exist');
+						$this->log->add('COM_CSVI_DEBUG_MANUFACTURERCATEGORY_NOT_EXISTS', true);
 
 						return false;
 					}
 				}
 				else
 				{
-					$this->log->add('Manufacturer category does not exist');
+					$this->log->add('COM_CSVI_DEBUG_MANUFACTURERCATEGORY_NOT_EXISTS', true);
 
 					return false;
 				}

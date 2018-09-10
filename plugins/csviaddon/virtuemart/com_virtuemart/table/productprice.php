@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -85,9 +85,7 @@ class VirtueMartTableProductPrice extends CsviTableDefault
 		}
 		else
 		{
-			$query->where(
-				$this->db->quoteName('product_price_publish_up') . ' = ' . $this->db->quote('0000-00-00 00:00:00') . ' OR ' .
-				$this->db->quoteName('product_price_publish_up') . ' IS NULL');
+			$query->where($this->db->quoteName('product_price_publish_up') . ' IS NULL');
 		}
 
 		if ($this->get('product_price_publish_down', false))
@@ -96,9 +94,7 @@ class VirtueMartTableProductPrice extends CsviTableDefault
 		}
 		else
 		{
-			$query->where(
-				$this->db->quoteName('product_price_publish_down') . ' = ' . $this->db->quote('0000-00-00 00:00:00') . ' OR ' .
-				$this->db->quoteName('product_price_publish_down') . ' IS NULL');
+			$query->where($this->db->quoteName('product_price_publish_down') . ' IS NULL');
 		}
 
 		$this->db->setQuery($query);

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Table
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -126,10 +126,7 @@ class CsviTableDefault extends JTable
 	{
 		try
 		{
-			if (!is_null($this->log))
-			{
-				$this->log->add('Load a row', false);
-			}
+			$this->log->add('Load a row', false);
 
 			$result = parent::load($keys, $reset);
 
@@ -137,10 +134,7 @@ class CsviTableDefault extends JTable
 		}
 		catch (Exception $e)
 		{
-			if (!is_null($this->log))
-			{
-				$this->log->add('Row cannot be loaded. Error: ' . $e->getMessage(), false);
-			}
+			$this->log->add('Row cannot be loaded. Error: ' . $e->getMessage());
 
 			return false;
 		}
@@ -157,19 +151,11 @@ class CsviTableDefault extends JTable
 	 */
 	public function store($updateNulls = false)
 	{
-		$area = $this->getArea();
-
-		if (!is_null($this->log))
-		{
-			$this->log->add('Query for ' . $area);
-		}
-
 		$result = parent::store($updateNulls);
 
-		if (!is_null($this->log))
-		{
-			$this->log->add('Executed store', true);
-		}
+		$area = $this->getArea();
+
+		$this->log->add('Query for ' . $area);
 
 		if (!$result)
 		{

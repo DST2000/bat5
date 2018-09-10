@@ -41,7 +41,6 @@
 				<option value="yesterday">COM_CSVI_DATE_YESTERDAY</option>
 				<option value="thisweek">COM_CSVI_DATE_THIS_WEEK</option>
 				<option value="lastweek">COM_CSVI_DATE_LAST_WEEK</option>
-				<option value="lastweek">COM_CSVI_DATE_LAST_WEEK</option>
 				<option value="thismonth">COM_CSVI_DATE_THIS_MONTH</option>
 				<option value="lastmonth">COM_CSVI_DATE_LAST_MONTH</option>
 				<option value="thisquarter">COM_CSVI_DATE_THIS_QUARTER</option>
@@ -51,22 +50,22 @@
 			</field>
 
 			<field name="orderdatestart"
-				type="calendar"
+				type="csvicalendar"
 				format="%d-%m-%Y %H:%M:%S"
 				class="input-medium" />
 
 			<field name="orderdateend"
-				type="calendar"
+				type="csvicalendar"
 				format="%d-%m-%Y %H:%M:%S"
 				class="input-medium" />
 
 			<field name="ordermdatestart"
-				type="calendar"
+				type="csvicalendar"
 				format="%d-%m-%Y %H:%M:%S"
 				class="input-medium" />
 
 			<field name="ordermdateend"
-				type="calendar"
+				type="csvicalendar"
 				format="%d-%m-%Y %H:%M:%S"
 				class="input-medium" />
 
@@ -88,15 +87,6 @@
 				multiple="true"
 				class="advancedSelect"
 				default="">
-				<option value="">COM_CSVI_DONT_USE</option>
-			</field>
-
-			<field name="ordershipment"
-			       type="Csvivirtuemart.Ordershipment"
-			       translate="false"
-			       multiple="true"
-			       class="advancedSelect"
-			       default="">
 				<option value="">COM_CSVI_DONT_USE</option>
 			</field>
 

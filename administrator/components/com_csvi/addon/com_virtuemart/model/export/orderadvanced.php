@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -22,14 +22,6 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  */
 class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 {
-	/**
-	 * Cache shipping values
-	 *
-	 * @var    array
-	 * @since  7.0
-	 */
-	private $cache = array();
-
 	/**
 	 * Export the data.
 	 *
@@ -163,7 +155,6 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 						}
 						break;
 					case 'shipment_element':
-					case 'shipment_name':
 						$userfields[] = $this->db->quoteName('#__virtuemart_orders.virtuemart_shipmentmethod_id');
 
 						if (array_key_exists($field->field_name, $groupbyfields))
@@ -348,9 +339,9 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 							$sortby[] = $this->db->quoteName('#__virtuemart_order_items.virtuemart_product_id');
 						}
 						break;
-					case 'shipping_last_name':
 					case 'shipping_company':
 					case 'shipping_title':
+					case 'shipping_last_name':
 					case 'shipping_first_name':
 					case 'shipping_middle_name':
 					case 'shipping_phone_1':
@@ -361,13 +352,68 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 					case 'shipping_city':
 					case 'shipping_zip':
 					case 'shipping_email':
+						$name = str_ireplace('shipping_', '', $field->field_name);
+						$userfields[] = 'MAX(CASE WHEN ' . $this->db->quoteName('user_info1.address_type') . ' = ' . $this->db->quote('ST') . ' THEN ' . $this->db->quoteName('user_info1.' . $name) . ' ELSE NULL END) AS ' . $this->db->quoteName($field->field_name);
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName($field->field_name);
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName($field->field_name);
+						}
+						break;
 					case 'shipping_state_name':
 					case 'shipping_state_2_code':
 					case 'shipping_state_3_code':
+						$userfields[] = 'MAX(CASE WHEN ' . $this->db->quoteName('user_info1.address_type') . ' = ' . $this->db->quote('ST') . ' THEN ' . $this->db->quoteName('user_info1.virtuemart_state_id') . ' ELSE NULL END) AS ' . $this->db->quoteName('virtuemart_state_id');
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName($field->field_name);
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName($field->field_name);
+						}
+						break;
 					case 'shipping_country_name':
 					case 'shipping_country_2_code':
 					case 'shipping_country_3_code':
+						$userfields[] = 'MAX(CASE WHEN ' . $this->db->quoteName('user_info1.address_type') . ' = ' . $this->db->quote('ST') . ' THEN ' . $this->db->quoteName('user_info1.virtuemart_country_id') . ' ELSE NULL END) AS ' . $this->db->quoteName('virtuemart_country_id');
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName($field->field_name);
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName($field->field_name);
+						}
+						break;
 					case 'shipping_full_name':
+						$userfields[] = 'MAX(CASE WHEN ' . $this->db->quoteName('user_info1.address_type') . ' = ' . $this->db->quote('ST') . ' THEN ' . $this->db->quoteName('user_info1.first_name') . ' ELSE NULL END) AS ' . $this->db->quoteName('shipping_first_name');
+						$userfields[] = 'MAX(CASE WHEN ' . $this->db->quoteName('user_info1.address_type') . ' = ' . $this->db->quote('ST') . ' THEN ' . $this->db->quoteName('user_info1.middle_name') . ' ELSE NULL END) AS ' . $this->db->quoteName('shipping_middle_name');
+						$userfields[] = 'MAX(CASE WHEN ' . $this->db->quoteName('user_info1.address_type') . ' = ' . $this->db->quote('ST') . ' THEN ' . $this->db->quoteName('user_info1.last_name') . ' ELSE NULL END) AS ' . $this->db->quoteName('shipping_last_name');
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName('shipping_first_name');
+							$groupby[] = $this->db->quoteName('shipping_middle_name');
+							$groupby[] = $this->db->quoteName('shipping_last_name');
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName('shipping_first_name');
+							$sortby[] = $this->db->quoteName('shipping_middle_name');
+							$sortby[] = $this->db->quoteName('shipping_last_name');
+						}
+						break;
 					case 'total_order_items':
 					case 'custom':
 						// These are man made fields, do not try to get them from the database
@@ -489,8 +535,7 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 
 			if ($daterange != '')
 			{
-				$jdate       = JFactory::getDate();
-				$currentDate = $this->db->quote($jdate->format('Y-m-d'));
+				$jdate = JFactory::getDate();
 
 				switch ($daterange)
 				{
@@ -501,27 +546,27 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 						}
 						break;
 					case 'yesterday':
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') = DATE_SUB(' . $currentDate . ', INTERVAL 1 DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)');
 						break;
 					case 'thisweek':
 						// Get the current day of the week
 						$dayofweek = $jdate->__get('dayofweek');
 						$offset = $dayofweek - 1;
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= ' . $currentDate);
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= CURDATE()');
 						break;
 					case 'lastweek':
 						// Get the current day of the week
 						$dayofweek = $jdate->__get('dayofweek');
 						$offset = $dayofweek + 6;
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofweek . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(CURDATE(), INTERVAL ' . $dayofweek . ' DAY)');
 						break;
 					case 'thismonth':
 						// Get the current day of the week
 						$dayofmonth = $jdate->__get('day');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= ' . $currentDate);
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= CURDATE()');
 						break;
 					case 'lastmonth':
 						// Get the current day of the week
@@ -542,8 +587,8 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 						$daysinmonth = date('t', mktime(0, 0, 0, $month, 25, $year));
 						$offset = ($daysinmonth + $dayofmonth) - 1;
 
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(CURDATE(), INTERVAL ' . $dayofmonth . ' DAY)');
 						break;
 					case 'thisquarter':
 						// Find out which quarter we are in
@@ -751,18 +796,17 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
-			$records = $this->db->getIterator();
+			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->db->getNumRows();
+			$logcount = $this->csvidb->getNumRows();
 
 			if ($logcount > 0)
 			{
 				$orderid = null;
 
-				foreach ($records as $record)
+				while ($record = $this->csvidb->getRow())
 				{
 					$this->log->incrementLinenumber();
 
@@ -800,86 +844,57 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 						switch ($fieldname)
 						{
 							case 'payment_element':
-								if (!array_key_exists($fieldname . $record->virtuemart_paymentmethod_id, $this->cache))
-								{
-									$query->clear()
-										->select($fieldname)
-										->from($this->db->quoteName('#__virtuemart_paymentmethods'))
-										->where($this->db->quoteName('virtuemart_paymentmethod_id') . ' = ' . (int) $record->virtuemart_paymentmethod_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_paymentmethod_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_paymentmethod_id];
+								$query = $this->db->getQuery(true);
+								$query->select($fieldname);
+								$query->from($this->db->quoteName('#__virtuemart_paymentmethods'));
+								$query->where($this->db->quoteName('virtuemart_paymentmethod_id') . ' = ' . (int) $record->virtuemart_paymentmethod_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'shipment_element':
-								if (!array_key_exists($fieldname . $record->virtuemart_shipmentmethod_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName($fieldname))
-										->from($this->db->quoteName('#__virtuemart_shipmentmethods'))
-										->where($this->db->quoteName('virtuemart_shipmentmethod_id') . ' = ' . (int) $record->virtuemart_shipmentmethod_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_shipmentmethod_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_shipmentmethod_id];
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName($fieldname));
+								$query->from($this->db->quoteName('#__virtuemart_shipmentmethods'));
+								$query->where($this->db->quoteName('virtuemart_shipmentmethod_id') . ' = ' . (int) $record->virtuemart_shipmentmethod_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
+							// @todo Add shipment name
 							case 'shipment_name':
-								if (!array_key_exists($fieldname . $record->virtuemart_shipmentmethod_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName($fieldname))
-										->from($this->db->quoteName('#__virtuemart_shipmentmethods_' . $language))
-										->where($this->db->quoteName('virtuemart_shipmentmethod_id') . ' = ' . (int) $record->virtuemart_shipmentmethod_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_shipmentmethod_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_shipmentmethod_id];
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName($fieldname));
+								$query->from($this->db->quoteName('#__virtuemart_shipmentmethods_' . $language));
+								$query->where($this->db->quoteName('virtuemart_shipmentmethod_id') . ' = ' . (int) $record->virtuemart_shipmentmethod_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'state_2_code':
 							case 'state_3_code':
 							case 'state_name':
-								if (!array_key_exists($fieldname . $record->virtuemart_state_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName($fieldname))
-										->from($this->db->quoteName('#__virtuemart_states'))
-										->where($this->db->quoteName('virtuemart_state_id') . ' = ' . (int) $record->virtuemart_state_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_state_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_state_id];
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName($fieldname));
+								$query->from($this->db->quoteName('#__virtuemart_states'));
+								$query->where($this->db->quoteName('virtuemart_state_id') . ' = ' . (int) $record->virtuemart_state_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'country_2_code':
 							case 'country_3_code':
 							case 'country_name':
-								if (!array_key_exists($fieldname . $record->virtuemart_country_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName($fieldname))
-										->from($this->db->quoteName('#__virtuemart_countries'))
-										->where($this->db->quoteName('virtuemart_country_id') . ' = ' . (int) $record->virtuemart_country_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_country_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_country_id];
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName($fieldname));
+								$query->from($this->db->quoteName('#__virtuemart_countries'));
+								$query->where($this->db->quoteName('virtuemart_country_id') . ' = ' . (int) $record->virtuemart_country_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'user_currency':
-								if (!array_key_exists($fieldname . $record->user_currency_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName('currency_code_3'))
-										->from($this->db->quoteName('#__virtuemart_currencies'))
-										->where($this->db->quoteName('virtuemart_currency_id') . ' = ' . (int) $record->user_currency_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->user_currency_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->user_currency_id];
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName('currency_code_3'));
+								$query->from($this->db->quoteName('#__virtuemart_currencies'));
+								$query->where($this->db->quoteName('virtuemart_currency_id') . ' = ' . (int) $record->user_currency_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'user_email':
 								$fieldvalue = $record->email;
@@ -912,6 +927,7 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 							case 'full_name':
 								$fieldvalue = str_replace('  ', ' ', $record->first_name . ' ' . $record->middle_name . ' ' . $record->last_name);
 								break;
+							// @todo Add shipping full name
 							case 'shipping_full_name':
 								if ($address == 'BTST')
 								{
@@ -919,30 +935,20 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 								}
 								break;
 							case 'total_order_items':
-								if (!array_key_exists($fieldname . $record->virtuemart_order_id, $this->cache))
-								{
-									$query->clear()
-										->select('COUNT(' . $this->db->quoteName('virtuemart_order_id') . ') AS ' . $this->db->quoteName('totalitems'))
-										->from($this->db->quoteName('#__virtuemart_order_items'))
-										->where($this->db->quoteName('virtuemart_order_id') . ' = ' . (int) $record->virtuemart_order_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_order_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_order_id];
+								$query = $this->db->getQuery(true);
+								$query->select('COUNT(' . $this->db->quoteName('virtuemart_order_id') . ') AS ' . $this->db->quoteName('totalitems'));
+								$query->from($this->db->quoteName('#__virtuemart_order_items'));
+								$query->where($this->db->quoteName('virtuemart_order_id') . ' = ' . (int) $record->virtuemart_order_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'username':
-								if (!array_key_exists($fieldname . $record->virtuemart_user_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName($fieldname))
-										->from($this->db->quoteName('#__users'))
-										->where($this->db->quoteName('id') . ' = ' . (int) $record->virtuemart_user_id);
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_user_id] = $this->db->loadResult();
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_user_id];
+								$query = $this->db->getQuery(true);
+								$query->select($this->db->quoteName($fieldname));
+								$query->from($this->db->quoteName('#__users'));
+								$query->where($this->db->quoteName('id') . ' = ' . (int) $record->virtuemart_user_id);
+								$this->db->setQuery($query);
+								$fieldvalue = $this->db->loadResult();
 								break;
 							case 'order_tax':
 							case 'order_total':
@@ -962,85 +968,14 @@ class Com_VirtuemartModelExportOrderadvanced extends CsviModelExports
 							case 'product_final_price':
 							case 'product_subtotal_discount':
 							case 'product_subtotal_with_tax':
-								if ($fieldvalue)
-								{
-									$fieldvalue = number_format(
-										$fieldvalue,
-										$this->template->get('export_price_format_decimal', 2, 'int'),
-										$this->template->get('export_price_format_decsep'),
-										$this->template->get('export_price_format_thousep')
-									);
-								}
+								$fieldvalue = number_format(
+									$fieldvalue,
+									$this->template->get('export_price_format_decimal', 2, 'int'),
+									$this->template->get('export_price_format_decsep'),
+									$this->template->get('export_price_format_thousep')
+								);
 								break;
-							case 'shipping_last_name':
-							case 'shipping_company':
-							case 'shipping_title':
-							case 'shipping_first_name':
-							case 'shipping_middle_name':
-							case 'shipping_phone_1':
-							case 'shipping_phone_2':
-							case 'shipping_fax':
-							case 'shipping_address_1':
-							case 'shipping_address_2':
-							case 'shipping_city':
-							case 'shipping_zip':
-							case 'shipping_email':
-								if (!array_key_exists($fieldname . $record->virtuemart_order_id, $this->cache))
-								{
-									$query->clear();
-									$query->select($this->db->quoteName(str_replace('shipping_', '', $fieldname)));
-									$query->from($this->db->quoteName('#__virtuemart_order_userinfos'));
-									$query->where($this->db->quoteName('virtuemart_order_id') . ' = ' . (int) $record->virtuemart_order_id);
-									$query->where($this->db->quoteName('address_type') . ' = ' . $this->db->quote('ST'));
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_order_id] = $this->db->loadResult();
-									$this->log->add('Find shipping last name' . $fieldvalue);
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_order_id];
-								break;
-							case 'shipping_state_name':
-							case 'shipping_state_2_code':
-							case 'shipping_state_3_code':
-								if (!array_key_exists($fieldname . $record->virtuemart_order_id, $this->cache))
-								{
-									$query->clear();
-									$query->select($this->db->quoteName(str_replace('shipping_', '', $fieldname)));
-									$query->from($this->db->quoteName('#__virtuemart_order_userinfos', 'u'));
-									$query->leftJoin(
-										$this->db->quoteName('#__virtuemart_states', 's')
-										. ' ON ' . $this->db->quoteName('s.virtuemart_state_id') . ' = ' . $this->db->quoteName('u.virtuemart_state_id')
-									);
-									$query->where($this->db->quoteName('u.virtuemart_order_id') . ' = ' . (int) $record->virtuemart_order_id);
-									$query->where($this->db->quoteName('u.address_type') . ' = ' . $this->db->quote('ST'));
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_order_id] = $this->db->loadResult();
-									$this->log->add('Find ' . $fieldname . ': ' . $fieldvalue);
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_order_id];
-								break;
-							case 'shipping_country_name':
-							case 'shipping_country_2_code':
-							case 'shipping_country_3_code':
-								if (!array_key_exists($fieldname . $record->virtuemart_order_id, $this->cache))
-								{
-									$query->clear()
-										->select($this->db->quoteName('c.' . str_replace('shipping_', '', $fieldname)))
-										->from($this->db->quoteName('#__virtuemart_order_userinfos', 'u'))
-										->leftJoin(
-											$this->db->quoteName('#__virtuemart_countries', 'c')
-											. ' ON ' . $this->db->quoteName('c.virtuemart_country_id') . ' = ' . $this->db->quoteName('u.virtuemart_country_id')
-										)
-										->where($this->db->quoteName('u.virtuemart_order_id') . ' = ' . (int) $record->virtuemart_order_id)
-										->where($this->db->quoteName('u.address_type') . ' = ' . $this->db->quote('ST'));
-									$this->db->setQuery($query);
-									$this->cache[$fieldname . $record->virtuemart_order_id] = $this->db->loadResult();
-									$this->log->add('Find ' . $fieldname . ': ' . $fieldvalue);
-								}
-
-								$fieldvalue = $this->cache[$fieldname . $record->virtuemart_order_id];
-								break;
+							// @todo Add product attribute
 							case 'product_attribute':
 								$options = json_decode($fieldvalue);
 

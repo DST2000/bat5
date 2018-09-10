@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Controller
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,16 +18,35 @@ defined('_JEXEC') or die;
  * @subpackage  Controller
  * @since       6.0
  */
-class CsviControllerImportsource extends JControllerLegacy
+class CsviControllerImportsource extends CsviControllerDefault
 {
 	/**
-	 * Show the form.
+	 * Execute a given task, but filter on custom tasks.
 	 *
-	 * @return  import details.
+	 * @param   string  $task  The task to execute
+	 *
+	 * @return  void.
 	 *
 	 * @since   6.0
 	 */
-	public function source()
+	public function execute($task)
+	{
+		if (!in_array(strtolower($task), array('cancel', 'preview')))
+		{
+			$task = 'detail';
+		}
+
+		parent::execute($task);
+	}
+
+	/**
+	 * Show the form.
+	 *
+	 * @return  void.
+	 *
+	 * @since   6.0
+	 */
+	public function detail()
 	{
 		// Get the template ID
 		$runId = $this->input->getInt('runId', false);
@@ -35,8 +54,7 @@ class CsviControllerImportsource extends JControllerLegacy
 		if ($runId)
 		{
 			// Load the model
-			/** @var CsviModelImportsources $model */
-			$model = $this->getModel('Importsources', 'CsviModel');
+			$model = $this->getThisModel();
 
 			// Initialise the import
 			try
@@ -44,9 +62,9 @@ class CsviControllerImportsource extends JControllerLegacy
 				$model->initialiseImport($runId);
 
 				// Push the template into the view
-				$view = $this->getView('Importsource', 'html');
-				$view->set('template', $model->getTemplate());
-				$view->display();
+				$this->getThisView()->set('template', $model->getTemplate());
+
+				return parent::detail();
 			}
 			catch (Exception $e)
 			{
@@ -76,7 +94,7 @@ class CsviControllerImportsource extends JControllerLegacy
 			{
 				// Get the model
 				/** @var CsviModelImportsources $model */
-				$model = $this->getModel('Importsources', 'CsviModel');
+				$model = $this->getThisModel();
 
 				// Initialise the model
 				$model->initialiseImport($runId);
@@ -85,7 +103,7 @@ class CsviControllerImportsource extends JControllerLegacy
 				$model->initialiseFile();
 
 				// Redirect to the preview page
-				$this->setRedirect('index.php?option=com_csvi&task=importpreview.preview&runId=' . $runId);
+				$this->setRedirect('index.php?option=com_csvi&view=importpreview&runId=' . $runId);
 				$this->redirect();
 			}
 			catch (Exception $e)

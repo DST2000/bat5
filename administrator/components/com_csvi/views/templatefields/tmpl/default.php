@@ -1,217 +1,208 @@
 <?php
 /**
- * Templatefields list page
+ * Templates list page
  *
- * @author 		RolandD Cyber Produksi
- * @link 		https://csvimproved.com
- * @copyright 	Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author 		Roland Dalmulder
+ * @link 		http://www.csvimproved.com
+ * @copyright 	Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @version 	$Id: default.php 1924 2012-03-02 11:32:38Z RolandD $
  */
 
 defined('_JEXEC') or die;
 
-JHtml::_('formbehavior.chosen');
+$saveOrderingUrl = 'index.php?option=com_csvi&view=templatefields&task=saveorder&format=json';
+JHtml::_('sortablelist.sortable', 'itemsList', 'adminForm', strtolower($this->lists->order_Dir), $saveOrderingUrl);
 
-$listOrder  = $this->escape($this->state->get('list.ordering'));
-$listDirn   = $this->escape($this->state->get('list.direction'));
-
-$loggeduser = JFactory::getUser();
-$saveOrder = $listOrder === 'a.ordering';
-
-if ($saveOrder)
-{
-	$saveOrderingUrl = 'index.php?option=com_csvi&task=templatefields.saveOrderAjax&tmpl=component';
-	JHtml::_('sortablelist.sortable', 'templatefieldsList', 'adminForm', strtolower($listDirn), $saveOrderingUrl);
-}
-
+JHtml::_('formbehavior.chosen', 'select');
 ?>
 <form action="<?php echo JRoute::_('index.php?option=com_csvi&view=templatefields'); ?>" method="post" name="adminForm" id="adminForm" class="form-horizontal">
-	<div id="j-sidebar-container" class="span2">
-		<?php echo $this->sidebar; ?>
+	<div class="pull-right">
+		<?php echo $this->pagination->getLimitBox(); ?>
 	</div>
-	<div id="j-main-container" class="span10">
-		<?php
-		// Search tools bar
-		echo JLayoutHelper::render('joomla.searchtools.default', array('view' => $this));
-		?>
-		<?php if (!$this->items) : ?>
-			<div class="alert alert-no-items">
-				<?php echo JText::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
-			</div>
-		<?php else : ?>
-			<table class="table table-striped" id="templatefieldsList">
-				<thead>
-					<tr>
-						<th width="1%" class="nowrap center hidden-phone">
-							<?php echo JHtml::_('searchtools.sort', '', 'a.ordering', $listDirn, $listOrder, null, 'asc', 'JGRID_HEADING_ORDERING', 'icon-menu-2'); ?>
-						</th>
-						<th width="1%" class="nowrap center">
-							<?php echo JHtml::_('grid.checkall'); ?>
-						</th>
-						<th>
-							<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_FIELD_NAME', 'a.field_name', $listDirn, $listOrder); ?>
-						</th>
-						<?php
-							if ($this->action === 'export')
-							{
-								?>
-								<?php if (count((array) $this->customTable) > 1)
-								{
-									?>
-								<th>
-									<?php echo $this->customTable !== '' ? JText::_('COM_CSVI_TABLE_NAME_LABEL') : ''; ?>
-								</th>
-									<?php
-								}
-								?>
-								<th>
-									<?php echo JText::_('COM_CSVI_COLUMN_HEADER_LABEL'); ?>
-								</th>
-								<?php
-							}
-
-							if ($this->action === 'import')
-							{
-								?>
-								<th>
-									<?php echo $this->source === 'fromdatabase' ? JText::_('COM_CSVI_SOURCE_FIELD_LABEL') : JText::_('COM_CSVI_XML_NODE_LABEL'); ?>
-								</th>
-								<?php
-							}
+	<div class="clearfix" />
+	<table class="table table-striped" id="itemsList">
+		<thead>
+			<tr>
+				<th>
+					<?php echo JHtml::_(
+						'grid.sort',
+						'<i class="icon-menu-2"></i>',
+						'ordering',
+						$this->lists->order_Dir,
+						$this->lists->order,
+						null,
+						'asc',
+						'JGRID_HEADING_ORDERING'
+					); ?>
+				</th>
+				<th>
+					<input type="checkbox" name="toggle" value="" onclick="Joomla.checkAll(this);" />
+				</th>
+				<th>
+					<?php echo JHtml::_('grid.sort', 'COM_CSVI_TEMPLATE_NAME', 'template_id', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				</th>
+				<th>
+					<?php echo JHtml::_('grid.sort', 'COM_CSVI_FIELD_NAME', 'field_name', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				</th>
+				<?php
+					if ($this->action == 'export')
+					{
 						?>
 						<th>
-							<?php echo JText::_('COM_CSVI_DEFAULT_VALUE_LABEL'); ?>
+							<?php echo JText::_('COM_CSVI_COLUMN_HEADER_LABEL'); ?>
 						</th>
-						<?php if ($this->action === 'export') : ?>
-							<th>
-								<?php echo JText::_('COM_CSVI_COLUMN_PUBLISHED_LABEL'); ?>
-							</th>
-						<?php endif; ?>
-					</tr>
-				<thead>
-				<tfoot>
-					<tr>
-						<td colspan="20">
-							<div class="pull-left">
-								<?php
-								if ($this->pagination->total > 0)
-								{
-									echo $this->pagination->getListFooter();
-								}
-								?>
-							</div>
-							<div class="pull-right"><?php echo $this->pagination->getResultsCounter(); ?></div>
-						</td>
-					</tr>
-				</tfoot>
-				<tbody>
-				<?php
-					$canEdit   = $this->canDo->get('core.edit');
-					$canChange = $loggeduser->authorise('core.edit.state', 'com_csvi');
+						<?php
+					}
 
-					foreach ($this->items as $i => $item)
+					if ($this->action == 'import')
 					{
+						?>
+						<th>
+							<?php echo JText::_('COM_CSVI_XML_NODE_LABEL'); ?>
+						</th>
+						<?php
+					}
+				?>
+				<th>
+					<?php echo JText::_('COM_CSVI_DEFAULT_VALUE_LABEL'); ?>
+				</th>
+				<?php
+				if ($this->action == 'export')
+				{
+				?>
+					<th>
+						<?php echo JText::_('COM_CSVI_COLUMN_PUBLISHED_LABEL'); ?>
+					</th>
+				<?php
+				}
+				?>
+			</tr>
+			<tr>
+				<th></th>
+				<th></th>
+				<th>
+					<?php echo JHtml::_(
+							'select.groupedlist',
+							$this->groupedtemplates,
+							'csvi_template_id',
+							array(
+								'list.attr' => 'class="input-xlarge" onchange="this.form.submit()"',
+								'id' => 'csvi_template_id',
+								'list.select' => $this->csvi_template_id
+							)
+					); ?>
+				</th>
+				<th>
+					<input type="text" value="<?php echo $this->escape($this->getModel()->getState('field_name','')); ?>" name="field_name" id="field_name" class="input-medium"/>
+					<div class="btn-group hidden-phone">
+						<button class="btn" onclick="this.form.submit();" title="<?php echo JText::_('JSEARCH_FILTER'); ?>">
+							<i class="icon-search"></i>
+						</button>
+						<button class="btn" onclick="document.adminForm.field_name.value=''; this.form.submit();" title="<?php echo JText::_('JSEARCH_RESET'); ?>">
+							<i class="icon-remove"></i>
+						</button>
+					</div>
+				</th>
+				<th></th>
+				<th></th>
+				<?php
+				if ($this->action == 'export')
+				{
 					?>
-						<tr class="sortable-group-id="<?php echo $item->csvi_template_id; ?>">
-							<td class="order nowrap center hidden-phone">
-								<?php
-								$iconClass = '';
-
-								if (!$canChange)
-								{
-									$iconClass = ' inactive';
-								}
-								elseif (!$saveOrder)
-								{
-									$iconClass = ' inactive tip-top hasTooltip" title="' . JHtml::tooltipText('JORDERINGDISABLED');
-								}
-								?>
-								<span class="sortable-handler <?php echo $iconClass ?>">
-									<span class="icon-menu"></span>
-								</span>
-								<?php if ($canChange && $saveOrder) : ?>
-									<input type="text" style="display:none" name="order[]" size="5"
-									       value="<?php echo $item->ordering; ?>" class="width-20 text-area-order " />
-								<?php endif; ?>
-							</td>
-							<td>
-								<?php if ($canEdit || $canChange) : ?>
-									<?php echo JHtml::_('grid.id', $i, $item->csvi_templatefield_id); ?>
-								<?php endif; ?>
-							</td>
-							<td>
-								<div class="name break-word">
-									<?php if ($canEdit)
-									{
-										echo JHtml::_(
-											'link',
-											JRoute::_('index.php?option=com_csvi&task=templatefield.edit&csvi_templatefield_id=' . (int) $item->csvi_templatefield_id),
-											$this->escape($item->field_name),
-											'title="' . JText::sprintf('COM_CSVI_EDIT_TEMPLATE', $this->escape($item->field_name)) . '"'
-										);
-									}
-									else
-									{
-										echo $this->escape($item->template_name);
-									}
-
-									if ($item->rules)
-									{
-										echo '<span class="icon-wand"></span>';
-									}
-									?>
-								</div>
-							</td>
-						<?php if (count((array) $this->customTable) > 1)
+					<th>
+					</th>
+				<?php
+				}
+				?>
+			</tr>
+		<thead>
+		<tfoot>
+			<tr>
+				<td colspan="20">
+					<?php
+					if ($this->pagination->total > 0)
+					{
+						echo $this->pagination->getListFooter();
+					}
+					?>
+				</td>
+			</tr>
+		</tfoot>
+		<tbody>
+		<?php
+		if (!empty($this->items))
+		{
+			foreach ($this->items as $i => $item)
+			{
+				$ordering = $this->lists->order == 'ordering';
+		?>
+				<tr>
+					<td class="order nowrap center hidden-phone">
+						<span class="sortable-handler">
+							<i class="icon-menu"></i>
+						</span>
+						<input type="text" style="display:none"  name="order[]" size="5"
+							value="<?php echo $item->ordering;?>" class="input-mini text-area-order " />
+					</td>
+					<td>
+						<?php echo JHtml::_('grid.id', $i, $item->csvi_templatefield_id); ?>
+					</td>
+					<td><?php echo $item->template_name; ?></td>
+					<td>
+						<a href="<?php echo JRoute::_('index.php?option=com_csvi&view=templatefield&id=' . (int) $item->csvi_templatefield_id); ?>">
+							<?php echo $this->escape($item->field_name); ?>
+						</a>
+						<?php
+						if (!empty($item->rules))
+						{
+							echo '<span class="icon-fire"></span>';
+						}
+						?>
+					</td>
+					<?php
+						if ($this->action == 'export')
 						{
 							?>
-							<td>
-								<?php echo $item->table_name !== '' ?  $item->table_name : ''; ?>
-							</td>
+							<td><?php echo $item->column_header; ?></td>
 							<?php
 						}
 						?>
-							<?php
-								if ($this->action === 'export')
-								{
-									?>
-									<td><?php echo $item->column_header; ?></td>
-									<?php
-								}
-								?>
 
-							<?php
-								if ($this->action === 'import')
-								{
-									?>
-									<td><?php echo $this->source === 'fromdatabase' ? $item->source_field : $item->xml_node; ?></td>
-									<?php
-								}
-								?>
-							<td>
-								<?php echo $item->default_value; ?>
-							</td>
-							<?php
-							if ($this->action === 'export')
-							{
-								?>
-								<td>
-									<?php echo JHtml::_('jgrid.published', $item->enabled, $i, 'templatefields.', $canChange); ?>
-								</td>
-							<?php
-							}
+					<?php
+						if ($this->action == 'import')
+						{
 							?>
-						</tr>
+							<td><?php echo $item->xml_node; ?></td>
+							<?php
+						}
+						?>
+					<td>
+						<?php echo $item->default_value; ?>
+					</td>
+					<?php
+					if ($this->action == 'export')
+					{
+						?>
+						<td>
+							<?php echo JHtml::_('jgrid.published', $item->enabled, $i, '', true); ?>
+						</td>
 					<?php
 					}
 					?>
-				</tbody>
-			</table>
-		<?php endif; ?>
-	</div>
+				</tr>
+			<?php
+			}
+			?>
+		<?php
+		}
+		?>
+		</tbody>
+	</table>
 	<input type="hidden" name="task" value="browse" />
 	<input type="hidden" name="boxchecked" value="0" />
+	<input type="hidden" name="filter_order" id="filter_order" value="<?php echo $this->lists->order ?>" />
+	<input type="hidden" name="filter_order_Dir" id="filter_order_Dir" value="<?php echo $this->lists->order_Dir ?>" />
 	<?php echo JHtml::_('form.token'); ?>
 </form>
 
@@ -242,10 +233,10 @@ if ($saveOrder)
 			<?php
 				$key_array = array();
 
-				foreach ($this->availableFields as $fieldname)
+				foreach ($this->availablefields as $fieldname)
 				{
 					// Only when field is not in key array so to remove duplicate
-					if (!in_array($fieldname->csvi_name, $key_array, true))
+					if (!in_array($fieldname->csvi_name, $key_array))
 					{
 						$key_array[] = $fieldname->csvi_name;
 
@@ -390,7 +381,7 @@ function addFields()
 		}
 	});
 	// Send the data to the database
-	var template_id = <?php echo $this->template->getId(); ?>;
+	var template_id = <?php echo $this->csvi_template_id; ?>;
 
 	if (template_id > 0)
 	{
@@ -399,23 +390,10 @@ function addFields()
 			type: 'post',
 			url: 'index.php',
 			dataType: 'json',
-			data: 'option=com_csvi&task=templatefield.storetemplatefield&format=json&template_id='+template_id+'&field_name='+fieldnames.join('~'),
+			data: 'option=com_csvi&view=templatefield&task=storetemplatefield&format=json&template_id='+template_id+'&field_name='+fieldnames.join('~'),
 			success: function(data)
 			{
-				if (data.success)
-				{
-					window.location = "index.php?option=com_csvi&view=templatefields&template_id=<?php echo $this->getModel()->getState('template_id'); ?>";
-				}
-				else
-				{
-					jQuery('#availablefieldsModal').modal('hide');
-
-					showMsg(
-						'<?php echo JText::_('COM_CSVI_ERROR'); ?>',
-						'<span class="error">' + data.message + '</span>',
-						'<?php echo JText::_('COM_CSVI_CLOSE_DIALOG'); ?>'
-					);
-				}
+				window.location = "index.php?option=com_csvi&view=templatefields&template_id=<?php echo $this->getModel()->getState('template_id'); ?>";
 			},
 			error:function (request, status, error)
 			{

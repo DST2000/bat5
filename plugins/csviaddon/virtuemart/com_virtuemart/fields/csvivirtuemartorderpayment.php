@@ -1,74 +1,50 @@
 <?php
 /**
- * @package     CSVI
- * @subpackage  Fields
+ * List the order payments
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - [year] RolandD Cyber Produksi. All rights reserved.
- * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @author 		Roland Dalmulder
+ * @link 		http://www.csvimproved.com
+ * @copyright 	Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
+ * @version 	$Id: csvivirtuemartorderpayment.php 2396 2013-03-24 11:55:23Z RolandD $
  */
 
+// Check to ensure this file is included in Joomla!
 defined('_JEXEC') or die;
 
 jimport('joomla.form.helper');
 JFormHelper::loadFieldClass('CsviForm');
 
 /**
- * Select list form field with order payments.
- *
- * @package     CSVI
- * @subpackage  Fields
- * @since       4.0
+ * Select list form field with order payments
  */
-class JFormFieldCsviVirtuemartOrderPayment extends JFormFieldCsviForm
-{
+class JFormFieldCsviVirtuemartOrderPayment extends JFormFieldCsviForm {
 
 	protected $type = 'CsviVirtuemartOrderPayment';
 
 	/**
-	 * Specify the options to load based on default site language.
+	 * Specify the options to load based on default site language
 	 *
-	 * @todo    Change to autoloader
-	 *
-	 * @return  array  List of payment options used to order.
-	 *
-	 * @since   4.0
-	 *
-	 * @throws  Exception
-	 * @throws  CsviException
-	 * @throws  RuntimeException
+	 * @copyright
+	 * @author 		RolandD
+	 * @todo
+	 * @see
+	 * @access 		protected
+	 * @param
+	 * @return 		array	an array of options
+	 * @since 		4.0
 	 */
-	protected function getOptions()
-	{
-		// Get the default language from virtuemart config
-		$templateId   = JFactory::getApplication()->input->get('csvi_template_id', 0, 'int');
-		$helper       = new CsviHelperCsvi;
-		$settings     = new CsviHelperSettings($this->db);
-		$log          = new CsviHelperLog($settings, $this->db);
-		$template     = new CsviHelperTemplate($templateId, $helper);
-		$fields       = new CsviHelperFields($template, $log, $this->db);
-		$languageCode = $template->get('language');
-
-		if (!$languageCode)
-		{
-			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_virtuemart/helper/com_virtuemart.php';
-			$helperConfig = new Com_VirtuemartHelperCom_Virtuemart($template, $log, $fields, $this->db);
-			$languageCode = $helperConfig->getDefaultLanguage();
-		}
-
+	protected function getOptions() {
+		// Get the default administrator language
+		$params = JComponentHelper::getParams('com_languages');
+		$lang = strtolower(str_replace('-', '_', $params->get('administrator')));
 		$db = JFactory::getDbo();
-		$query = $db->getQuery(true)
-			->select('virtuemart_paymentmethod_id AS value, payment_name AS text')
-			->from('#__virtuemart_paymentmethods_' . $languageCode);
+		$query = $db->getQuery(true);
+		$query->select('virtuemart_paymentmethod_id AS value, payment_name AS text');
+		$query->from('#__virtuemart_paymentmethods_'.$lang);
 		$db->setQuery($query);
 		$methods = $db->loadObjectList();
-
-		if (!$methods)
-		{
-			$methods = array();
-		}
-
+		if (empty($methods)) $methods = array();
 		return array_merge(parent::getOptions(), $methods);
 	}
 }

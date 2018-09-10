@@ -2,9 +2,9 @@
 /**
  * List the operations
  *
- * @author 		RolandD Cyber Produksi
- * @link 		https://csvimproved.com
- * @copyright 	Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author 		Roland Dalmulder
+ * @link 		http://www.csvimproved.com
+ * @copyright 	Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @version 	$Id: csvioperations.php 2380 2013-03-15 14:34:04Z RolandD $
  */
@@ -37,7 +37,7 @@ class JFormFieldCsviCustomtables extends JFormFieldCsviForm
 	 */
 	protected function getOptions()
 	{
-		$db     = JFactory::getDbo();
+		$db = JFactory::getDbo();
 		$tables = $db->getTableList();
 		$prefix = $db->getPrefix();
 

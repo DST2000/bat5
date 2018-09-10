@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -69,6 +69,14 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	private $categorySeparator = null;
 
 	/**
+	 * Set if language tables exist
+	 *
+	 * @var    bool
+	 * @since  6.0
+	 */
+	private $tablesExist = true;
+
+	/**
 	 * Here starts the processing.
 	 *
 	 * @return  bool  Akways returns true.
@@ -77,67 +85,82 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	 */
 	public function getStart()
 	{
-		// Get the general category functions
-		$this->categoryModel = new Com_virtuemartHelperCategory(
-			$this->db,
-			$this->template,
-			$this->log,
-			$this->csvihelper,
-			$this->fields,
-			$this->helper,
-			$this->helperconfig,
-			$this->userId
-		);
-		$this->categoryModel->getStart();
-
-		// Check for vendor ID
-		$this->setState('virtuemart_vendor_id', $this->helper->getVendorId());
-
-		// Process data
-		foreach ($this->fields->getData() as $fields)
+		// Only continue if all tables exist
+		if ($this->tablesExist)
 		{
-			foreach ($fields as $name => $details)
+			// Get the general category functions
+			$this->categoryModel = new Com_virtuemartHelperCategory(
+				$this->db,
+				$this->template,
+				$this->log,
+				$this->csvihelper,
+				$this->fields,
+				$this->helper,
+				$this->helperconfig,
+				$this->userId
+			);
+			$this->categoryModel->getStart();
+
+			// Check for vendor ID
+			$this->setState('virtuemart_vendor_id', $this->helper->getVendorId());
+
+			// Process data
+			foreach ($this->fields->getData() as $fields)
 			{
-				$value = $details->value;
-
-				switch ($name)
+				foreach ($fields as $name => $details)
 				{
-					case 'published':
-					case 'media_published':
-						switch ($value)
-						{
-							case 'n':
-							case 'no':
-							case 'N':
-							case 'NO':
-							case '0':
-								$value = 0;
-								break;
-							default:
-								$value = 1;
-								break;
-						}
+					$value = $details->value;
 
-						$this->setState($name, $value);
-						break;
-					default:
-						$this->setState($name, $value);
-						break;
+					switch ($name)
+					{
+						case 'published':
+							switch ($value)
+							{
+								case 'n':
+								case 'N':
+								case '0':
+									$value = 0;
+									break;
+								default:
+									$value = 1;
+									break;
+							}
+
+							$this->setState('published', $value);
+							break;
+						default:
+							$this->setState($name, $value);
+							break;
+					}
 				}
 			}
+
+			// If we have no category path we cannot continue
+			$categoryPath = $this->getState('category_path', false);
+
+			if (!$categoryPath)
+			{
+				$this->log->addStats('incorrect', 'COM_CSVI_NO_CATEGORY_PATH_SET');
+
+				return false;
+			}
+
+			return true;
 		}
-
-		// If we have no category path we cannot continue
-		$categoryPath = $this->getState('category_path', false);
-
-		if (!$categoryPath)
+		else
 		{
-			$this->log->addStats('incorrect', 'COM_CSVI_NO_CATEGORY_PATH_SET');
+			$lang = $this->template->get('target_language');
+
+			if ($this->template->get('language') == $this->template->get('target_language'))
+			{
+				$lang = $this->template->get('language');
+			}
+
+			$tblname = $this->db->getPrefix() . 'virtuemart_categories_' . $lang;
+			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_LANG_TABLE_NOT_EXIST', $tblname));
 
 			return false;
 		}
-
-		return true;
 	}
 
 	/**
@@ -175,8 +198,8 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 		}
 		elseif ($this->template->get('language') == $this->template->get('target_language'))
 		{
-			$trans_paths = explode($this->categorySeparator, $this->getState('category_path'));
-			$paths = explode($this->categorySeparator, $this->getState('category_path'));
+			$trans_paths = array($this->getState('category_path'));
+			$paths = array($this->getState('category_path'));
 		}
 		else
 		{
@@ -276,9 +299,6 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 					// Check and store the language data
 					if ($this->categoryLang->check())
 					{
-						// Bind the new values
-						$this->categoryLang->bind($this->state);
-
 						// Recreate the slug
 						if ($this->template->get('recreate_alias', false))
 						{
@@ -314,9 +334,6 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  CsviException
-	 * @throws  RuntimeException
 	 */
 	public function loadTables()
 	{
@@ -327,30 +344,24 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		// Get the language to use
-		$language = $this->template->get('target_language');
-
-		if ($this->template->get('language') === $this->template->get('target_language'))
+		if ($this->template->get('language') == $this->template->get('target_language'))
 		{
-			$language = $this->template->get('language');
+			$lang = $this->template->get('language');
+		}
+		else
+		{
+			$lang = $this->template->get('target_language');
 		}
 
-		// Get the table name to check
-		$tableName = $this->db->getPrefix() . 'virtuemart_categories_' . $language;
-
-		if (!in_array($tableName, $tables))
+		if (!in_array($this->db->getPrefix() . 'virtuemart_categories_' . $lang, $tables))
 		{
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			$this->tablesExist = false;
 		}
-
-		$this->categoryLang = $this->getTable('CategoryLang');
+		else
+		{
+			$this->tablesExist = true;
+			$this->categoryLang = $this->getTable('CategoryLang');
+		}
 	}
 
 	/**
@@ -499,14 +510,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 
 							if (strpos($imgpath, $dirname) !== false)
 							{
-								// Collect rest of folder path if it is more than image default path
-								$imageleftpath = str_replace($imgpath, '', $dirname . '/');
 								$image = basename($image);
-
-								if ($imageleftpath)
-								{
-									$image = $imageleftpath . $image;
-								}
 							}
 
 							$original = $imgpath . $image;
@@ -574,7 +578,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 								$media['file_is_downloadable'] = 0;
 								$media['file_is_forSale'] = 0;
 								$media['file_url'] = (empty($file_details['output_path'])) ? $file_details['output_name'] : $file_details['output_path'] . $file_details['output_name'];
-								$media['published'] = $this->getState('media_published', $this->getState('published', 0));
+								$media['published'] = $this->getState('published', 0);
 
 								// Create the thumbnail
 								if ($file_details['isimage'])
@@ -596,7 +600,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 									}
 									else
 									{
-										$media['file_url_thumb'] = (empty($thumb)) ? $media['file_url'] : $file_details['output_path'] . 'resized/' . basename($thumb);
+										$media['file_url_thumb'] = (empty($thumb)) ? $media['file_url'] : $file_details['output_path'] . $thumb;
 
 										if (substr($media['file_url_thumb'], 0, 4) == 'http')
 										{

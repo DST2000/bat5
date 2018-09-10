@@ -40,14 +40,6 @@
 				class="input-large advancedSelect">
 					<option value="">COM_CSVI_SELECT_OPERATION</option>
 			</field>
-			<field name="override"
-			       type="CsviOverride"
-			       size="1"
-			       default=""
-			       advancedUser="1"
-			       class="input-large advancedSelect">
-				<option value="">COM_CSVI_DONT_USE</option>
-			</field>
 		</fieldset>
 	</fields>
 </form>

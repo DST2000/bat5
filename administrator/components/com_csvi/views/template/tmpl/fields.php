@@ -3,16 +3,16 @@
  * @package     CSVI
  * @subpackage  Template
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
 
 ?>
-<?php if ($this->action === 'export') : ?>
+<?php if ($this->action == 'export') : ?>
 	<?php $form = $this->forms->fields; ?>
 	<div class="control-group">
 		<label class="control-label <?php echo $form->getField('groupbyfields', 'jform')->labelClass; ?>" for="<?php echo $form->getField('groupbyfields', 'jform')->id; ?>">
@@ -57,17 +57,14 @@ defined('_JEXEC') or die;
 	<tfoot></tfoot>
 	<tbody>
 		<?php
-			if (is_array($this->fields))
+			foreach ($this->fields as $field)
 			{
-				foreach ($this->fields as $field)
-				{
-					?>
-					<tr>
-						<th><?php echo $field->ordering; ?></th>
-						<th><?php echo $field->field_name; ?></th>
-					</tr>
-					<?php
-				}
+			?>
+			<tr>
+				<th><?php echo $field->ordering; ?></th>
+				<th><?php echo $field->field_name; ?></th>
+			</tr>
+			<?php
 			}
 			?>
 	</tbody>

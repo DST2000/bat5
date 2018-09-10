@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -124,7 +124,7 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 			$this->db->setQuery($query);
 			$this->setState('order_item_sku', $this->db->loadResult());
 		}
-		elseif (!$this->getState('virtuemart_product_id', false) && !$this->getState('order_item_sku', false))
+		else
 		{
 			$this->log->addStats('incorrect', 'COM_CSVI_NO_PRODUCT_ID_OR_SKU');
 

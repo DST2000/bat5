@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -26,7 +26,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProduct
 	 * @since  6.0
 	 */
-	private $productTable;
+	private $productTable = null;
 
 	/**
 	 * The media table
@@ -34,7 +34,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableMedia
 	 * @since  6.0
 	 */
-	private $mediaTable;
+	private $mediaTable = null;
 
 	/**
 	 * The product media cross reference table
@@ -42,7 +42,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProductMedia
 	 * @since  6.0
 	 */
-	private $productMediaTable;
+	private $productMediaTable = null;
 
 	/**
 	 * The product price table
@@ -50,7 +50,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProductPrice
 	 * @since  6.0
 	 */
-	private $productPriceTable;
+	private $productPriceTable = null;
 
 	/**
 	 * The calculation rule table
@@ -58,7 +58,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableCalc
 	 * @since  6.0
 	 */
-	private $calcsTable;
+	private $calcsTable = null;
 
 	/**
 	 * The product custom fields table
@@ -66,7 +66,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProductCustomfield
 	 * @since  6.0
 	 */
-	private $productCustomfieldTable;
+	private $productCustomfieldTable = null;
 
 	/**
 	 * The manufacturer table
@@ -74,7 +74,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableManufacturer
 	 * @since  6.0
 	 */
-	private $manufacturerTable;
+	private $manufacturerTable = null;
 
 	/**
 	 * The product manufacturer cross reference table
@@ -82,7 +82,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProductManufacturer
 	 * @since  6.0
 	 */
-	private $productManufacturerTable;
+	private $productManufacturerTable = null;
 
 	/**
 	 * The product shopper group cross reference table
@@ -90,7 +90,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProductShoppergroup
 	 * @since  6.0
 	 */
-	private $productShoppergroupTable;
+	private $productShoppergroupTable = null;
 
 	/**
 	 * The product language table
@@ -98,7 +98,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableProductLang
 	 * @since  6.0
 	 */
-	private $productLangTable;
+	private $productLangTable = null;
 
 	/**
 	 * The manufacturer language table
@@ -106,7 +106,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    VirtueMartTableManufacturerLang
 	 * @since  6.0
 	 */
-	private $manufacturerLangTable;
+	private $manufacturerLangTable = null;
 
 	/**
 	 * List of available custom fields
@@ -122,7 +122,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @var    CsviHelperImportFields
 	 * @since  6.0
 	 */
-	protected $fields;
+	protected $fields = null;
 
 	/**
 	 * The multi variant fields that can be used as available field.
@@ -189,39 +189,9 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 						$this->setState($name, $this->convertDate($value));
 						break;
 					case 'product_price':
+					case 'product_override_price':
 						// Cannot clean price otherwise we lose calculations
 						$this->setState($name, $this->toPeriod($value));
-						break;
-					case 'product_override_price':
-						// Set the value only when there is one, else dont update even if its empty
-						if ($value)
-						{
-							$this->setState($name, $this->toPeriod($value));
-						}
-						break;
-					case 'override':
-						// Set the value only when there, else dont update even if its empty
-						if ($value)
-						{
-							switch ($value)
-							{
-								case 'y':
-								case 'yes':
-								case 'Y':
-								case 'YES':
-								case '1':
-									$value = 1;
-									break;
-								case '-1':
-									$value = '-1';
-									break;
-								default:
-									$value = 0;
-									break;
-							}
-
-							$this->setState($name, $value);
-						}
 						break;
 					case 'product_weight':
 					case 'product_length':
@@ -231,7 +201,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 						$this->setState($name, $this->toPeriod($value));
 						break;
 					case 'related_products':
-						if (substr($value, -1, 1) === '|')
+						if (substr($value, -1, 1) == "|")
 						{
 							$value = substr($value, 0, -1);
 						}
@@ -244,7 +214,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 						{
 							if (stripos($value, '|') > 0)
 							{
-								$category_ids[$name] = explode('|', $value);
+								$category_ids[$name] = explode("|", $value);
 							}
 							else
 							{
@@ -260,7 +230,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 						$this->setState($name, $this->cleanPrice($value));
 						break;
 					case 'published':
-					case 'media_published':
 						switch ($value)
 						{
 							case 'n':
@@ -277,6 +246,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 
 						$this->setState($name, $value);
 						break;
+					case 'override':
 					case 'product_special':
 						switch ($value)
 						{
@@ -412,11 +382,11 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			$product_delete = $this->getState('product_delete', 'N');
 
 			// User wants to delete the product
-			if ($virtuemart_product_id && $product_delete === 'Y')
+			if ($virtuemart_product_id && $product_delete == 'Y')
 			{
 				$this->deleteProduct();
 			}
-			elseif (!$virtuemart_product_id && $product_delete === 'Y')
+			elseif (!$virtuemart_product_id && $product_delete == 'Y')
 			{
 				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_NO_PRODUCT_ID_NO_DELETE', $this->recordIdentity));
 			}
@@ -569,43 +539,46 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 					}
 
 					// Process category path
-					if (($this->getState('category_path', false) || $this->getState('category_id', false)) && $this->getState('category_ids', false))
+					if ($this->getState('category_path', false) || $this->getState('category_id', false))
 					{
-						if (null === $this->_categorymodel)
+						if ($this->getState('category_ids', false) || $this->getState('category_id', false))
 						{
-							$this->_categorymodel = new Com_virtuemartHelperCategory(
-								$this->db,
-								$this->template,
-								$this->log,
-								$this->csvihelper,
-								$this->fields,
-								$this->helper,
-								$this->helperconfig,
-								$this->userId
-							);
-						}
+							if (is_null($this->_categorymodel))
+							{
+								$this->_categorymodel = new Com_virtuemartHelperCategory(
+									$this->db,
+									$this->template,
+									$this->log,
+									$this->csvihelper,
+									$this->fields,
+									$this->helper,
+									$this->helperconfig,
+									$this->userId
+								);
+							}
 
-						$this->_categorymodel->getStart();
+							$this->_categorymodel->getStart();
 
-						// Check the categories
-						// Do we have IDs
-						if (array_key_exists('category_id', $this->getState('category_ids')))
-						{
-							$this->_categorymodel->checkCategoryPath(
-								$this->getState('virtuemart_product_id'),
-								false,
-								$this->category_ids['category_id'],
-								$this->getState('product_ordering')
-							);
-						}
-						elseif (array_key_exists('category_path', $this->getState('category_ids')))
-						{
-							$this->_categorymodel->checkCategoryPath(
-								$this->getState('virtuemart_product_id'),
-								$this->category_ids['category_path'],
-								false,
-								$this->getState('product_ordering')
-							);
+							// Check the categories
+							// Do we have IDs
+							if (array_key_exists('category_id', $this->getState('category_ids')))
+							{
+								$this->_categorymodel->checkCategoryPath(
+									$this->getState('virtuemart_product_id'),
+									false,
+									$this->category_ids['category_id'],
+									$this->getState('product_ordering')
+								);
+							}
+							elseif (array_key_exists('category_path', $this->getState('category_ids')))
+							{
+								$this->_categorymodel->checkCategoryPath(
+									$this->getState('virtuemart_product_id'),
+									$this->category_ids['category_path'],
+									false,
+									$this->getState('product_ordering')
+								);
+							}
 						}
 					}
 				}
@@ -625,8 +598,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.5.0
-	 *
-	 * @throws  Exception
 	 */
 	private function deleteAllCustomValues()
 	{
@@ -714,10 +685,9 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 *
 	 * @return  void.
 	 *
-	 * @since   3.0
-	 *
 	 * @throws  CsviException
-	 * @throws  RuntimeException
+	 *
+	 * @since   3.0
 	 */
 	public function loadTables()
 	{
@@ -735,41 +705,26 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		// Get the language to use
-		$language = $this->template->get('language');
-
-		if (!in_array($this->db->getPrefix() . 'virtuemart_products_' . $language, $tables, true))
+		if (!in_array($this->db->getPrefix() . 'virtuemart_products_' . $this->template->get('language'), $tables))
 		{
 			// Set the name of the table not found
-			$tableName = $this->db->getPrefix() . 'virtuemart_products_' . $language;
+			$tblname = $this->db->getPrefix() . 'virtuemart_products_' . $this->template->get('language');
 
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			throw new CsviException(JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tblname), 510);
 		}
-		elseif (!in_array($this->db->getPrefix() . 'virtuemart_manufacturers_' . $language, $tables, true))
+		elseif (!in_array($this->db->getPrefix() . 'virtuemart_manufacturers_' . $this->template->get('language'), $tables))
 		{
 			// Set the name of the table not found
-			$tableName = $this->db->getPrefix() . 'virtuemart_manufacturers_' . $language;
+			$tblname = $this->db->getPrefix() . 'virtuemart_manufacturers_' . $this->template->get('language');
 
-			$message = JText::_('COM_CSVI_LANGUAGE_MISSING');
-
-			if ($language)
-			{
-				$message = JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
-			}
-
-			throw new CsviException($message, 510);
+			throw new CsviException(JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tblname), 510);
 		}
-
-		// Load the language tables
-		$this->productLangTable = $this->getTable('ProductLang');
-		$this->manufacturerLangTable = $this->getTable('ManufacturerLang');
+		else
+		{
+			// Load the language tables
+			$this->productLangTable = $this->getTable('ProductLang');
+			$this->manufacturerLangTable = $this->getTable('ManufacturerLang');
+		}
 	}
 
 	/**
@@ -778,8 +733,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   4.4.1
-	 *
-	 * @throws  Exception
 	 */
 	private function loadCustomFields()
 	{
@@ -804,24 +757,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			->order($this->db->quoteName('ordering'));
 		$this->db->setQuery($query);
 		$this->customFields = $this->db->loadObjectlist();
-
-		// Load the plugins
-		$dispatcher = new RantaiPluginDispatcher;
-		$dispatcher->importPlugins('csviext', $this->db);
-
-		// Fire the plugin to load specific custom fields if needed
-		$pluginFields = $dispatcher->trigger(
-			'loadPluginCustomFields',
-			array(
-				'log' => $this->log
-			)
-		);
-
-		if ($pluginFields)
-		{
-			$this->customFields = array_merge($this->customFields, $pluginFields);
-		}
-
 		$this->log->add('Load the custom fields');
 	}
 
@@ -868,8 +803,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function productParentSku()
 	{
@@ -907,8 +840,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  bool true if the query executed successful|false if the query failed.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function productQuery()
 	{
@@ -1014,7 +945,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 						}
 						break;
 					case 'product_params':
-						if (!$this->getState($field, false))
+						if (!($this->getState($field, false)))
 						{
 							$this->productTable->$field = 'min_order_level=""|max_order_level=""|step_order_level=""|product_box=""|';
 						}
@@ -1023,28 +954,17 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			}
 		}
 
-		try
+		// Store the product
+		if ($this->productTable->store())
 		{
-			// Store the product
-			$this->productTable->store();
-
 			// If this is a child product, check if we need to update the custom field
 			if ($this->getState('child_product'))
 			{
 				$this->processParentValues();
 			}
 		}
-		catch (Exception $e)
+		else
 		{
-			$this->log->addStats('error', JText::_('COM_CSVI_CANNOT_ADD_PRODUCTS'));
-			$this->log->add($e->getMessage(), false);
-
-			// Check if error is for duplicate sku and show a friendly message
-			if (strpos($e->getMessage(), 'Duplicate entry') !== false)
-			{
-				$this->log->addStats('error', JText::_('COM_CSVI_DUPLICATE_SKU_PRODUCTS'));
-			}
-
 			return false;
 		}
 
@@ -1094,12 +1014,10 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function processRelatedProducts()
 	{
-		$relatedproducts = explode('|', $this->related_products);
+		$relatedproducts = explode("|", $this->related_products);
 
 		$query = 'INSERT IGNORE INTO ';
 		$query .= $this->db->quoteName('#__csvi_related_products') . ' VALUES ';
@@ -1123,8 +1041,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function postProcessRelatedProducts()
 	{
@@ -1184,12 +1100,10 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function processRelatedCategories()
 	{
-		if (null === $this->_categorymodel)
+		if (is_null($this->_categorymodel))
 		{
 			$this->_categorymodel = new Com_virtuemartHelperCategory(
 				$this->db,
@@ -1229,8 +1143,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function postProcessRelatedCategories()
 	{
@@ -1255,7 +1167,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 				// Find the category ID
 				$ids = $this->_categorymodel->getCategoryIdFromPath($related->related_cat);
 
-				if (array_key_exists('category_id', $ids))
+				if (isset($ids['category_id']))
 				{
 					$related->customfield_value = $ids['category_id'];
 
@@ -1294,36 +1206,34 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  bool Returns true on OK | False on failure.
 	 *
 	 * @since   4.0
-	 *
-	 * @throws  Exception
 	 */
 	private function processMedia()
 	{
-		$generateImage = $this->template->get('auto_generate_image_name', false);
-		$fileUrl = $this->getState('file_url', '');
+		$generate_image = $this->template->get('auto_generate_image_name', false);
+		$file_url = $this->getState('file_url', false);
 
 		// Check if any image handling needs to be done
-		if ($fileUrl || $generateImage)
+		if ($file_url || $generate_image)
 		{
 			// Check if we have any images
-			if (('' === $fileUrl) && $generateImage)
+			if (is_null($file_url) && $generate_image)
 			{
-				$fileUrl = $this->createImageName();
+				$file_url = $this->createImageName();
 			}
 
 			// Create an array of images to process
-			$images       = explode('|', $fileUrl);
-			$thumbs       = explode('|', $this->getState('file_url_thumb'));
-			$titles       = explode('|', $this->getState('file_title'));
+			$images = explode('|', $file_url);
+			$thumbs = explode('|', $this->getState('file_url_thumb'));
+			$titles = explode('|', $this->getState('file_title'));
 			$descriptions = explode('|', $this->getState('file_description'));
-			$metas        = explode('|', $this->getState('file_meta'));
-			$order        = explode('|', $this->getState('file_ordering'));
-			$ordering     = 1;
-			$max_width    = $this->template->get('resize_max_width', 1024);
-			$max_height   = $this->template->get('resize_max_height', 768);
+			$metas = explode('|', $this->getState('file_meta'));
+			$order = explode('|', $this->getState('file_ordering'));
+			$ordering = 1;
+			$max_width = $this->template->get('resize_max_width', 1024);
+			$max_height = $this->template->get('resize_max_height', 768);
 
 			// Image handling
-			$imageHelper = new CsviHelperImage($this->template, $this->log, $this->csvihelper);
+			$imagehelper = new CsviHelperImage($this->template, $this->log, $this->csvihelper);
 
 			// Delete existing image links
 			if ($this->template->get('delete_product_images', false))
@@ -1338,271 +1248,214 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			foreach ($images as $key => $image)
 			{
 				$image = trim($image);
-				$productFullImageOutput = '';
+				$product_full_image_output = '';
 
 				// Create image name if needed
-				if (count($images) === 1)
+				if (count($images) == 1)
 				{
-					$imgCounter = 0;
+					$img_counter = 0;
 				}
 				else
 				{
-					$imgCounter = $key + 1;
+					$img_counter = $key + 1;
 				}
 
-				if ($generateImage)
+				if ($generate_image)
 				{
-					$productFullImageOutput = $this->createImageName($imgCounter);
+					$product_full_image_output = $this->createImageName($img_counter);
 				}
 
 				if (!empty($image))
 				{
 					// Get the image path
-					$imgPath = $this->template->get('file_location_product_files', 'images/stories/virtuemart/product/');
+					$imgpath = $this->template->get('file_location_product_files', 'images/stories/virtuemart/product/');
 
 					// Make sure the final slash is present
-					if (substr($imgPath, -1) !== '/')
+					if (substr($imgpath, -1) != '/')
 					{
-						$imgPath .= '/';
+						$imgpath .= '/';
 					}
 
 					// Verify the original image
-					if ($imageHelper->isRemote($image))
+					if ($imagehelper->isRemote($image))
 					{
 						$original = $image;
-						$fullPath = $imgPath;
+						$full_path = $imgpath;
 					}
 					else
 					{
 						// Check if the image contains the image path
 						$dirname = dirname($image);
 
-						if (strpos($imgPath, $dirname) !== false)
+						if (strpos($imgpath, $dirname) !== false)
 						{
-							// Collect rest of folder path if it is more than image default path
-							$imageLeftPath = str_replace($imgPath, '', $dirname . '/');
 							$image = basename($image);
-
-							if ($imageLeftPath)
-							{
-								$image = $imageLeftPath . $image;
-							}
 						}
 
-						$original = $imgPath . $image;
+						$original = $imgpath . $image;
 
 						// Get subfolders
-						$pathParts = pathinfo($original);
-						$fullPath = $pathParts['dirname'] . '/';
+						$path_parts = pathinfo($original);
+						$full_path = $path_parts['dirname'] . '/';
 					}
 
-					// Check only if image link has to be updated
-					if ($this->template->get('update_only_media_link', false))
+					// Generate image names
+					if ($this->template->get('process_image', false))
 					{
-						$this->mediaTable->file_url = (empty($fullPath)) ? basename($image) : $fullPath . basename($image);
-
-						// Check if the media image already exists
-						if ($this->mediaTable->check())
+						if ($generate_image)
 						{
-							$this->productMediaTable->virtuemart_product_id = $this->getState('virtuemart_product_id');
-							$this->productMediaTable->virtuemart_media_id = $this->mediaTable->get('virtuemart_media_id');
-
-							if ($this->productMediaTable->check())
-							{
-								$this->productMediaTable->ordering = (array_key_exists($key, $order) && !empty($order[$key])) ? $order[$key] : $ordering;
-
-								if ($this->productMediaTable->store())
-								{
-									$this->log->add('Store product image relation', false);
-									$ordering++;
-								}
-							}
-							else
-							{
-								$this->log->add('Product image relation already exist', false);
-							}
+							$file_details = $imagehelper->ProcessImage($original, $full_path, $product_full_image_output);
 						}
 						else
 						{
-							$this->log->add('Image ' . $this->mediaTable->file_url . ' does not exist in media table', false);
+							$file_details = $imagehelper->ProcessImage($original, $full_path);
 						}
 					}
 					else
 					{
-						// Generate image names
-						if ($this->template->get('process_image', false))
+						$file_details['exists'] = true;
+						$file_details['isimage'] = $imagehelper->isImage(JPATH_SITE . '/' . $image);
+						$file_details['name'] = $image;
+						$file_details['output_name'] = basename($image);
+
+						if (file_exists(JPATH_SITE . '/' . $image))
 						{
-							if ($generateImage)
-							{
-								$fileDetails = $imageHelper->processImage($original, $fullPath, $productFullImageOutput);
-							}
-							else
-							{
-								$fileDetails = $imageHelper->processImage($original, $fullPath);
-							}
+							$file_details['mime_type'] = $imagehelper->findMimeType($image);
 						}
 						else
 						{
-							$fileDetails['exists']      = true;
-							$fileDetails['isimage']     = $imageHelper->isImage(JPATH_SITE . '/' . $image);
-							$fileDetails['name']        = $image;
-							$fileDetails['output_name'] = basename($image);
-
-							if (file_exists(JPATH_SITE . '/' . $image))
-							{
-								$fileDetails['mime_type'] = $imageHelper->findMimeType($image);
-							}
-							else
-							{
-								$fileDetails['mime_type'] = '';
-							}
-
-							$fileDetails['output_path'] = $fullPath;
+							$file_details['mime_type'] = '';
 						}
 
-						// Process the file details
-						if ($fileDetails['exists'])
+						$file_details['output_path'] = $full_path;
+					}
+
+					// Process the file details
+					if ($file_details['exists'])
+					{
+						$title = (isset($titles[$key])) ? $titles[$key] : $file_details['output_name'];
+						$description = (isset($descriptions[$key])) ? $descriptions[$key] : '';
+						$meta = (isset($metas[$key])) ? $metas[$key] : '';
+						$media = array();
+						$media['virtuemart_vendor_id'] = $this->getState('virtuemart_vendor_id');
+
+						if ($this->template->get('autofill'))
 						{
-							$title                         = array_key_exists($key, $titles) ? $titles[$key] : $fileDetails['output_name'];
-							$description                   = array_key_exists($key, $descriptions) ? $descriptions[$key] : '';
-							$meta                          = array_key_exists($key, $metas) ? $metas[$key] : '';
-							$media                         = array();
-							$media['virtuemart_vendor_id'] = $this->getState('virtuemart_vendor_id');
+							$media['file_title'] = $file_details['output_name'];
+							$media['file_description'] = $file_details['output_name'];
+							$media['file_meta'] = $file_details['output_name'];
+						}
+						else
+						{
+							$media['file_title'] = $title;
+							$media['file_description'] = $description;
+							$media['file_meta'] = $meta;
+						}
 
-							if ($this->template->get('autofill'))
+						$media['file_mimetype'] = $file_details['mime_type'];
+						$media['file_type'] = 'product';
+						$media['file_is_product_image'] = 1;
+						$media['file_is_downloadable'] = ($file_details['isimage']) ? 0 : 1;
+						$media['file_is_forSale'] = 0;
+						$media['file_url'] = (empty($file_details['output_path'])) ? $file_details['output_name'] : $file_details['output_path'] . $file_details['output_name'];
+						$media['published'] = $this->getState('published');
+
+						// Create the thumbnail
+						if ($file_details['isimage'])
+						{
+							$thumb = (isset($thumbs[$key])) ? $thumbs[$key] : null;
+
+							if ($this->template->get('thumb_create', false))
 							{
-								$media['file_title']       = $fileDetails['output_name'];
-								$media['file_description'] = $fileDetails['output_name'];
-								$media['file_meta']        = $fileDetails['output_name'];
-							}
-							else
-							{
-								$media['file_title']       = $title;
-								$media['file_description'] = $description;
-								$media['file_meta']        = $meta;
-							}
+								$thumb_sizes = getimagesize(JPATH_SITE . '/' . $media['file_url']);
 
-							$media['file_mimetype']         = $fileDetails['mime_type'];
-							$media['file_type']             = 'product';
-							$media['file_is_product_image'] = 1;
-							$media['file_is_downloadable']  = ($fileDetails['isimage']) ? 0 : 1;
-							$media['file_is_forSale']       = 0;
-							$media['file_url']              = (empty($fileDetails['output_path'])) ? $fileDetails['output_name'] : $fileDetails['output_path'] . $fileDetails['output_name'];
-							$media['published']             = $this->getState('media_published', $this->getState('published', 0));
-
-							// Create the thumbnail
-							if ($fileDetails['isimage'])
-							{
-								$thumb = (isset($thumbs[$key])) ? $thumbs[$key] : null;
-
-								if ($thumb)
+								if (empty($thumb) || $generate_image)
 								{
-									// Check if the image contains the image path
-									$dirname = dirname($thumb);
+									// Get the subfolder structure
+									$thumb_path = str_ireplace($imgpath, '', $full_path);
 
-									if (strpos($imgPath . 'resized/', $dirname) !== false)
+									if (empty($thumb))
 									{
-										// Collect rest of folder path if it is more than image default path
-										$imageLeftPath = str_replace($imgPath, '', $dirname . '/');
-										$imageThumb    = basename($thumb);
-
-										if ($imageLeftPath)
-										{
-											$thumb = $imageLeftPath . $imageThumb;
-										}
-									}
-								}
-
-								if ($this->template->get('thumb_create', false))
-								{
-									$thumbSizes = getimagesize(JPATH_SITE . '/' . $media['file_url']);
-
-									if (empty($thumb) || $generateImage)
-									{
-										// Get the subfolder structure
-										$thumbPath = str_ireplace($imgPath, '', $fullPath);
-										$thumb = 'resized/' . $thumbPath . basename($media['file_url']);
-									}
-									else
-									{
-										// Check if we are not overwriting any large images
-										$thumbPathParts = pathinfo($thumb);
-
-										if ($thumbPathParts['dirname'] === '.')
-										{
-											$this->log->addStats('incorrect', 'COM_CSVI_THUMB_OVERWRITE_FULL');
-											$thumb = false;
-										}
-									}
-
-									$media['file_url_thumb'] = '';
-
-									if ($thumb && ($thumbSizes[0] < $max_width || $thumbSizes[1] < $max_height))
-									{
-										$media['file_url_thumb'] = $imageHelper->createThumbnail($media['file_url'], $imgPath, $thumb);
-									}
-									else
-									{
-										$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_THUMB_TOO_BIG', $max_width, $max_height, $thumbSizes[0], $thumbSizes[1]));
-										$this->log->add('Thumbnail is bigger than maximums set', false);
-										$media['file_url_thumb'] = '';
+										$thumb = 'resized/' . $thumb_path . basename($media['file_url']);
 									}
 								}
 								else
 								{
-									$media['file_url_thumb'] = empty($thumb) ? $media['file_url'] : $fileDetails['output_path'] . $thumb;
+									// Check if we are not overwriting any large images
+									$thumb_path_parts = pathinfo($thumb);
 
-									if (0 === strpos($media['file_url_thumb'], 'http') && null !== $thumb)
+									if ($thumb_path_parts['dirname'] == '.')
 									{
-										$media['file_url_thumb'] = $thumb;
+										$this->log->addStats('incorrect', 'COM_CSVI_THUMB_OVERWRITE_FULL');
+										$thumb = false;
 									}
 								}
-							}
-							else
-							{
-								$media['file_is_product_image'] = 0;
-								$media['file_url_thumb']        = '';
-							}
 
-							// Bind the media data
-							$this->mediaTable->bind($media);
-
-							// Check if the media image already exists
-							$this->mediaTable->check();
-
-							// Store the media data
-							if ($this->mediaTable->store())
-							{
-								// Watermark the image
-								if ($this->template->get('full_watermark', 'image') && $fileDetails['isimage'])
+								if ($thumb && ($thumb_sizes[0] < $max_width || $thumb_sizes[1] < $max_height))
 								{
-									$imageHelper->addWatermark(JPATH_SITE . '/' . $media['file_url']);
+									$media['file_url_thumb'] = $imagehelper->createThumbnail($media['file_url'], $imgpath, $thumb);
 								}
-
-								// Store the product image relation
-								$data                          = array();
-								$data['virtuemart_product_id'] = $this->getState('virtuemart_product_id');
-								$data['virtuemart_media_id']   = $this->mediaTable->get('virtuemart_media_id');
-								$data['ordering']              = (isset($order[$key]) && !empty($order[$key])) ? $order[$key] : $ordering;
-
-								if ($this->productMediaTable->save($data))
+								else
 								{
-									$this->log->add('Store product image relation', false);
-									$ordering++;
+									$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_THUMB_TOO_BIG', $max_width, $max_height, $thumb_sizes[0], $thumb_sizes[1]));
+									$this->log->add('Thumbnail is bigger than maximums set', false);
+									$media['file_url_thumb'] = '';
 								}
 							}
 							else
 							{
-								$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->mediaTable->getError()));
+								$media['file_url_thumb'] = (empty($thumb)) ? $media['file_url'] : $file_details['output_path'] . $thumb;
 
-								return false;
+								if (substr($media['file_url_thumb'], 0, 4) == 'http')
+								{
+									$media['file_url_thumb'] = $thumbs[$key];
+								}
 							}
 						}
-					}
+						else
+						{
+							$media['file_is_product_image'] = 0;
+							$media['file_url_thumb'] = '';
+						}
 
-					// Reset the product media table
-					$this->mediaTable->reset();
-					$this->productMediaTable->reset();
+						// Bind the media data
+						$this->mediaTable->bind($media);
+
+						// Check if the media image already exists
+						$this->mediaTable->check();
+
+						// Store the media data
+						if ($this->mediaTable->store())
+						{
+							// Watermark the image
+							if ($this->template->get('full_watermark', 'image') && $file_details['isimage'])
+							{
+								$imagehelper->addWatermark(JPATH_SITE . '/' . $media['file_url']);
+							}
+
+							// Store the product image relation
+							$data = array();
+							$data['virtuemart_product_id'] = $this->getState('virtuemart_product_id');
+							$data['virtuemart_media_id'] = $this->mediaTable->get('virtuemart_media_id');
+							$data['ordering'] = (isset($order[$key]) && !empty($order[$key])) ? $order[$key] : $ordering;
+
+							if ($this->productMediaTable->save($data))
+							{
+								$this->log->add('Store product image relation', false);
+								$ordering++;
+							}
+						}
+						else
+						{
+							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->mediaTable->getError()));
+
+							return false;
+						}
+
+						// Reset the product media table
+						$this->mediaTable->reset();
+						$this->productMediaTable->reset();
+					}
 				}
 			}
 		}
@@ -1618,8 +1471,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  bool Returns true on OK | False on failure.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function manufacturerImport()
 	{
@@ -1638,14 +1489,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 
 		if ($manufacturerIds || $manufacturerNames)
 		{
-			$manufacturers = explode('|', $manufacturerIds ?: $manufacturerNames);
-
-			// Delete old product manufacturer reference and insert new ones
-			$query = $this->db->getQuery(true)
-				->delete($this->db->quoteName('#__virtuemart_product_manufacturers'))
-				->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $this->getState('virtuemart_product_id'));
-			$this->db->setQuery($query)->execute();
-			$this->log->add('Delete product manufacturer references');
+			$manufacturers = explode('|', ($manufacturerIds) ? $manufacturerIds : $manufacturerNames);
 
 			foreach ($manufacturers as $manufacturer)
 			{
@@ -1664,9 +1508,13 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 					$this->manufacturerTable->set('virtuemart_manufacturer_id', $this->manufacturerLangTable->get('virtuemart_manufacturer_id'));
 
 					// Check if a manufacturer exists
-					if (!$this->manufacturerTable->check() && !$this->manufacturerTable->store())
+					if (!$this->manufacturerTable->check())
 					{
-						return false;
+						// Store the manufacturer data
+						if (!$this->manufacturerTable->store())
+						{
+							return false;
+						}
 					}
 
 					// Store the cross reference
@@ -1694,29 +1542,30 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   3.0
-	 *
-	 * @throws  Exception
 	 */
 	private function priceQuery()
 	{
 		// Check if we have a child product with an empty price (will use parents price)
-		if ($this->child_product && ($this->product_price == 0) && (null === $this->price_with_tax) && (null === $this->product_tax))
+		if ($this->child_product && ($this->product_price == 0 && (is_null($this->price_with_tax) && is_null($this->product_tax))))
 		{
 			$this->log->add('COM_CSVI_DEBUG_CHILD_NO_PRICE', false);
 		}
 		else
 		{
 			// Check if we have an override price, this is always excluding tax
-			if ($this->getState('product_override_price', false) && ($this->getState('override', false) === false))
+			if ($this->getState('product_override_price', false))
 			{
-				$this->setState('override', 1);
+				if ($this->getState('override', false) === false)
+				{
+					$this->setState('override', 1);
+				}
 			}
 
 			// Check if the price is including or excluding tax
 			if (($this->getState('product_tax_id', false) || $this->getState('product_tax', false))
 				&& $this->getState('price_with_tax', false) && !$this->getState('product_price', false))
 			{
-				if (strlen($this->getState('price_with_tax', '')) === 0)
+				if (strlen($this->getState('price_with_tax', '')) == 0)
 				{
 					$this->setState('product_price', null);
 				}
@@ -1730,18 +1579,18 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 						$this->setState('product_tax', $this->calcsTable->calc_value);
 					}
 
-					$this->setState('product_price', $this->getState('price_with_tax') / (1 + ($this->getState('product_tax') / 100)));
+					$this->setState('product_price', ($this->getState('price_with_tax') / (1 + ($this->getState('product_tax') / 100))));
 				}
 			}
-			elseif (strlen($this->getState('product_price', '')) === 0)
+			elseif (strlen($this->getState('product_price', '')) == 0)
 			{
 				$this->setState('product_price', null);
 			}
 
 			// Check if we need to assign a shopper group
-			if (null !== $this->shopper_group_name_price)
+			if (!is_null($this->shopper_group_name_price))
 			{
-				if ($this->getState('shopper_group_name_price', '*') === '*')
+				if ($this->getState('shopper_group_name_price', '*') == '*')
 				{
 					$this->setState('virtuemart_shoppergroup_id', 0);
 				}
@@ -1792,9 +1641,9 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			}
 
 			// Check if we need to change the shopper group name
-			if (null !== $this->shopper_group_name_new)
+			if (!is_null($this->shopper_group_name_new))
 			{
-				if ($this->shopper_group_name_new === '*')
+				if ($this->shopper_group_name_new == '*')
 				{
 					$this->productPriceTable->virtuemart_shoppergroup_id = 0;
 				}
@@ -1843,7 +1692,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 		// Determine if the discount field is a percentage
 		if ($this->getState('product_discount', false))
 		{
-			if (substr($this->getState('product_discount'), -1, 1) === '%')
+			if (substr($this->getState('product_discount'), -1, 1) == '%')
 			{
 				$this->calcsTable->calc_value_mathop = '-%';
 				$this->calcsTable->calc_value = substr($this->toPeriod($this->product_discount), 0, -1);
@@ -1855,7 +1704,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			}
 		}
 
-		if ((null !== $this->calcsTable->calc_value) && $this->calcsTable->calc_value > 0)
+		if (!is_null($this->calcsTable->calc_value) && $this->calcsTable->calc_value > 0)
 		{
 			// Add the discount fields
 			$this->calcsTable->publish_up = $this->getState('product_discount_date_start');
@@ -2022,22 +1871,22 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 		// Build the new name
 		if ($ordering > 0)
 		{
-			$imageName = $name . '_' . $ordering . '.' . $ext;
+			$image_name = $name . '_' . $ordering . '.' . $ext;
 		}
 		else
 		{
-			$imageName = $name . '.' . $ext;
+			$image_name = $name . '.' . $ext;
 		}
 
-		$this->log->add('Created image name: ' . $imageName, false);
+		$this->log->add('Created image name: ' . $image_name, false);
 
 		// Check if the user is supplying image data
 		if (!$this->getState('file_url', false))
 		{
-			$this->setState('file_url', $imageName);
+			$this->setState('file_url', $image_name);
 		}
 
-		return $imageName;
+		return $image_name;
 	}
 
 	/**
@@ -2046,8 +1895,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   4.0
-	 *
-	 * @throws  Exception
 	 */
 	private function processCustomFields()
 	{
@@ -2067,7 +1914,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 		{
 			foreach ($deletes as $key => $value)
 			{
-				if ($value === 'Y' && isset($titles[$key]))
+				if ($value == 'Y' && isset($titles[$key]))
 				{
 					// Find the custom details
 					$query = $this->db->getQuery(true)
@@ -2105,13 +1952,13 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 			foreach ($values as $key => $value)
 			{
 				// We need to clean the custom titles otherwise values are not cleaned
-				if (isset($multiples[$key]) && strtoupper($multiples[$key]) === 'N')
+				if (isset($multiples[$key]) && strtoupper($multiples[$key]) == 'N')
 				{
 					unset($this->customTitles[$virtuemart_product_id][$titles[$key]]);
 				}
 
 				// Check if the value is not deleted
-				if ((null === $this->getState('custom_delete')) || (isset($deletes[$key]) && $deletes[$key] !== 'Y'))
+				if (is_null($this->getState('custom_delete')) || (isset($deletes[$key]) && $deletes[$key] !== 'Y'))
 				{
 					// Get the custom ID
 					if (!isset($this->customTitles[$virtuemart_product_id][$titles[$key]]))
@@ -2184,9 +2031,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 							$this->productCustomfieldTable->customfield_price = $this->toPeriod($prices[$key]);
 						}
 
-						// Set the default ordering if none set in import file
-						$this->productCustomfieldTable->ordering = $key;
-
 						if (isset($ordering[$key]))
 						{
 							$this->productCustomfieldTable->ordering = $ordering[$key];
@@ -2204,12 +2048,12 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 							)
 						);
 
-						if (is_array($result) && (0 !== count($result)))
+						if (is_array($result) && !empty($result))
 						{
 							$this->productCustomfieldTable->customfield_params = $result[0];
 						}
 
-						if ($result === false || (0 === count($result)))
+						if ($result === false || empty($result))
 						{
 							$this->productCustomfieldTable->customfield_params = (isset($params[$key])) ? $params[$key] : '';
 						}
@@ -2220,7 +2064,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 							$this->productCustomfieldTable->created_on = $this->date->toSql();
 							$this->productCustomfieldTable->created_by = $this->userId;
 						}
-						elseif (isset($multiples[$key]) && strtoupper($multiples[$key]) === 'Y')
+						elseif (isset($multiples[$key]) && strtoupper($multiples[$key]) == 'Y')
 						{
 							$this->productCustomfieldTable->virtuemart_customfield_id = null;
 						}
@@ -2244,19 +2088,12 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 							{
 								// Load the parent custom field id
 								$query = $this->db->getQuery(true)
-									->select($this->db->quoteName('virtuemart_customfield_id'))
-									->from($this->db->quoteName('#__virtuemart_product_customfields'))
-									->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $this->getState('product_parent_id'))
-									->where($this->db->quoteName('virtuemart_custom_id') . ' = ' . (int) $virtuemart_custom->virtuemart_custom_id)
-									->order($this->db->quoteName('ordering'));
+									->select('virtuemart_customfield_id')
+									->from('#__virtuemart_product_customfields')
+									->where('virtuemart_product_id = ' . (int) $this->getState('product_parent_id'))
+									->where('virtuemart_custom_id = ' . (int) $virtuemart_custom->virtuemart_custom_id);
 								$this->db->setQuery($query);
-								$parentCustomfieldId   = $this->db->loadResult();
-								$parent_customfield_id = 0;
-
-								if ($parentCustomfieldId)
-								{
-									$parent_customfield_id = $parentCustomfieldId;
-								}
+								$parent_customfield_id = $this->db->loadResult();
 
 								if (isset($disabler[$key]))
 								{
@@ -2302,7 +2139,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 									'virtuemart_customfield_id' => $this->productCustomfieldTable->virtuemart_customfield_id,
 									'log' => $this->log,
 									'product_parent_id' => $this->getState('product_parent_id', false),
-									'product_as_derived' => $this->getState('product_as_derived', false)
 								)
 							);
 
@@ -2356,7 +2192,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 
 					if ($virtuemart_custom)
 					{
-						if ($value === 'param')
+						if ($value == 'param')
 						{
 							// Remove existing values for this parameter
 							$query = $this->db->getQuery(true)
@@ -2531,8 +2367,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   1.0
-	 *
-	 * @throws  Exception
 	 */
 	private function processParentValues($child=true)
 	{
@@ -2632,13 +2466,11 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   4.4.1
-	 *
-	 * @throws  Exception
 	 */
 	private function processCustomAvailableFields()
 	{
 		// Create the queries
-		if (count($this->customFields) > 0)
+		if (!empty($this->customFields))
 		{
 			foreach ($this->customFields as $field)
 			{
@@ -2662,7 +2494,6 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 								->where($this->db->quoteName('file_url') . ' = ' . $this->db->quote($this->getState($title)));
 							$this->db->setQuery($query);
 							$value = $this->db->loadResult();
-							$this->log->add(($value) ? 'Found file_url value: ' . $value : 'No file_url value found');
 							break;
 						default:
 							$value = $this->getState($title, false);
@@ -2804,13 +2635,11 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
-	 *
-	 * @throws  Exception
 	 */
 	private function processMultiVariantFields()
 	{
 		// Check if there are any fields to process
-		if (count($this->multivariantFields) > 0)
+		if (!empty($this->multivariantFields))
 		{
 			$this->log->add('Process multi-variant fields', false);
 
@@ -2856,13 +2685,13 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 							// Assign the value to it's group
 							$$group = json_decode($value);
 
-							if ($group === 'selectoptions' && is_array($selectoptions))
+							if ($group == 'selectoptions' && is_array($selectoptions))
 							{
 								foreach ($selectoptions as $selectoption)
 								{
 									$field = trim($selectoption->voption);
 
-									if ($selectoption->voption === 'clabels')
+									if ($selectoption->voption == 'clabels')
 									{
 										$field = trim($selectoption->clabel);
 									}
@@ -2985,7 +2814,7 @@ class Com_VirtuemartModelImportProduct extends RantaiImportEngine
 
 				if (!empty($importvalue))
 				{
-					if (0 === count($selectoptions))
+					if (empty($selectoptions))
 					{
 						$selectoptionValues[$multiField][] = $importvalue;
 					}

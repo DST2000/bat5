@@ -9,20 +9,11 @@
 			type="hidden"
 			emptylabel="true"/>
 
-		<field name="table_name"
-		       type="csvi.exportcustomtables"
-		       size="1"
-		       idfield="csvi_template_id"
-		       onchange="Csvi.loadCustomAvailableFields();"
-		       class="advancedSelect input-xxlarge">
-				<option value="">COM_CSVI_SELECT_TABLE</option>
-		</field>
-
 		<field name="field_name"
 			type="csviavailablefields"
 			size="1"
 			required="true"
-			idfield="csvi_template_id"
+			idfield="csvi_templatefield_id"
 			class="advancedSelect" />
 
 		<field name="column_header"
@@ -72,10 +63,5 @@
 			<option value="1">COM_CSVI_YES</option>
 			<option value="0">COM_CSVI_NO</option>
 		</field>
-
-		<field name="field_date_format"
-		       type="text"
-		       class="input-normal"
-		       required="false" />
 	</fieldset>
 </form>

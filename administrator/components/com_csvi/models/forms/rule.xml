@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <form cron="false">
-	<fieldset name="rule">
+	<fieldset name="replacement">
 		<field name="csvi_rule_id"
 			type="hidden" />
 

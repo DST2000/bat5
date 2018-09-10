@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -86,14 +86,11 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 		{
 			if (empty($this->slug))
 			{
-				$this->createSlug();
+				$this->validateSlug();
 			}
 
 			if (!empty($this->slug))
 			{
-				// Check if the slug exists
-				$this->verifySlug();
-
 				// Create a dummy entry for updating
 				$query = "INSERT INTO "
 					. $this->_tbl
@@ -121,9 +118,6 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 			// Keep the existing slug if we have one
 			$slug = $this->get('slug', false);
 
-			// Load the existing data
-			$this->load($this->get('virtuemart_category_id'));
-
 			// Keep the slug user is importing
 			if ($slug)
 			{
@@ -131,7 +125,7 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 			}
 
 			// Verify the slug
-			$this->verifySlug();
+			$this->validateSlug();
 		}
 
 		return true;
@@ -151,7 +145,7 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 		if (empty($this->slug))
 		{
 			// Create the slug
-			$this->verifySlug();
+			$this->validateSlug();
 		}
 
 		return parent::store();
@@ -178,7 +172,7 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 			$this->slug = $this->helper->createSlug($this->category_name);
 
 			// Check if the slug exists
-			$this->verifySlug();
+			$this->validateSlug();
 		}
 	}
 
@@ -189,8 +183,11 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 	 *
 	 * @since   4.0
 	 */
-	private function verifySlug()
+	private function validateSlug()
 	{
+		// Create the slug
+		$this->slug = $this->helper->createSlug($this->category_name);
+
 		// Check if the slug exists
 		$query = $this->db->getQuery(true)
 			->select('COUNT(' . $this->db->quoteName($this->_tbl_key) . ')')
@@ -203,40 +200,8 @@ class VirtueMartTableCategoryLang extends CsviTableDefault
 
 		if ($slugs > 0)
 		{
-			if ($this->get('category_name'))
-			{
-				// See how many categories we have with the same name
-				$query->clear()
-					->select(
-						'ABS(REPLACE(' . $this->db->quoteName('slug') . ', ' . $this->db->quote($this->slug) . ', ' . $this->db->quote('') . ')) + 1'
-					)
-					->from($this->_tbl)
-					->where(
-						'('
-						. $this->db->quoteName('slug') . ' = ' . $this->db->quote($this->slug)
-						. ' OR '
-						. $this->db->quoteName('slug') . ' REGEXP ' . $this->db->quote('^' . $this->slug . '-[[:digit:]]+$')
-						. ' AND RIGHT(' . $this->db->quoteName('slug') . ', 1) IN (0,1,2,3,4,5,6,7,8,9)'
-						. ')'
-					)
-					->where($this->db->quoteName($this->_tbl_key) . ' != ' . (int) $this->get('virtuemart_category_id'))
-					->order('LENGTH(' . $this->db->quoteName('slug') . '), ' . $this->db->quoteName('slug') . ' ASC');
-				$this->db->setQuery($query);
-				$items = $this->db->loadColumn();
-				$this->log->add('Check how many other categories exist with the same slug');
-
-				if ($items)
-				{
-					$count = array_pop($items);
-
-					$this->slug .= '-' . $count;
-				}
-			}
-			else
-			{
-				$jdate = JFactory::getDate();
-				$this->slug .= $jdate->format("Y-m-d-h-i-s") . mt_rand();
-			}
+			$jdate = JFactory::getDate();
+			$this->slug .= $jdate->format("Y-m-d-h-i-s") . mt_rand();
 		}
 	}
 

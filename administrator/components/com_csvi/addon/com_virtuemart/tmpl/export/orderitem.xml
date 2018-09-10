@@ -34,22 +34,22 @@
 			</field>
 
 			<field name="orderitemdatestart"
-				   type="calendar"
+				   type="csvicalendar"
 				   format="%d-%m-%Y %H:%M:%S"
 				   class="input-medium" />
 
 			<field name="orderitemdateend"
-				   type="calendar"
+				   type="csvicalendar"
 				   format="%d-%m-%Y %H:%M:%S"
 				   class="input-medium" />
 
 			<field name="orderitemmdatestart"
-				   type="calendar"
+				   type="csvicalendar"
 				   format="%d-%m-%Y %H:%M:%S"
 				   class="input-medium" />
 
 			<field name="orderitemmdateend"
-				   type="calendar"
+				   type="csvicalendar"
 				   format="%d-%m-%Y %H:%M:%S"
 				   class="input-medium" />
 

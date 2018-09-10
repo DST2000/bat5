@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2017 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -73,9 +73,6 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 
 			// Build something fancy to only get the fieldnames the user wants
 			$userfields = array();
-
-			// Order ID is needed as controller
-			$userfields[] = $this->db->quoteName('#__virtuemart_orders.virtuemart_order_id');
 			$exportfields = $this->fields->getFields();
 
 			// Group by fields
@@ -232,7 +229,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 					case 'state_2_code':
 					case 'state_3_code':
 					case 'state_name':
-						if ($address === 'BTST')
+						if ($address == 'BTST')
 						{
 							$userfields[] = 'COALESCE('
 												. $this->db->quoteName('user_info2.virtuemart_state_id') . ', ' . $this->db->quoteName('user_info1.virtuemart_state_id')
@@ -267,7 +264,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 					case 'country_3_code':
 					case 'country_name':
 					case 'virtuemart_country_id':
-						if ($address === 'BTST')
+						if ($address == 'BTST')
 						{
 							$userfields[] = 'COALESCE('
 												. $this->db->quoteName('user_info2.virtuemart_country_id') . ', ' . $this->db->quoteName('user_info1.virtuemart_country_id')
@@ -325,28 +322,6 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						}
 						break;
 					case 'full_name':
-
-						if ($address === 'BTST')
-						{
-							$userfields[] = $this->db->quoteName('user_info2.first_name', 'shipping_first_name');
-							$userfields[] = $this->db->quoteName('user_info2.middle_name', 'shipping_middle_name');
-							$userfields[] = $this->db->quoteName('user_info2.last_name', 'shipping_last_name');
-
-							if (array_key_exists($field->field_name, $groupbyfields))
-							{
-								$groupby[] = $this->db->quoteName('user_info2.first_name');
-								$groupby[] = $this->db->quoteName('user_info2.middle_name');
-								$groupby[] = $this->db->quoteName('user_info2.last_name');
-							}
-
-							if (array_key_exists($field->field_name, $sortbyfields))
-							{
-								$sortby[] = $this->db->quoteName('user_info2.first_name');
-								$sortby[] = $this->db->quoteName('user_info2.middle_name');
-								$sortby[] = $this->db->quoteName('user_info2.last_name');
-							}
-						}
-
 						$userfields[] = $this->db->quoteName('user_info1.first_name', 'billing_first_name');
 						$userfields[] = $this->db->quoteName('user_info1.middle_name', 'billing_middle_name');
 						$userfields[] = $this->db->quoteName('user_info1.last_name', 'billing_last_name');
@@ -366,7 +341,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						}
 						break;
 					case 'first_name':
-						if ($address === 'BTST')
+						if ($address == 'BTST')
 						{
 							$userfields[] = 'COALESCE('
 								. $this->db->quoteName('user_info2.' . $field->field_name)
@@ -399,7 +374,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						}
 						break;
 					case 'middle_name':
-						if ($address === 'BTST')
+						if ($address == 'BTST')
 						{
 							$userfields[] = 'COALESCE('
 								. $this->db->quoteName('user_info2.' . $field->field_name)
@@ -432,7 +407,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						}
 						break;
 					case 'last_name':
-						if ($address === 'BTST')
+						if ($address == 'BTST')
 						{
 							$userfields[] = 'COALESCE('
 								. $this->db->quoteName('user_info2.' . $field->field_name)
@@ -465,7 +440,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						}
 						break;
 					case 'shipping_full_name':
-						if ($address === 'BTST')
+						if ($address == 'BTST')
 						{
 							$userfields[] = $this->db->quoteName('user_info2.first_name', 'shipping_first_name');
 							$userfields[] = $this->db->quoteName('user_info2.middle_name', 'shipping_middle_name');
@@ -673,8 +648,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 
 			if ($daterange != '')
 			{
-				$jdate       = JFactory::getDate('now', 'UTC');
-				$currentDate = $this->db->quote($jdate->format('Y-m-d'));
+				$jdate = JFactory::getDate();
 
 				switch ($daterange)
 				{
@@ -685,28 +659,27 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						}
 						break;
 					case 'yesterday':
-						$query->where(
-							'DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') = DATE_SUB(' . $currentDate . ', INTERVAL 1 DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)');
 						break;
 					case 'thisweek':
 						// Get the current day of the week
 						$dayofweek = $jdate->__get('dayofweek');
 						$offset = $dayofweek - 1;
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= ' . $currentDate);
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= CURDATE()');
 						break;
 					case 'lastweek':
 						// Get the current day of the week
 						$dayofweek = $jdate->__get('dayofweek');
 						$offset = $dayofweek + 6;
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofweek . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(CURDATE(), INTERVAL ' . $dayofweek . ' DAY)');
 						break;
 					case 'thismonth':
 						// Get the current day of the week
 						$dayofmonth = $jdate->__get('day');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= ' . $currentDate);
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= CURDATE()');
 						break;
 					case 'lastmonth':
 						// Get the current day of the week
@@ -727,8 +700,8 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 						$daysinmonth = date('t', mktime(0, 0, 0, $month, 25, $year));
 						$offset = ($daysinmonth + $dayofmonth) - 1;
 
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
-						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') >= DATE_SUB(CURDATE(), INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('#__virtuemart_orders.created_on') . ') <= DATE_SUB(CURDATE(), INTERVAL ' . $dayofmonth . ' DAY)');
 						break;
 					case 'thisquarter':
 						// Find out which quarter we are in
@@ -916,14 +889,6 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 				$query->where($this->db->quoteName('#__virtuemart_orders.virtuemart_paymentmethod_id') . ' IN (\'' . implode("','", $orderpayment) . '\')');
 			}
 
-			// Filter by shipping method
-			$ordershipment = $this->template->get('ordershipment', false);
-
-			if ($ordershipment && $ordershipment[0] != '')
-			{
-				$query->where($this->db->quoteName('#__virtuemart_orders.virtuemart_shipmentmethod_id') . ' IN (\'' . implode("','", $ordershipment) . '\')');
-			}
-
 			// Group the fields
 			$groupby = array_unique($groupby);
 
@@ -944,12 +909,11 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
-			$records = $this->db->getIterator();
+			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->db->getNumRows();
+			$logcount = $this->csvidb->getNumRows();
 
 			if ($logcount > 0)
 			{
@@ -962,7 +926,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 					$orderId = 0;
 				}
 
-				foreach ($records as $record)
+				while ($record = $this->csvidb->getRow())
 				{
 					if ($splitLine)
 					{
@@ -1102,45 +1066,29 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 								break;
 							case 'address_type':
 								// Check if we have any content otherwise use the default value
-								if (strlen(trim($fieldvalue)) === 0)
+								if (strlen(trim($fieldvalue)) == 0)
 								{
 									$fieldvalue = $field->default_value;
 								}
 
-								if ($fieldvalue === 'BT')
+								if ($fieldvalue == 'BT')
 								{
 									$fieldvalue = JText::_('COM_CSVI_BILLING_ADDRESS');
 								}
-								elseif ($fieldvalue === 'ST')
+								elseif ($fieldvalue == 'ST')
 								{
 									$fieldvalue = JText::_('COM_CSVI_SHIPPING_ADDRESS');
 								}
 								break;
 							case 'full_name':
-								$shippingName = '';
-
-								if ($address === 'BTST')
-								{
-									$shippingName = str_replace(
-										'  ',
-										' ',
-										$record->shipping_first_name . ' ' . $record->shipping_middle_name . ' ' . $record->shipping_last_name
-									);
-								}
-
 								$fieldvalue = str_replace(
 									'  ',
 									' ',
 									$record->billing_first_name . ' ' . $record->billing_middle_name . ' ' . $record->billing_last_name
 								);
-
-								if (strlen(trim($shippingName)) > 0)
-								{
-									$fieldvalue = $shippingName;
-								}
 								break;
 							case 'shipping_full_name':
-								if ($address === 'BTST')
+								if ($address == 'BTST')
 								{
 									$fieldvalue = str_replace(
 										'  ',
@@ -1272,10 +1220,7 @@ class Com_VirtuemartModelExportOrder extends CsviModelExports
 										}
 									}
 
-									if ($values)
-									{
-										$fieldvalue = implode('|', $values);
-									}
+									$fieldvalue = implode('|', $values);
 								}
 								break;
 							case 'order_weight':

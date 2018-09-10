@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Images
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -149,9 +149,7 @@ class CsviHelperImage
 		{
 			if ($remote)
 			{
-				$dirPath   = dirname($filename);
-				$imageName = rawurlencode(basename($filename));
-				$filename  = $dirPath . '/' . $imageName;
+				$filename = str_ireplace(' ', '%20', $filename);
 			}
 
 			$url_parts = @parse_url($filename);
@@ -363,9 +361,8 @@ class CsviHelperImage
 		$this->mimeTypes[85]['signature'] = 'FFD8FFE0';
 		$this->mimeTypes[86]['signature'] = 'FFD8FFEE';
 		$this->mimeTypes[87]['signature'] = 'FFD8FFE1';
-		$this->mimeTypes[88]['signature'] = 'FFD8FFE2';
-		$this->mimeTypes[89]['signature'] = 'FFD8FFDB';
-		$this->mimeTypes[90]['signature'] = '474946383961';
+		$this->mimeTypes[88]['signature'] = 'FFD8FFDB';
+		$this->mimeTypes[89]['signature'] = '474946383961';
 
 		// Extensions
 		$this->mimeTypes[0]['extension'] = '.gif';
@@ -457,8 +454,7 @@ class CsviHelperImage
 		$this->mimeTypes[86]['extension'] = '.jpeg;.jpe;.jpg';
 		$this->mimeTypes[87]['extension'] = '.jpeg;.jpe;.jpg';
 		$this->mimeTypes[88]['extension'] = '.jpeg;.jpe;.jpg';
-		$this->mimeTypes[89]['extension'] = '.jpeg;.jpe;.jpg';
-		$this->mimeTypes[90]['extension'] = '.gif';
+		$this->mimeTypes[89]['extension'] = '.gif';
 
 		// Descriptions
 		$this->mimeTypes[0]['description'] = 'GIF 87A';
@@ -550,8 +546,7 @@ class CsviHelperImage
 		$this->mimeTypes[86]['description'] = 'JPG Graphic File';
 		$this->mimeTypes[87]['description'] = 'JPG Graphic File';
 		$this->mimeTypes[88]['description'] = 'JPG Graphic File';
-		$this->mimeTypes[89]['description'] = 'JPG Graphic File';
-		$this->mimeTypes[90]['description'] = 'GIF 89A';
+		$this->mimeTypes[89]['description'] = 'GIF 89A';
 
 		// Mime descriptions
 		$this->mimeTypes[0]['mime_type'] = 'image/gif';
@@ -643,8 +638,7 @@ class CsviHelperImage
 		$this->mimeTypes[86]['mime_type'] = 'image/jpeg';
 		$this->mimeTypes[87]['mime_type'] = 'image/jpeg';
 		$this->mimeTypes[88]['mime_type'] = 'image/jpeg';
-		$this->mimeTypes[89]['mime_type'] = 'image/jpeg';
-		$this->mimeTypes[90]['mime_type'] = 'image/gif';
+		$this->mimeTypes[89]['mime_type'] = 'image/gif';
 	}
 
 	/**
@@ -960,40 +954,40 @@ class CsviHelperImage
 
 		switch (strtolower($this->file_out_extension))
 		{
-			case 'gif':
-				if (strtolower(substr($this->file_out, strlen($this->file_out) - 4, 4)) !== '.gif')
+			case "gif":
+				if (strtolower(substr($this->file_out, strlen($this->file_out) - 4, 4)) != ".gif")
 				{
-					$this->file_out .= '.gif';
+					$this->file_out .= ".gif";
 				}
 
 				return imagegif($new_img, $this->file_out);
 				break;
-			case 'jpg':
-				if (strtolower(substr($this->file_out, strlen($this->file_out) - 4, 4)) !== '.jpg')
+			case "jpg":
+				if (strtolower(substr($this->file_out, strlen($this->file_out) - 4, 4)) != ".jpg")
 				{
-					$this->file_out .= '.jpg';
+					$this->file_out .= ".jpg";
 				}
 
 				return imagejpeg($new_img, $this->file_out, 100);
 				break;
-			case 'jpeg':
-				if (strtolower(substr($this->file_out, strlen($this->file_out) - 5, 5)) !== '.jpeg')
+			case "jpeg":
+				if (strtolower(substr($this->file_out, strlen($this->file_out) - 5, 5)) != ".jpeg")
 				{
-					$this->file_out .= '.jpeg';
+					$this->file_out .= ".jpeg";
 				}
 
 				return imagejpeg($new_img, $this->file_out, 100);
 				break;
-			case 'png':
-				if (strtolower(substr($this->file_out, strlen($this->file_out) - 4, 4)) !== '.png')
+			case "png":
+				if (strtolower(substr($this->file_out, strlen($this->file_out) - 4, 4)) != ".png")
 				{
-					$this->file_out .= '.png';
+					$this->file_out .= ".png";
 				}
 
 				return imagepng($new_img, $this->file_out);
 				break;
 			default:
-				$this->log->add('No matching extension found', false);
+				$this->log->add('COM_CSVI_NO_FILE_EXTENSION');
 
 				return false;
 				break;
@@ -1047,23 +1041,7 @@ class CsviHelperImage
 		{
 			$this->log->add('Process remote file: ' . $this->_imagedata['name'], false);
 
-			$imageUsername  = $this->template->get('image_username', '');
-			$imagePassword  = $this->template->get('image_password', '');
-			$method         = $this->template->get('image_method', 'POST');
-			$credentialType = $this->template->get('image_credential_type', 'htaccess');
-
-			if ($imageUsername && $imagePassword)
-			{
-				$remoteMethod = $this->csvihelper->fileExistsRemote(
-					$this->_imagedata['name'], $imageUsername, $imagePassword, $method, 'user', 'password', $credentialType
-				);
-			}
-			else
-			{
-				$remoteMethod = $this->csvihelper->fileExistsRemote($this->_imagedata['name']);
-			}
-
-			if ($remoteMethod)
+			if ($this->csvihelper->fileExistsRemote($this->_imagedata['name']))
 			{
 				$this->_imagedata['exists'] = true;
 
@@ -1160,7 +1138,10 @@ class CsviHelperImage
 		{
 			if ($this->_imagedata['exists'])
 			{
-				$this->log->add('The file ' . $name . ' is not an image', false);
+				$this->log->add(JText::sprintf('COM_CSVI_DEBUG_FILE_IS_NOT_IMAGE', $name));
+
+				// Non image details
+				$this->log->add(JText::_('COM_CSVI_DEBUG_PROCESS_NON_IMAGE'));
 
 				// Set the extension to the original extension
 				$this->_imagedata['output_name'] = JFile::stripExt($this->_imagedata['output_name']) . '.' . $this->_imagedata['extension'];
@@ -1270,22 +1251,7 @@ class CsviHelperImage
 		}
 		else
 		{
-			$imageUsername  = $this->template->get('image_username', '');
-			$imagePassword  = $this->template->get('image_password', '');
-			$method         = $this->template->get('image_method', 'POST');
-			$credentialType = $this->template->get('image_credential_type', 'htaccess');
-
-			if ($imageUsername && $imagePassword)
-			{
-				$file_exists = $this->csvihelper->fileExistsRemote(
-					$original, $imageUsername, $imagePassword, $method, 'user', 'password', $credentialType
-				);
-			}
-			else
-			{
-				$file_exists = $this->csvihelper->fileExistsRemote($original);
-			}
-
+			$file_exists = $this->csvihelper->fileExistsRemote($original);
 			$remote = true;
 		}
 
@@ -1297,7 +1263,7 @@ class CsviHelperImage
 
 			if (!JFolder::exists($thumb_folder))
 			{
-				$this->log->add('Create thumbnail folder: ' . $thumb_folder, false);
+				$this->log->add('Create thumbnail folder: ' . $thumb_folder);
 				JFolder::create($thumb_folder);
 			}
 
@@ -1411,8 +1377,6 @@ class CsviHelperImage
 	 */
 	private function cleanupImage()
 	{
-		$mime_type = '';
-
 		if ($this->_imagedata['isremote'] && $this->template->get('save_images_on_server', 'image'))
 		{
 			// Check if we need to re-download the image
@@ -1487,17 +1451,15 @@ class CsviHelperImage
 
 		if ($ext != strtolower($output_ext))
 		{
-			$this->log->add('Source extension is ' . $ext . ' and target extension is ' . $output_ext, false);
-
 			// Fix up the new names
-			$basename = basename($this->_imagedata['name'], '.' . $output_ext);
-			$to = dirname($this->_imagedata['name']) . '/' . $basename . '.' . $ext;
+			$basename = basename($this->_imagedata['name'], $this->_imagedata['extension']);
+			$to = dirname($this->_imagedata['name']) . '/' . $basename . $ext;
+
+			$this->log->add('Renaming full image because bad extension: ' . $this->_imagedata['name'] . ' --> ' . $to, false);
 
 			// Rename the file
 			if (JFile::exists($this->_imagedata['name']))
 			{
-				$this->log->add('Renaming full image because bad extension: ' . $this->_imagedata['name'] . ' --> ' . $to, false);
-
 				if (!JFile::move($this->_imagedata['name'], $to))
 				{
 					return false;
@@ -1510,7 +1472,7 @@ class CsviHelperImage
 		}
 
 		// Check for a valid extenion
-		if (empty($this->_imagedata['extension']) && $type === 'image')
+		if (empty($this->_imagedata['extension']) && $type == 'image')
 		{
 			$this->_imagedata['extension'] = $ext;
 		}
@@ -1518,9 +1480,9 @@ class CsviHelperImage
 		// Set a new extension if the image needs to be converted
 		$convert_type = $this->template->get('convert_type', 'image');
 
-		if ($convert_type !== 'none' && $convert_type !== $this->_imagedata['extension'])
+		if ($convert_type != 'none' && $convert_type != $this->_imagedata['extension'])
 		{
-			// @todo Hier gaat het fout als de naam is gegeneerd op basis van SKU
+			// Hier gaat het fout als de naam is gegeneerd op basis van SKU
 			// Check if the name is generated
 			if ($this->template->get('auto_generate_image_name', 'image', false))
 			{
@@ -1559,52 +1521,14 @@ class CsviHelperImage
 	private function storeRemoteImage($remote_image, $local_image)
 	{
 		// Fix spaces in the remote image
-		$dirPath      = dirname($remote_image);
-		$imageName    = rawurlencode(basename($remote_image));
-		$remote_image = $dirPath . '/' . $imageName;
-
-		// Suppress any warnings as it breaks the import process
+		$remote_image = str_replace(' ', '%20', $remote_image);
 		$url_parts = @parse_url($remote_image);
 
 		if (substr($url_parts['scheme'], 0, 4) == 'http')
 		{
-			$imageUsername  = $this->template->get('image_username', '');
-			$imagePassword  = $this->template->get('image_password', '');
-			$method         = $this->template->get('image_method', 'POST');
-			$credentialType = $this->template->get('image_credential_type', 'htaccess');
-			$http = JHttpFactory::getHttp(null, array('curl', 'stream'));
+			$remote_image_data = file_get_contents($remote_image);
 
-			if ($imageUsername && $imagePassword)
-			{
-				$data = array('user' => $imageUsername, 'password' => $imagePassword);
-
-				if (strtoupper($method) === 'POST')
-				{
-					if ($credentialType === 'htaccess')
-					{
-						$http->setOption('userauth', $imageUsername);
-						$http->setOption('passwordauth', $imagePassword);
-						$data = array();
-					}
-
-					$answer = $http->post($remote_image, $data);
-				}
-				else
-				{
-					$answer = $http->get($remote_image, $data);
-				}
-			}
-			else
-			{
-				$answer = $http->get($remote_image);
-			}
-
-			if ((int) $answer->code === 200)
-			{
-				return JFile::write($local_image, $answer->body);
-			}
-
-			return false;
+			return JFile::write($local_image, $remote_image_data);
 		}
 		elseif (substr($url_parts['scheme'], 0, 3) == 'ftp')
 		{
@@ -1684,7 +1608,7 @@ class CsviHelperImage
 			}
 			else
 			{
-				$this->log->add('Image not converted', false);
+				$this->log->add(JText::_('COM_CSVI_IMAGE_NOT_CONVERTED'));
 
 				return false;
 			}
@@ -1707,16 +1631,16 @@ class CsviHelperImage
 	private function renameImage()
 	{
 		if (!$this->_imagedata['isremote']
-			&& $this->template->get('auto_generate_image_name')
-			&& $this->template->get('convert_type') === 'none'
-			&& (basename($this->_imagedata['name']) !== $this->_imagedata['output_name']))
+			&& $this->template->get('auto_generate_image_name', 'image')
+			&& (basename($this->_imagedata['name']) != $this->_imagedata['output_name'])
+			&& $this->template->get('convert_type', 'image') == 'none')
 		{
 			$from = $this->_imagedata['name'];
 
 			if (JFile::exists($from))
 			{
 				$to = $this->_imagedata['base'] . '/' . $this->_imagedata['output_path'] . $this->_imagedata['output_name'];
-				$this->log->add('Rename the full file from ' . $from . ' to ' . $to, false);
+				$this->log->add(JText::sprintf('COM_CSVI_RENAME_FULL_FILE', $from, $to));
 
 				// Delete existing target image
 				if (JFile::exists($to))
@@ -1725,7 +1649,7 @@ class CsviHelperImage
 				}
 
 				// Check if the user wants to keep the original
-				if ($this->template->get('keep_original'))
+				if ($this->template->get('keep_original', 'image'))
 				{
 					// Rename the image
 					JFile::copy($from, $to);
@@ -1782,16 +1706,16 @@ class CsviHelperImage
 			$file_details['mime_type'] = $this->_imagedata['mime_type'];
 
 			// We need to resize the image and Save the new one (all done in the constructor)
-			$this->log->add('Convert ' . $file_details['file'] . ' to ' . $file_details['file_out'], false);
+			$this->log->add(JText::sprintf('COM_CSVI_DEBUG_CONVERT_TYPE_CHECK', $file_details['file'], $file_details['file_out']));
 			$new_img = $this->convertImage($file_details);
 
 			if ($new_img)
 			{
-				$this->log->add('Converted the ' . $file_details['file'] . ' image', false);
+				$this->log->add(JText::sprintf('COM_CSVI_IMAGE_CONVERTED', $file_details['file']));
 			}
 			else
 			{
-				$this->log->add('Could not converted the ' . $file_details['file'] . ' image', false);
+				$this->log->add(JText::sprintf('COM_CSVI_IMAGE_NOT_CONVERTED', $file_details['file']));
 			}
 		}
 		// We have a remote image, update the mime type since we can't convert images on remote servers
@@ -1805,7 +1729,7 @@ class CsviHelperImage
 			}
 			else
 			{
-				$this->log->add('Unable to find the mime type on the remote file', false);
+				$this->log->add(JText::_('COM_CSVI_CANNOT_FIND_REMOTE_MIMETYPE'));
 			}
 		}
 	}
@@ -1901,8 +1825,8 @@ class CsviHelperImage
 
 					// We need to resize the image and Save the new one (all done in the constructor)
 					$this->log->add(
-						sprintf(
-							'Resizing large image %s from %s to %s',
+						JText::sprintf(
+							'COM_CSVI_DEBUG_RESIZE_IMAGE',
 							$file_details['file'], $cur_size[1] . 'x' . $cur_size[0], $this->template->get('full_height') . 'x' . $this->template->get('full_width')
 						)
 					);
@@ -1915,7 +1839,7 @@ class CsviHelperImage
 
 					if ($new_img)
 					{
-						$this->log->add('Full image has been resized');
+						$this->log->add(JText::_('COM_CSVI_FULL_IMAGE_RESIZED'));
 					}
 				}
 			}
@@ -1954,8 +1878,8 @@ class CsviHelperImage
 				$stamp = $this->createImage($mime_stamp, $watermark);
 
 				// Set the margins for the stamp and get the height/width of the stamp image
-				$marge_right = $this->template->get('full_watermark_right', 0);
-				$marge_bottom = $this->template->get('full_watermark_bottom', 0);
+				$marge_right = $this->template->get('full_watermark_right');
+				$marge_bottom = $this->template->get('full_watermark_bottom');
 				$sx = imagesx($stamp);
 				$sy = imagesy($stamp);
 

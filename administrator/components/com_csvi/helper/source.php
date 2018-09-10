@@ -3,13 +3,11 @@
  * @package     CSVI
  * @subpackage  Source
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
-
-use phpseclib\Net\SFTP;
 
 defined('_JEXEC') or die;
 
@@ -94,7 +92,7 @@ class CsviHelperSource
 	public function validateFile($source, $data, CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperCsvi $csvihelper)
 	{
 		// Set the working folder
-		$folder = CSVIPATH_TMP . '/' . (time() + rand());
+		$folder = CSVIPATH_TMP . '/' . time();
 
 		if (JFolder::create($folder))
 		{
@@ -105,7 +103,6 @@ class CsviHelperSource
 					$processfolder = $this->fromupload($data, $folder, $template, $log);
 					break;
 				case 'fromserver':
-				case 'fromtextfield':
 					$processfolder = $this->fromserver($data, $folder, $template, $log);
 					break;
 				case 'fromurl':
@@ -344,14 +341,6 @@ class CsviHelperSource
 			throw new CsviException(JText::sprintf('COM_CSVI_LOCAL_FILE_IS_NOT_FILE', $csv_file), 405);
 		}
 
-		// Delete the temporary file as we have it in timestamp folder
-		$from = $template->get('source', 'fromupload');
-
-		if ($from === 'fromtextfield')
-		{
-			JFile::delete(CSVIPATH_TMP . '/' . basename($csv_file));
-		}
-
 		return $folder;
 	}
 
@@ -373,53 +362,35 @@ class CsviHelperSource
 	private function fromurl($data, $folder, CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperCsvi $csvihelper)
 	{
 		// The temporary folder
-		$urlfile       = $template->get('urlfile', false);
-		$urluser       = $template->get('urlusername', false);
-		$urluserfield  = $template->get('urlusernamefield', 'user');
-		$urlpass       = $template->get('urlpass', false);
-		$urlpassfield  = $template->get('urlpassfield', 'password');
-		$urlmethod     = $template->get('urlmethod', 'GET');
-		$urlcredential = $template->get('urlcredential', 'htaccess');
-
-		$tempfile  = preg_replace('/[\?\s\/=]/', '_', basename($urlfile));
-		$force     = $template->get('use_file_extension');
-		$extension = (!empty($force)) ? $force : JFile::getExt($tempfile);
-
-		$log->add('Retrieving file ' . $urlfile, false);
+		$urlfile = $template->get('urlfile', 'general', false);
+		$tempfile = preg_replace('/[\?\s\/=]/', '_', basename($urlfile));
+		$force = $template->get('use_file_extension');
+		$extension = (!empty($force)) ?  $force : JFile::getExt($tempfile);
 
 		// Check if the remote file exists
 		if ($urlfile)
 		{
-			$log->add('Check if remote file exists', false);
-
-			if ($csvihelper->fileExistsRemote($urlfile, $urluser, $urlpass, $urlmethod, $urluserfield, $urlpassfield, $urlcredential))
+			if ($csvihelper->fileExistsRemote($urlfile))
 			{
 				// Copy the remote file to a local location
 				if (JFolder::create($folder))
 				{
-					$log->add('Create temporary file' . $tempfile, false);
-
 					if (touch($folder . '/' . $tempfile))
 					{
-						$log->add('Retrieve file from remote location', false);
-						$http = JHttpFactory::getHttp(null, array('curl', 'stream'));
+						$sourcefile = file_get_contents($urlfile);
 
-						/** @var JHttpResponse $answer */
-						$answer = $http->$urlmethod($urlfile, array($urluserfield => $urluser, $urlpassfield => $urlpass));
-						$log->add('HTTP Response: ' . $answer->code, false);
-
-						if (JFile::write($folder . '/' . $tempfile, $answer->body))
+						if (JFile::write($folder . '/' . $tempfile, $sourcefile))
 						{
-							$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_URL', $urlfile), false);
+							$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_URL', $urlfile));
 
 							// Let's see if the uploaded file is an archive
-							if (in_array($extension, $this->archives, true))
+							if (in_array($extension, $this->archives))
 							{
 								// It is an archive, unpack first
 								$files = $this->unpackZip($folder . '/' . $tempfile, $folder);
 
 								// Check if there are multiple files
-								if ($files)
+								if (!empty($files))
 								{
 									return $folder;
 								}
@@ -477,178 +448,74 @@ class CsviHelperSource
 	private function fromftp($data, $folder, CsviHelperTemplate $template, CsviHelperLog $log)
 	{
 		// The temporary folder
-		$ftpFile = $template->get('ftpfile', false);
-		$ftpRoot = $template->get('ftproot', '');
-		$sftp	 = $template->get('sftp', 0);
+		$ftpfile = $template->get('ftpfile', false);
 
-		if ($sftp)
+		if ($ftpfile)
 		{
-			return $this->fromsftp($data, $folder, $template, $log);
-		}
-
-		if (!$ftpRoot)
-		{
-			$log->addStats('incorrect', 'COM_CSVI_NO_FOLDER_GIVEN');
-			throw new RuntimeException(JText::_('COM_CSVI_NO_FOLDER_GIVEN'));
-		}
-
-		// Create the output file
-		if (JFolder::create($folder))
-		{
-			// Start the FTP
-			jimport('joomla.client.ftp');
-			$ftp = JClientFtp::getInstance(
-				$template->get('ftphost'),
-				$template->get('ftpport'),
-				array(),
-				$template->get('ftpusername'),
-				$template->get('ftppass')
-			);
-
-			// Check if the FTP root folder ends with a /
-			if (!substr($ftpRoot, -1) !== '/')
+			// Create the output file
+			if (JFolder::create($folder))
 			{
-				$ftpRoot .= '/';
-			}
-
-			// Get a list of files
-			$names = $ftp->listNames($ftpRoot);
-
-			if (!$names)
-			{
-				// Close the FTP connection
-				$ftp->quit();
-
-				$log->addStats('incorrect', 'COM_CSVI_CANNOT_READ_FROM_FTP');
-				throw new RuntimeException(JText::_('COM_CSVI_CANNOT_READ_FROM_FTP'));
-			}
-
-			// Go through the files we found
-			foreach ($names as $name)
-			{
-				if ($ftpFile && $name !== $ftpFile)
+				if (touch($folder . '/' . $ftpfile))
 				{
-					continue;
-				}
+					// Start the FTP
+					jimport('joomla.client.ftp');
+					$ftp = JFTP::getInstance(
+						$template->get('ftphost'),
+						$template->get('ftpport'),
+						array(),
+						$template->get('ftpusername'),
+						$template->get('ftppass')
+					);
 
-				if (!touch($folder . '/' . $ftpFile))
-				{
-					$log->addStats('incorrect', JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FILE', $folder . '/' . $ftpFile));
-					throw new RuntimeException(JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FILE', $folder . '/' . $ftpFile));
-				}
-
-				if ($ftp->get($folder . '/' . $name, $ftpRoot . $name))
-				{
-					$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_FTP', $folder . $name));
-					$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_FTP', $ftpRoot . $name));
-
-					// Let's see if the uploaded file is an archive
-					if (in_array(JFile::getExt($ftpFile), $this->archives))
+					if ($ftp->get($folder . '/' . $ftpfile, $template->get('ftproot', '') . $ftpfile))
 					{
-						// It is an archive, unpack first
-						$this->unpackZip($folder . '/' . $ftpFile, $folder);
+						$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_FTP', $template->get('ftproot', '') . $ftpfile));
+
+						// Close the FTP connection
+						$ftp->quit();
+
+						// Let's see if the uploaded file is an archive
+						if (in_array(JFile::getExt($ftpfile), $this->archives))
+						{
+							// It is an archive, unpack first
+							$files = $this->unpackZip($folder . '/' . $ftpfile, $folder);
+
+							// Check if there are multiple files
+							if (!empty($files))
+							{
+								return $folder;
+							}
+						}
+						else
+						{
+							return $folder;
+						}
+					}
+					else
+					{
+						// Close the FTP connection
+						$ftp->quit();
+
+						$log->addStats('incorrect', 'COM_CSVI_CANNOT_READ_FROM_FTP');
+						throw new RuntimeException(JText::_('COM_CSVI_CANNOT_READ_FROM_FTP'));
 					}
 				}
+				else
+				{
+					$log->addStats('incorrect', JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FILE', $folder . '/' . $ftpfile));
+					throw new RuntimeException(JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FILE', $folder . '/' . $ftpfile));
+				}
 			}
-
-			// Close the FTP connection
-			$ftp->quit();
-
-			// Return the folder name
-			return $folder;
+			else
+			{
+				$log->addStats('incorrect', JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FOLDER', $folder));
+				throw new RuntimeException(JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FOLDER', $folder));
+			}
 		}
 		else
 		{
-			$log->addStats('incorrect', JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FOLDER', $folder));
-			throw new RuntimeException(JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FOLDER', $folder));
-		}
-	}
-
-	/**
-	 * Process file from FTP.
-	 *
-	 * @param   array               $data      The source data
-	 * @param   string              $folder    The temporary folder
-	 * @param   CsviHelperTemplate  $template  The template
-	 * @param   CsviHelperLog       $log       The log
-	 *
-	 * @return  string  The file to use.
-	 *
-	 * @throws  RuntimeException
-	 *
-	 * @since   7.4.0
-	 */
-	private function fromsftp($data, $folder, CsviHelperTemplate $template, CsviHelperLog $log)
-	{
-		// The temporary folder
-		$ftpFile = $template->get('ftpfile', false);
-		$ftpRoot = $template->get('ftproot', '');
-
-		if (!$ftpRoot)
-		{
-			$log->addStats('incorrect', 'COM_CSVI_NO_FOLDER_GIVEN');
-			throw new RuntimeException(JText::_('COM_CSVI_NO_FOLDER_GIVEN'));
-		}
-
-		// Create the output file
-		if (JFolder::create($folder))
-		{
-			$host     = $template->get('ftphost', '', 'string');
-			$port     = $template->get('ftpport', 21, 'int');
-			$username = $template->get('ftpusername', '', 'string');
-			$pass     = $template->get('ftppass', '', 'string');
-
-			$sftp = new SFTP($host, $port);
-
-			if (!$sftp->login($username, $pass))
-			{
-				$log->addStats('incorrect', 'COM_CSVI_CANNOT_READ_FROM_FTP');
-				throw new RuntimeException(JText::_('COM_CSVI_CANNOT_READ_FROM_FTP'));
-			}
-
-			// Check if the FTP root folder ends with a /
-			if (!substr($ftpRoot, -1) !== '/')
-			{
-				$ftpRoot .= '/';
-			}
-
-			// Get a list of files
-			$names = $sftp->nlist($ftpRoot);
-
-			if (!$names)
-			{
-				$log->addStats('incorrect', 'COM_CSVI_CANNOT_READ_FROM_FTP');
-				throw new RuntimeException(JText::_('COM_CSVI_CANNOT_READ_FROM_FTP'));
-			}
-
-			// Go through the files we found
-			foreach ($names as $name)
-			{
-				if ($ftpFile && $name !== $ftpFile)
-				{
-					continue;
-				}
-
-				if (!touch($folder . '/' . $ftpFile))
-				{
-					$log->addStats('incorrect', JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FILE', $folder . '/' . $ftpFile));
-					throw new RuntimeException(JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FILE', $folder . '/' . $ftpFile));
-				}
-
-				if ($sftp->get($ftpRoot . $name, $folder . '/' . $name))
-				{
-					$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_FTP', $folder . $name));
-					$log->add(JText::sprintf('COM_CSVI_RETRIEVE_FROM_FTP', $ftpRoot . $name));
-				}
-			}
-
-			// Return the folder name
-			return $folder;
-		}
-		else
-		{
-			$log->addStats('incorrect', JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FOLDER', $folder));
-			throw new RuntimeException(JText::sprintf('COM_CSVI_CANNOT_CREATE_TEMP_FOLDER', $folder));
+			$log->addStats('incorrect', 'COM_CSVI_NO_FILENAME_GIVEN');
+			throw new RuntimeException(JText::_('COM_CSVI_NO_FILENAME_GIVEN'));
 		}
 	}
 

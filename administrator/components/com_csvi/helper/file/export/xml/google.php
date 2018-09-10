@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Export
  *
- * @author      RolandD Cyber Produksi <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @author      Roland Dalmulder <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://csvimproved.com
+ * @link        http://www.csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -26,7 +26,7 @@ class CsviHelperFileExportXmlGoogle
 	 * @var    CsviHelperTemplate
 	 * @since  6.0
 	 */
-	private $template;
+	private $template = null;
 
 	/**
 	 * An instance of CsviHelperSettings
@@ -34,7 +34,7 @@ class CsviHelperFileExportXmlGoogle
 	 * @var    CsviHelperSettings
 	 * @since  6.0
 	 */
-	private $settings;
+	private $settings = null;
 
 	/**
 	 * Contains the data to export.
@@ -42,7 +42,7 @@ class CsviHelperFileExportXmlGoogle
 	 * @var    string
 	 * @since  6.0
 	 */
-	public $contents = '';
+	public $contents = "";
 
 	/**
 	 * Contains the XML node to export.
@@ -50,7 +50,7 @@ class CsviHelperFileExportXmlGoogle
 	 * @var    string
 	 * @since  6.0
 	 */
-	public $node = '';
+	public $node = "";
 
 	/**
 	 * Constructor.
@@ -148,7 +148,7 @@ class CsviHelperFileExportXmlGoogle
 	 */
 	public function Element($column_header, $cdata = false)
 	{
-		if (false !== stripos($column_header, 'c:'))
+		if (stristr($column_header, 'c:'))
 		{
 			$this->node = '<' . $column_header . ' type="string">';
 		}
@@ -180,18 +180,16 @@ class CsviHelperFileExportXmlGoogle
 	 *
 	 * @param   string  $content        The content to be exported.
 	 * @param   string  $column_header  The name of the column header.
-	 * @param   string  $fieldName      The field name being exported.
+	 * @param   string  $fieldname      The fieldname being exported.
 	 * @param   bool    $cdata          Set if the field needs to be CDATA enclosed.
 	 *
 	 * @return  string  The prepared content.
 	 *
 	 * @since   6.0
 	 */
-	public function ContentText($content, $column_header, $fieldName, $cdata = false)
+	public function ContentText($content, $column_header, $fieldname, $cdata = false)
 	{
-		$this->contents = '';
-
-		switch ($fieldName)
+		switch ($fieldname)
 		{
 			case 'custom_shipping':
 				switch ($column_header)
@@ -199,12 +197,16 @@ class CsviHelperFileExportXmlGoogle
 					case 'g:shipping':
 						if (strpos($content, ':'))
 						{
-							list($country, $service, $price) = explode(':', $content);
+							list($country, $service, $price) = explode(":", $content);
 							$this->contents = '
 							<g:country>' . $country . '</g:country>
 							<g:service>' . $service . '</g:service>
 							<g:price>' . $price . '</g:price>
 							';
+						}
+						else
+						{
+							$this->contents = '';
 						}
 					break;
 				}
@@ -217,7 +219,7 @@ class CsviHelperFileExportXmlGoogle
 						$this->contents = $content;
 						break;
 					case 'g:tax':
-						list($country, $region, $rate, $tax_ship) = explode(':', $content);
+						list($country, $region, $rate, $tax_ship) = explode(":", $content);
 						$this->contents = '
 						<g:country>' . $country . '</g:country>
 						<g:region>' . $region . '</g:region>
@@ -232,20 +234,20 @@ class CsviHelperFileExportXmlGoogle
 				break;
 			case 'category_path':
 				// Only export the first category
-				$paths = explode('|', $content);
+				$paths = explode("|", $content);
 
-				if (array_key_exists(0, $paths))
+				if (isset($paths[0]))
 				{
-					$this->contents = str_replace($this->template->get('category_separator', '/'), '>', $paths[0]);
+					$this->contents = str_replace('/', '>', $paths[0]);
 				}
 				break;
 			case 'picture_url':
-				if (0 === count($column_header))
+				if (empty($column_header))
 				{
-					$column_header = $fieldName;
+					$column_header = $fieldname;
 				}
 
-				if (strpos($content, ','))
+				if (stripos($content, ','))
 				{
 					// We need to create an entry for each image
 					$images = explode(',', $content);
@@ -256,7 +258,7 @@ class CsviHelperFileExportXmlGoogle
 					{
 						$this->contents = $image;
 
-						if ($nr === 1)
+						if ($nr == 1)
 						{
 							$xml .= $this->Element($column_header, $cdata);
 							$nr++;
@@ -275,6 +277,9 @@ class CsviHelperFileExportXmlGoogle
 
 				return $xml;
 				break;
+			case 'manufacturer_name':
+			case 'product_url':
+				$cdata = true;
 			default:
 				// Replace certain characters
 				if (!$cdata)
@@ -296,9 +301,9 @@ class CsviHelperFileExportXmlGoogle
 				break;
 		}
 
-		if (0 === count($column_header))
+		if (empty($column_header))
 		{
-			$column_header = $fieldName;
+			$column_header = $fieldname;
 		}
 
 		return $this->Element($column_header, $cdata);
