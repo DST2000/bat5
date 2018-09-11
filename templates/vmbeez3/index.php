@@ -43,11 +43,13 @@ $content_width = $templateparams->get('content_width');
 // Output as HTML5
 $this->setHtml5(true);
 
-if (in_array($option, $bootstrap))
+// {DST
+/*if (in_array($option, $bootstrap))
 {
 	// Load optional rtl Bootstrap css and Bootstrap bugfixes
 	JHtml::_('bootstrap.loadCss', true, $this->direction);
-}
+}*/
+// }DST
 
 $this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
 // {DST
@@ -88,7 +90,11 @@ if (file_exists($userCss) && filesize($userCss) > 0)
 	$this->addStyleSheetVersion($this->baseurl . '/templates/' . $this->template . '/css/user.css');
 }
 
-JHtml::_('bootstrap.framework');
+// {DST
+/*JHtml::_('bootstrap.framework');*/
+$this->addStyleSheetVersion($this->baseurl . '/templates/' . $this->template . '/css/all.css');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/jquery.min.js');
+// }DST
 if($templateparams->get('fontsizeselect')){
 	$this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/md_stylechanger.js');
 }
