@@ -15,11 +15,11 @@
 					  		<div class="row">
 					  			<div class="col-md-4">
 					  				<ul>
-					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=virtuemart'); ?>">Каталог</a></h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">Каталог</a></h3></li>
 					  					<li><h3>Контакты</h3></li>
-					  					<li><h3>Акции</h3></li>
-					  					<li><h3>Новости</h3></li>
-					  					<li><h3>Техническая информация</h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=11&Itemid=0'); ?>">Акции</a></h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=10&Itemid=0'); ?>">Новости</a></h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=12&Itemid=0'); ?>">Техническая информация</a></h3></li>
 					  					<li><h3>Сдать старый аккумулятор</h3></li>
 					  					<li><h3>Розничная сеть</h3></li>
 					  					<li role="separator" class="divider"></li>
@@ -32,7 +32,7 @@
 					  					<div class="row">
 					  						<div class="col-md-12">
 					  							<h2>аккумуляторы</h2>
-					  							<h3 class="akb">показать все аккумуляторы</h3>
+					  							<h3 class="akb"><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18'); ?>">показать все аккумуляторы</a></h3>
 					  								<div class="row">
 					  									<div class="col-md-4">
 					  										<p>назначение</p>
@@ -140,7 +140,7 @@
 								</div>
 								<div class="row">
 									<div class="col-md-4">
-										<h3 class="akb">показать все аккумуляторы</h3>
+										<h3 class="akb"><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18'); ?>">показать все аккумуляторы</a></h3>
 										<p>назначение</p>
 											<ul>
 												<li>АКБ для легкового авто</li>
@@ -257,7 +257,7 @@
 					</div>
                   </div>
                 <div id="menu-basket" class="col-md-1">
-                  <i class="fas fa-shopping-cart"></i>
+					<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=cart'); ?>"><i class="fas fa-shopping-cart"></i></a>             
                   </div>
                 </div>
               </div>

@@ -49,6 +49,7 @@ $this->setHtml5(true);
 	// Load optional rtl Bootstrap css and Bootstrap bugfixes
 	JHtml::_('bootstrap.loadCss', true, $this->direction);
 }*/
+//$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/jquery.min.js');
 // }DST
 
 $this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
@@ -93,7 +94,7 @@ if (file_exists($userCss) && filesize($userCss) > 0)
 // {DST
 /*JHtml::_('bootstrap.framework');*/
 $this->addStyleSheetVersion($this->baseurl . '/templates/' . $this->template . '/css/all.css');
-$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/jquery.min.js');
+//$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/jquery.min.js');
 // }DST
 if($templateparams->get('fontsizeselect')){
 	$this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/md_stylechanger.js');
@@ -243,14 +244,15 @@ require __DIR__ . '/jsstrings.php';
 
 				</div>
 			<?php endif; ?>
-			<?php if ($this->countModules('position-14')) { ?>
+			<?php if ($this->countModules('position-14') and FALSE ) { ?>
 				<div id="footer-sub">
 					<footer id="footer">
-						<jdoc:include type="modules" name="position-14" />
+<!--						<jdoc:include type="modules" name="position-14" />-->
 					</footer><!-- end footer -->
 				</div>
 			<?php } ?>
 		</div>
+		<jdoc:include type="modules" name="position-14" />
 		<jdoc:include type="modules" name="debug" />
 	</body>
 </html>

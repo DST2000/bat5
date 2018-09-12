@@ -1,4 +1,4 @@
-$(function(){
+jQuery(function($){
 	
 	/* my */
 	$('.dropdown').on('shown.bs.dropdown', function(e) {
