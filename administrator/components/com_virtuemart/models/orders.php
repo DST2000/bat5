@@ -1915,8 +1915,10 @@ vmdebug('my prices',$data);
 		//We can use that here, because the order_number is free to set, the invoice_number must often follow special rules
 		$c = $db->loadResult();
 		$c = $c + (int)VM_ORDER_OFFSET;
-
+		// {DST		
 		$str = vmCrypt::getHumanToken(VmConfig::get('randOrderNr',$length)).'0'.$c;
+		//$str = $c;
+		// }DST
 
 		return $str;
 	}
