@@ -17,6 +17,13 @@ id = 6
 
 INSERT INTO `xl9ks_virtuemart_products_en_gb` (`virtuemart_product_id`, `product_s_desc`, `product_desc`, `product_name`, `metadesc`, `metakey`, `customtitle`, `slug`) VALUES ('6', '', '', 'Good name', '', '', '', 'good-name')
 
+virtuemart_product_prices
+
+id = 1
+
+INSERT INTO `xl9ks_virtuemart_product_prices` (`virtuemart_product_price_id`, `virtuemart_product_id`, `virtuemart_shoppergroup_id`, `product_price`, `override`, `product_override_price`, `product_tax_id`, `product_discount_id`, `product_currency`, `product_price_publish_up`, `product_price_publish_down`, `price_quantity_start`, `price_quantity_end`, `created_on`, `created_by`, `modified_on`, `modified_by`, `locked_on`, `locked_by`) VALUES (NULL, '1', '0', '101.110000', '0', '0.00000', '0', '0', '194', '0000-00-00 00:00:00', '0000-00-00 00:00:00', '0', '0', '2018-08-29 02:13:23', '949', '2018-08-29 18:15:08', '949', '0000-00-00 00:00:00', '0')
+
+
 virtuemart_categories
 
 id = 14

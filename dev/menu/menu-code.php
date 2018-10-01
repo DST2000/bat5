@@ -16,7 +16,7 @@
 					  			<div class="col-md-4">
 					  				<ul>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">Каталог</a></h3></li>
-					  					<li><h3>Контакты</h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>">Контакты</a></h3></li>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=11&Itemid=0'); ?>">Акции</a></h3></li>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=10&Itemid=0'); ?>">Новости</a></h3></li>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=12&Itemid=0'); ?>">Техническая информация</a></h3></li>
