@@ -21,20 +21,18 @@
     			<div class="col-md-3">
     				<p>СООО "БАТАВТОТРЕЙД"</p>
     				<p>УНП: 800002576</p>
-    				<p>Адрес: Lorem ipsum dolor sit amet, consectetur adipisicing elit. Odit consequatur, aliquam, quaerat animi tenetur, quasi totam alias quidem, similique tempore commodi magni non sequi id. Dolorem dolor minus quos beatae?</p>
+    				<p>Адрес: 223049, Минский р-н, Щомыслицкий с/с, 19/4, комн.36</p>
     			</div>
     			<div class="col-md-3">
-    				<h4>Аккумуляторы</h4>
+    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18&Itemid=117'); ?>">Аккумуляторы</a></h4>
     				<h4>Масла</h4>
     				<h4>Лампы автомобильные</h4>
     				<h4>Щетки стеклочистительные</h4>
     			</div>
     			<div class="col-md-3">
     				<p>Карта сайта</p>
-    				<p>Контактная информация</p>
+    				<p><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>">Контактная информация</a></p>
     				<p>Сеть "АвтоБат" &trade;</p>
-    				<br>
-    				<br>
     				<br>
     				<p> 2018 bat.by &reg;</p>
     				
