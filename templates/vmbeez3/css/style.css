@@ -188,9 +188,11 @@ body {
 
 .brand {
 	padding: 10px;
-	border: 2px solid #fff;
-	border-radius: 5px;
+	border: 1px solid #fff;
+	border-radius: 8px;
 	text-transform: uppercase;
+	height: 100%;
+	box-shadow: 0 0 3px rgba(0,0,0,0.5); /* Параметры тени */
 }
 
 .brand-1 {

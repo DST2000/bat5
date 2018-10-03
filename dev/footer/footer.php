@@ -25,17 +25,16 @@
     			</div>
     			<div class="col-md-3">
     				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18&Itemid=117'); ?>">Аккумуляторы</a></h4>
-    				<h4>Масла</h4>
+    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=61'); ?>">Масла</a></h4>
     				<h4>Лампы автомобильные</h4>
     				<h4>Щетки стеклочистительные</h4>
     			</div>
     			<div class="col-md-3">
     				<p>Карта сайта</p>
     				<p><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>">Контактная информация</a></p>
-    				<p>Сеть "АвтоБат" &trade;</p>
+    				<p><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=319'); ?>">Сеть "АвтоБат" &trade;</a></p>
     				<br>
-    				<p> 2018 bat.by &reg;</p>
-    				
+    				<p><a href="<?php echo JRoute::_('index.php?option=com_content&view=featured&Itemid=101'); ?>"> 2018 bat.by &reg;</a></p>
     			</div>
     		</div>
     	</div>

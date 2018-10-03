@@ -35,11 +35,11 @@
 					  									<div class="col-md-4">
 					  										<p>назначение</p>
 					  										<ul>
-					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=27'); ?>">АКБ для легкового авто</a></li>
-					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=28'); ?>">АКБ для легкого коммерческого транспорта</a></li>
-					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=29'); ?>">АКБ для грузовой техники</a></li>
-																<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=31'); ?>">АКБ для мототехники</a></li>
-					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=58'); ?>">тяговые аккумуляторы</a></li>
+					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=27'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
+					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=28'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для легкого коммерческого транспорта</a></li>
+					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=29'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой техники</a></li>
+																<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=31'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мототехники</a></li>
+					  											<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=58'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> тяговые аккумуляторы</a></li>
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-4">
@@ -55,9 +55,9 @@
 					  									<div class="col-md-4">
 					  										<p>подбор аккумулятора</p>
 					  										<ul>
-					  											<ul>легковые авто</ul>
-					  											<ul>мототехника</ul>
-					  											<ul>грузовые авто</ul>
+					  											<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
+					  											<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
+					  											<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
 					  										</ul>
 					  									</div>
 					  								</div>
@@ -92,9 +92,9 @@
 					  									<div class="col-md-3">
 					  										<p>подбор масел</p>
 					  										<ul>
-					  											<li>легковые авто</li>
-					  											<li>грузовые авто</li>
-					  											<li>мототехника</li>
+					  											<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
+					  											<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
+					  											<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
 					  										</ul>
 					  									</div>
 					  								</div>
@@ -137,11 +137,11 @@
 										<h3 class="akb"><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18&Itemid=117'); ?>">показать все аккумуляторы</a></h3>
 										<p>назначение</p>
 											<ul>
-												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=27'); ?>">АКБ для легкового авто</a></li>
-												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=28'); ?>">АКБ для легкого коммерческого транспорта</a></li>
-												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=29'); ?>">АКБ для грузовой техники</a></li>
-												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=31'); ?>">АКБ для мототехники</a></li>
-												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=58'); ?>">тяговые аккумуляторы</a></li>
+												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=27'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
+												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=28'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для легкого коммерческого транспорта</a></li>
+												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=29'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой техники</a></li>
+												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=31'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мототехники</a></li>
+												<li><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=58'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> тяговые аккумуляторы</a></li>
 											</ul>
 									</div>
 									<div class="col-md-2">
@@ -157,15 +157,15 @@
 									<div class="col-md-2">
 										<p>подбор аккумулятора</p>
 											<ul>
-												<ul>легковые авто</ul>
-												<ul>мототехника</ul>
-												<ul>грузовые авто</ul>
+												<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
+												<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
+												<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
 											</ul>
 									</div>
 									<div class="col-md-4">
 										<h4>принадлежности для аккумуляторов</h4>
 										<h4>зарядные устройства / тестеры</h4>
-										<h4>получить деньги за старый аккумулятор</h4>
+										<h4>&#36; получить деньги за старый аккумулятор</h4>
 									</div>
 								</div>
 							</div>
@@ -217,9 +217,9 @@
 									<div class="col-md-4">
 										<p>подбор масел</p>
 											<ul>
-												<ul>легковые авто</ul>
-												<ul>грузовые авто</ul>
-												<ul>мототехника</ul>
+												<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
+												<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
+												<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
 											</ul>
 									</div>
 								</div>

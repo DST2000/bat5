@@ -60,7 +60,7 @@ a:focus
 
 /* ##########################  header  ########################### */
 
-#all {padding-top:13em}
+/*#all {padding-top:13em}*/
 #line { position:relative; max-width:1050px; margin:0 auto; text-align:right; right:0;  top:0em}
 #header
 {

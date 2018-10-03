@@ -143,18 +143,7 @@ require __DIR__ . '/jsstrings.php';
 					<?php if ($templateparams->get('main_menu_position') == 'main_menu_top') { ?>
 						<jdoc:include type="modules" name="position-1" />
 					<?php } ?>
-					<div class="logoheader">
-						<h1 id="logo">
-						<?php if ($logo) : ?>
-							<img src="<?php echo $this->baseurl; ?>/<?php echo htmlspecialchars($logo); ?>"  alt="<?php echo htmlspecialchars($templateparams->get('sitetitle')); ?>" />
-						<?php endif;?>
-						<?php if (!$logo AND $templateparams->get('sitetitle')) : ?>
-							<?php echo htmlspecialchars($templateparams->get('sitetitle')); ?>
-						<?php endif; ?>
-						<span class="header1">
-						<?php echo htmlspecialchars($templateparams->get('sitedescription')); ?>
-						</span></h1>
-					</div><!-- end logoheader -->
+
 					<ul class="skiplinks">
 						<li><a href="#main" class="u2"><?php echo JText::_('TPL_BEEZ3_SKIP_TO_CONTENT'); ?></a></li>
 						<li><a href="#nav" class="u2"><?php echo JText::_('TPL_BEEZ3_JUMP_TO_NAV'); ?></a></li>
