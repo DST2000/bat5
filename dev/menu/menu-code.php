@@ -240,7 +240,8 @@
                 </div>
                 <div id="menu-search" class="col-md-2">
 					<div class="form-group">	
-                  		<!-- <input type="search" class="form-control" name="search" id="search" placeholder="Найти..."> -->
+                		<!-- <input type="search" class="form-control" name="search" id="search" placeholder="Найти..."> -->
+						
                   		<input type="search" class="form-control" name="search" id="search" placeholder="Найти...">
                   		<i class="fas fa-search"></i>
                   		<!-- <i class="fa fa-search"></i>-->

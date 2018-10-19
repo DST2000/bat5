@@ -262,8 +262,8 @@
 }
 
 .cf_btn_list .cf_sel_opt {
-	border: 1px solid #666666;
-	color: #777777 !important;
+	border: 2px solid #666666;
+	color: #e80404 !important;
 }
 
 .cf_btn_list .cf_disabled_opt {
