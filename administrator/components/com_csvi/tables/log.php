@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Table
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -16,28 +16,19 @@ defined('_JEXEC') or die;
  *
  * @package     CSVI
  * @subpackage  Table
- * @since       6.0
+ * @since       6.6.0
  */
-class CsviTableLog extends FOFTable
+class TableLog extends JTable
 {
 	/**
-	 * Reset the primary key
+	 * Constructor.
 	 *
-	 * @return  bool  True on success | False on failure
+	 * @param   JDatabaseDriver  $db  A database connector object.
 	 *
-	 * @since   6.0
+	 * @since   6.6.0
 	 */
-	protected function onAfterReset()
+	public function __construct($db)
 	{
-		if (parent::onAfterReset())
-		{
-			$this->csvi_log_id = null;
-
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		parent::__construct('#__csvi_logs', 'csvi_log_id', $db);
 	}
 }

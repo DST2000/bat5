@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaCategory
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -118,5 +118,57 @@ class Com_CategoriesMaintenance
 
 			$this->db->setQuery($query)->execute();
 		}
+
+		if (JComponentHelper::isEnabled('com_fields'))
+		{
+			// Update Joomla custom fields
+			$query->clear()
+				->select($this->db->quoteName('name'))
+				->from($this->db->quoteName('#__fields'))
+				->where($this->db->quoteName('state') . ' = 1')
+				->where($this->db->quoteName('context') . ' = ' . $this->db->quote('com_content.categories'));
+			$this->db->setQuery($query);
+
+			$customFields = $this->db->loadRowList();
+
+			if ($customFields)
+			{
+				$query->clear()
+					->insert($this->db->quoteName('#__csvi_availablefields'))
+					->columns($this->db->quoteName(array('csvi_name', 'component_name', 'component_table', 'component', 'action')));
+
+				foreach ($customFields as $cfield)
+				{
+					$query->values(
+						$this->db->quote($cfield[0]) . ',' .
+						$this->db->quote($cfield[0]) . ',' .
+						$this->db->quote('category') . ',' .
+						$this->db->quote('com_categories') . ',' .
+						$this->db->quote('import')
+					);
+					$query->values(
+						$this->db->quote($cfield[0]) . ',' .
+						$this->db->quote($cfield[0]) . ',' .
+						$this->db->quote('category') . ',' .
+						$this->db->quote('com_categories') . ',' .
+						$this->db->quote('export')
+					);
+				}
+
+				$this->db->setQuery($query)->execute();
+			}
+		}
+	}
+
+	/**
+	 * Threshold available fields for extension
+	 *
+	 * @return  int Hardcoded available fields
+	 *
+	 * @since   7.0
+	 */
+	public function availableFieldsThresholdLimit()
+	{
+		return 35;
 	}
 }

@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
+class Mediaproduct extends \RantaiImportEngine
 {
 	/**
 	 * The media table
 	 *
-	 * @var    VirtueMartTableMedia
+	 * @var    \VirtueMartTableMedia
 	 * @since  6.0
 	 */
 	private $media = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 	/**
 	 * The product media cross reference table
 	 *
-	 * @var    VirtueMartTableProductMedia
+	 * @var    \VirtueMartTableProductMedia
 	 * @since  6.0
 	 */
 	private $productMedia = null;
@@ -79,7 +81,7 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 	public function getProcessRecord()
 	{
 		// Get the needed data
-		$product_sku = $this->getState('product_sku', false);
+		$product_sku           = $this->getState('product_sku', false);
 		$virtuemart_product_id = $this->getState('virtuemart_product_id', false);
 
 		if (!$virtuemart_product_id)
@@ -93,12 +95,12 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 		{
 			if (!$this->template->get('overwrite_existing_data'))
 			{
-				$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_MEDIA_SKU', $product_sku));
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_MEDIA_SKU', $product_sku));
+				$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_MEDIA_SKU', $product_sku));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_MEDIA_SKU', $product_sku));
 			}
 			else
 			{
-				$this->log->add(JText::sprintf('COM_CSVI_DEBUG_PROCESS_SKU', $this->recordIdentity));
+				$this->log->add(\JText::sprintf('COM_CSVI_DEBUG_PROCESS_SKU', $this->recordIdentity));
 
 				// Do nothing for new products when user chooses to ignore new products
 				if ($virtuemart_product_id)
@@ -158,18 +160,18 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 			}
 
 			// Create an array of images to process
-			$images = explode('|', $this->file_url);
-			$thumbs = explode('|', $this->file_url_thumb);
-			$titles = explode('|', $this->file_title);
+			$images       = explode('|', $this->file_url);
+			$thumbs       = explode('|', $this->file_url_thumb);
+			$titles       = explode('|', $this->file_title);
 			$descriptions = explode('|', $this->file_description);
-			$metas = explode('|', $this->file_meta);
-			$order = explode('|', $this->file_ordering);
-			$ordering = 1;
-			$max_width = $this->template->get('resize_max_width', 1024);
-			$max_height = $this->template->get('resize_max_height', 768);
+			$metas        = explode('|', $this->file_meta);
+			$order        = explode('|', $this->file_ordering);
+			$ordering     = 1;
+			$max_width    = $this->template->get('resize_max_width', 1024);
+			$max_height   = $this->template->get('resize_max_height', 768);
 
 			// Image handling
-			$imagehelper = new CsviHelperImage($this->template, $this->log, $this->csvihelper);
+			$imagehelper = new \CsviHelperImage($this->template, $this->log, $this->csvihelper);
 
 			// Delete existing image links
 			if ($this->template->get('delete_product_images', false))
@@ -225,7 +227,14 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 
 						if (strpos($imgpath, $dirname) !== false)
 						{
+							// Collect rest of folder path if it is more than image default path
+							$imageleftpath = str_replace($imgpath, '', $dirname . '/');
 							$image = basename($image);
+
+							if ($imageleftpath)
+							{
+								$image = $imageleftpath . $image;
+							}
 						}
 
 						$original = $imgpath . $image;
@@ -349,7 +358,7 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 
 									if (substr($media['file_url_thumb'], 0, 4) == 'http')
 									{
-										$this->log->add(JText::sprintf('COM_CSVI_RESET_THUMB_NOHTTP', $media['file_url_thumb']));
+										$this->log->add(\JText::sprintf('COM_CSVI_RESET_THUMB_NOHTTP', $media['file_url_thumb']));
 										$media['file_url_thumb'] = '';
 									}
 								}
@@ -399,13 +408,13 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 								if (!$this->productMedia->store())
 								{
 									$this->log->add('Can not store the product media relation', true);
-									$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->media->getError()));
+									$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->media->getError()));
 									$ordering++;
 								}
 							}
 							else
 							{
-								$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->media->getError()));
+								$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->media->getError()));
 
 								return false;
 							}
@@ -463,7 +472,7 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 
 				if (!is_null($this->productLang->product_name))
 				{
-					$name = $this->productLang->product_name;
+					$name = str_replace(' ', '_', $this->productLang->product_name);
 				}
 				else
 				{
@@ -507,7 +516,7 @@ class Com_VirtuemartModelImportMediaproduct extends RantaiImportEngine
 			$image_name = $name . '.' . $ext;
 		}
 
-		$this->log->add(JText::sprintf('COM_CSVI_CREATED_IMAGE_NAME', $image_name));
+		$this->log->add(\JText::sprintf('COM_CSVI_CREATED_IMAGE_NAME', $image_name));
 		$this->setState('product_full_image_output', $image_name);
 
 		// Check if the user is supplying image data

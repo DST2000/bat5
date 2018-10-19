@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  JoomlaUser
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace users\com_users\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  JoomlaUser
  * @since       6.0
  */
-class Com_UsersModelImportUser extends RantaiImportEngine
+class User extends \RantaiImportEngine
 {
 	/**
 	 * User table
 	 *
-	 * @var    UsersTableUser
+	 * @var    \UsersTableUser
 	 * @since  6.0
 	 */
 	private $userTable = null;
@@ -31,10 +33,33 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 	/**
 	 * The addon helper
 	 *
-	 * @var    Com_UsersHelperCom_Users
+	 * @var    \Com_UsersHelperCom_Users
 	 * @since  6.0
 	 */
 	protected $helper = null;
+
+	/**
+	 * List of available custom fields
+	 *
+	 * @var    array
+	 * @since  7.2.0
+	 */
+	private $customFields = '';
+
+	/**
+	 * Run this before we start.
+	 *
+	 * @return  void
+	 *
+	 * @throws  \Exception
+	 *
+	 * @since   7.2.0
+	 */
+	public function onBeforeStart()
+	{
+		// Load the tables that will contain the data
+		$this->loadCustomFields();
+	}
 
 	/**
 	 * Start the product import process.
@@ -77,20 +102,19 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 			}
 
 			// Load the current content data
-			if ($this->userTable->load($this->getState('id')))
+			$this->userTable->load($this->getState('id'));
+
+			if ($this->userTable->get('id', 0) > 0 && !$this->template->get('overwrite_existing_data'))
 			{
-				if (!$this->template->get('overwrite_existing_data'))
-				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $this->getState('email', '')));
-					$this->loaded = false;
-				}
+				$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $this->getState('email', '')));
+				$this->loaded = false;
 			}
 		}
 		else
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -110,7 +134,7 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 			if (!$this->getState('id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new users when user chooses to ignore new users
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('email', '')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('email', '')));
 			}
 			else
 			{
@@ -135,7 +159,7 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 				elseif ($this->getState('password', false))
 				{
 					// Check if we have an encrypted password
-					$userdata['password'] = JUserHelper::hashPassword($this->getState('password'));
+					$userdata['password'] = \JUserHelper::hashPassword($this->getState('password'));
 				}
 
 				// No user id, need to create a user if possible
@@ -237,31 +261,71 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 						$userdata['requireReset'] = $this->getState('requireReset');
 					}
 
+					$usergroups = array();
+
 					// Check if we have a group ID
-					if (!$this->getState('group_id', false) && !$this->getState('usergroup_name', false))
+					if (!$this->getState('group_id', false)
+						&& !$this->getState('usergroup_name', false)
+						&& !$this->getState('usergroup_path', false)
+						&& !$this->getState('usergroup_name_delete'))
 					{
 						$this->log->addStats('incorrect', 'COM_CSVI_NO_USERGROUP_NAME_FOUND');
 
 						return false;
 					}
-					elseif (!$this->getState('group_id', false))
+					elseif (!$this->getState('group_id', false) && $this->getState('usergroup_path'))
 					{
-						$groups = explode('|', $this->getState('usergroup_name'));
-						$usergroups = array();
+						$groups = explode('|', $this->getState('usergroup_path'));
+						$query  = $this->db->getQuery(true)
+							->select($this->db->quoteName('id'))
+							->from($this->db->quoteName('#__usergroups'));
 
 						foreach ($groups as $group)
 						{
-							$query = $this->db->getQuery(true)
-								->select($this->db->quoteName('id'))
-								->from($this->db->quoteName('#__usergroups'))
+							if (strpos($group, $this->template->get('group_separator', '/')) !== false)
+							{
+								$usergroups[] = $this->helper->getUserGroupIdFromPath($group);
+							}
+							else
+							{
+								$query->clear('where')
+									->where($this->db->quoteName('title') . ' = ' . $this->db->quote($group));
+								$this->db->setQuery($query);
+								$usergroups[] = $this->db->loadResult();
+							}
+						}
+
+						// Clean out any empty values
+						$usergroups = array_filter($usergroups, 'strlen');
+
+						if (empty($usergroups))
+						{
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_NO_USERGROUP_FOUND', $this->getState('usergroup_path')));
+
+							return false;
+						}
+					}
+					elseif (!$this->getState('usergroup_path', false) && $this->getState('usergroup_name'))
+					{
+						$groups = explode('|', $this->getState('usergroup_name'));
+						$query  = $this->db->getQuery(true)
+							->select($this->db->quoteName('id'))
+							->from($this->db->quoteName('#__usergroups'));
+
+						foreach ($groups as $group)
+						{
+							$query->clear('where')
 								->where($this->db->quoteName('title') . ' = ' . $this->db->quote($group));
 							$this->db->setQuery($query);
 							$usergroups[] = $this->db->loadResult();
 						}
 
+						// Clean out any empty values
+						$usergroups = array_filter($usergroups, 'strlen');
+
 						if (empty($usergroups))
 						{
-							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NO_USERGROUP_FOUND', $this->getState('usergroup_name')));
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_NO_USERGROUP_FOUND', $this->getState('usergroup_name')));
 
 							return false;
 						}
@@ -270,9 +334,10 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 					// Store/update the user
 					if ($this->userTable->save($userdata))
 					{
-						$this->log->add('COM_CSVI_DEBUG_JOOMLA_USER_STORED', true);
+						$this->processCustomFields($this->userTable->id);
+						$this->log->add('Joomla user stored', false);
 
-						if ($this->queryResult() == 'UPDATE')
+						if ($this->queryResult() === 'UPDATE')
 						{
 							$this->log->addStats('updated', 'COM_CSVI_UPDATE_USERINFO');
 						}
@@ -281,22 +346,38 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 							$this->log->addStats('added', 'COM_CSVI_ADD_USERINFO');
 						}
 
+						// If user wants to append usergroup, collect the existing ones
+						if ($this->template->get('append_usergroup', false))
+						{
+							$query = $this->db->getQuery(true)
+								->select($this->db->quoteName('group_id'))
+								->from($this->db->quoteName('#__user_usergroup_map'))
+								->where($this->db->quoteName('user_id') . ' = ' . (int) $this->userTable->id);
+							$this->db->setQuery($query);
+							$existingGroups = $this->db->loadColumn();
+
+							$usergroups = array_unique(array_merge($usergroups, $existingGroups));
+						}
+
 						// Empty the usergroup map table
 						$query = $this->db->getQuery(true);
 						$query->delete($this->db->quoteName('#__user_usergroup_map'));
 						$query->where($this->db->quoteName('user_id') . ' = ' . (int) $this->userTable->id);
-						$this->db->setQuery($query);
-						$this->db->execute();
+						$this->db->setQuery($query)->execute();
+						$this->log->add('Delete the existing user group to import new ones');
 
 						// Store the user in the usergroup map table
-						$query = $this->db->getQuery(true);
+						$query->clear();
 						$query->insert($this->db->quoteName('#__user_usergroup_map'));
 
 						if (!empty($usergroups))
 						{
 							foreach ($usergroups as $group)
 							{
-								$query->values($this->userTable->id . ', ' . $group);
+								if ($group)
+								{
+									$query->values($this->userTable->id . ', ' . $group);
+								}
 							}
 						}
 						else
@@ -309,17 +390,49 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 						// Store the map
 						if ($this->db->execute())
 						{
-							$this->log->add('COM_CSVI_DEBUG_JOOMLA_USER_MAP_STORED');
+							$this->log->add('Joomla user mapping stored');
 						}
 						else
 						{
-							$this->log->add('COM_CSVI_DEBUG_JOOMLA_USER_MAP_NOT_STORED');
+							$this->log->add('Could not store Joomla user mapping');
+						}
+
+						// If user wants to remove assigned usergroups then do it
+						$removeUserGroups = explode('|', $this->getState('usergroup_name_delete', false));
+
+						if ($removeUserGroups)
+						{
+							$tobeRemoved = array();
+
+							$query->clear()
+								->select($this->db->quoteName('id'))
+								->from($this->db->quoteName('#__usergroups'));
+
+							foreach ($removeUserGroups as $removeGroup)
+							{
+								$query->clear('where')
+									->where($this->db->quoteName('title') . ' = ' . $this->db->quote($removeGroup));
+								$this->db->setQuery($query);
+								$tobeRemoved[] = $this->db->loadResult();
+							}
+
+							$tobeRemoved = array_filter($tobeRemoved, 'strlen');
+
+							if ($tobeRemoved)
+							{
+								$removeGroupIds = implode(',', $tobeRemoved);
+								$query->clear()
+									->delete($this->db->quoteName('#__user_usergroup_map'))
+									->where($this->db->quoteName('group_id') . ' IN (' . $removeGroupIds . ')');
+								$this->log->add('Removed user from assigned group');
+								$this->db->setQuery($query)->execute();
+							}
 						}
 					}
 					else
 					{
 						$this->log->add('COM_CSVI_DEBUG_JOOMLA_USER_NOT_STORED');
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_USERINFO_NOT_ADDED', $this->userTable->getError()));
+						$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_USERINFO_NOT_ADDED', $this->userTable->getError()));
 					}
 				}
 				else
@@ -358,5 +471,85 @@ class Com_UsersModelImportUser extends RantaiImportEngine
 	public function clearTables()
 	{
 		$this->userTable->reset();
+	}
+
+	/**
+	 * Get a list of custom fields that can be used as available field.
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.2.0
+	 *
+	 * @throws  \Exception
+	 */
+	private function loadCustomFields()
+	{
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('name'))
+			->from($this->db->quoteName('#__fields'))
+			->where($this->db->quoteName('state') . ' = 1')
+			->where($this->db->quoteName('context') . ' = ' . $this->db->quote('com_users.user'));
+		$this->db->setQuery($query);
+		$this->customFields = $this->db->loadObjectList();
+
+		$this->log->add('Load the Joomla custom fields for users');
+	}
+
+	/**
+	 * Update custom fields data.
+	 *
+	 * @param   int  $id  Id of the article
+	 *
+	 * @return  bool Returns true if all is OK | Returns false otherwise
+	 *
+	 * @since   7.2.0
+	 */
+	private function processCustomFields($id)
+	{
+		if (count($this->customFields) === 0)
+		{
+			$this->log->add('No custom fields found', false);
+
+			return false;
+		}
+
+		foreach ($this->customFields as $field)
+		{
+			$fieldName = $field->name;
+
+			if ($this->getState($fieldName, ''))
+			{
+				$query = $this->db->getQuery(true);
+				$query->select($this->db->quoteName('id'))
+					->from($this->db->quoteName('#__fields'))
+					->where($this->db->quoteName('name') . '  = ' . $this->db->quote($fieldName));
+				$this->db->setQuery($query);
+				$fieldId = $this->db->loadResult();
+
+				$query->clear()
+					->delete($this->db->quoteName('#__fields_values'))
+					->where($this->db->quoteName('field_id') . ' = ' . (int) $fieldId)
+					->where($this->db->quoteName('item_id') . ' = ' . (int) $id);
+				$this->db->setQuery($query)->execute();
+				$this->log->add('Removed existing custom field values');
+
+				$importValues = explode('|', $this->getState($fieldName, ''));
+				$query->clear()
+					->insert($this->db->quoteName('#__fields_values'))
+					->columns($this->db->quoteName(array('field_id', 'item_id', 'value')));
+
+				foreach ($importValues as $fieldValues)
+				{
+					$query->values(
+						(int) $fieldId . ',' .
+						(int) $id . ',' .
+						$this->db->quote($fieldValues)
+					);
+				}
+
+				$this->db->setQuery($query)->execute();
+				$this->log->add('Custom field values added');
+			}
+		}
 	}
 }

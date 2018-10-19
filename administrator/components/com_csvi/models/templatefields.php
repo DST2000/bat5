@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Templatefields
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,7 +18,7 @@ defined('_JEXEC') or die;
  * @subpackage  Templatefields
  * @since       6.0
  */
-class CsviModelTemplatefields extends FOFModel
+class CsviModelTemplatefields extends JModelList
 {
 	/**
 	 * Holds the database driver
@@ -26,127 +26,200 @@ class CsviModelTemplatefields extends FOFModel
 	 * @var    JDatabase
 	 * @since  6.0
 	 */
-	protected $db = null;
+	private $db;
 
 	/**
 	 * Construct the class.
 	 *
+	 * @param   array  $config  An optional associative array of configuration settings.
+	 *
 	 * @since   6.0
 	 */
-	public function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		if (empty($config['filter_fields']))
+		{
+			$config['filter_fields'] = array(
+				'ordering', 'a.ordering',
+				'csvi_templatefield_id', 'a.csvi_templatefield_id',
+				'csvi_template_id', 'a.csvi_template_id',
+				'field_name', 'a.field_name',
+				'xml_node', 'a.xml_node',
+				'column_header', 'a.column_header',
+				'default_value', 'a.default_value',
+				'enabled', 'a.enabled',
+			);
+		}
 
 		// Load the basics
-		$this->db = $this->getDbo();
+		$this->db = JFactory::getDbo();
+
+		parent::__construct($config);
 	}
 
 	/**
-	 * Get the filter values.
+	 * Method to auto-populate the model state.
 	 *
-	 * @return  object  Filter values.
+	 * Note. Calling getState in this method will result in recursion.
 	 *
-	 * @since   6.0
+	 * @param   string  $ordering   An optional ordering field.
+	 * @param   string  $direction  An optional direction (asc|desc).
+	 *
+	 * @return  void
+	 *
+	 * @since   6.6.0
+	 *
+	 * @throws  Exception
 	 */
-	private function getFilterValues()
+	protected function populateState($ordering = 'a.ordering', $direction = 'ASC')
 	{
-		return (object) array(
-				'field_name'	=> $this->getState('field_name', '', 'string'),
-				'csvi_template_id'	=> $this->getState('csvi_template_id', 0, 'int')
-		);
+		// List state information.
+		parent::populateState($ordering, $direction);
+
+		$app = JFactory::getApplication();
+
+		// Check if there is an override in the URL
+		$templateId = $app->input->get->getInt('csvi_template_id', null);
+
+		if ($templateId)
+		{
+			// Override for the database query
+			$this->setState('filter.csvi_template_id', $templateId);
+
+			// Override for the search tools filters
+			$app->setUserState($this->context . '.filter.csvi_template_id', $templateId);
+		}
+	}
+
+	/**
+	 * Method to get a store id based on the model configuration state.
+	 *
+	 * This is necessary because the model is used by the component and
+	 * different modules that might need different sets of data or different
+	 * ordering requirements.
+	 *
+	 * @param   string  $id  An identifier string to generate the store id.
+	 *
+	 * @return  string  A store id.
+	 *
+	 * @since   12.2
+	 */
+	protected function getStoreId($id = '')
+	{
+		// Add the list state to the store id.
+		$id .= ':' . $this->getState('list.start');
+		$id .= ':' . $this->getState('list.limit');
+		$id .= ':' . $this->getState('list.ordering');
+		$id .= ':' . $this->getState('list.direction');
+		$id .= ':' . $this->getState('filter.search');
+
+		return md5($this->context . ':' . $id);
 	}
 
 	/**
 	 * Build an SQL query to load the list data.
 	 *
-	 * @param   bool  $overrideLimits  Sets whether or not to override the page limits
-	 *
-	 * @return  object the query to execute.
+	 * @return  JDatabaseQuery  The query to execute.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  Exception
+	 * @throws  RuntimeException
 	 */
-	public function buildQuery($overrideLimits = false)
+	protected function getListQuery()
 	{
 		// Get the parent query
-		$query = parent::buildQuery($overrideLimits);
-
-		// Clean the query builder so we can do our stuff
-		$query->clear('select');
-		$query->clear('from');
-		$query->clear('where');
-
-		// Load the tables
-		$query->from($this->db->quoteName('#__csvi_templatefields', 'tbl'));
-		$query->leftJoin(
+		$query = $this->db->getQuery(true)
+			->from($this->db->quoteName('#__csvi_templatefields', 'a'))
+			->leftJoin(
 				$this->db->quoteName('#__csvi_templates', 't')
-				. ' ON ' . $this->db->quoteName('t.csvi_template_id') . ' = ' . $this->db->quoteName('tbl.csvi_template_id')
-			);
-		$query->leftJoin(
+				. ' ON ' . $this->db->quoteName('a.csvi_template_id') . ' = ' . $this->db->quoteName('t.csvi_template_id')
+			)
+			->leftJoin(
 				$this->db->quoteName('#__users', 'u')
-				. ' ON ' . $this->db->quoteName('tbl.locked_by') . ' = ' . $this->db->quoteName('u.id')
-			);
+				. ' ON ' . $this->db->quoteName('a.locked_by') . ' = ' . $this->db->quoteName('u.id')
+			)
+			->select(
+				$this->db->quoteName(
+					array(
+						'a.csvi_templatefield_id',
+						'a.csvi_template_id',
+						'a.field_name',
+						'a.table_name',
+						'a.xml_node',
+						'a.source_field',
+						'a.column_header',
+						'a.default_value',
+						'a.enabled',
+						'a.sort',
+						'a.cdata',
+						'a.ordering',
+					)
+				)
+			)
+			->select($this->db->quoteName('t.template_name'))
+			->select($this->db->quoteName('u.name', 'editor'));
 
-		// Set the selects
-		$query->select($this->db->quoteName('tbl') . '.*');
-		$query->select($this->db->quoteName('t.template_name'));
-		$query->select($this->db->quoteName('u.name', 'editor'));
+		// Filter by search field
+		$search = $this->getState('filter.search');
 
-		$state = $this->getFilterValues();
-
-		if ($state->field_name)
+		if ($search)
 		{
-			$query->where($this->db->quoteName('tbl.field_name') . ' LIKE ' . $this->db->quote('%' . $state->field_name . '%'));
+			$query->where($this->db->quoteName('a.field_name') . ' LIKE ' . $this->db->quote('%' . $search . '%'));
 		}
 
-		if ($state->csvi_template_id)
+		// Filter by enabled
+		$enabled = $this->getState('filter.enabled');
+
+		if ('' !== $enabled && null !== $enabled)
 		{
-			$query->where($this->db->quoteName('tbl.csvi_template_id') . ' = ' . (int) $state->csvi_template_id);
+			$query->where($this->db->quoteName('a.enabled') . ' = ' . $this->db->quote($enabled));
 		}
+
+		// Filter by template
+		$templateId = $this->getState('filter.csvi_template_id');
+
+		if ('' !== $templateId && null !== $templateId)
+		{
+			$query->where($this->db->quoteName('a.csvi_template_id') . ' = ' . (int) $templateId);
+		}
+
+		// Add the list ordering clause.
+		$query->order(
+			$this->db->quoteName(
+				$this->db->escape(
+					$this->getState('list.ordering', 'a.ordering')
+				)
+			)
+			. ' ' . $this->db->escape($this->getState('list.direction', 'ASC'))
+		);
 
 		return $query;
 	}
 
 	/**
-	 * This method can be overriden to automatically do something with the
-	 * list results array. You are supposed to modify the list which was passed
-	 * in the parameters; DO NOT return a new array!
+	 * Method to get an array of data items.
 	 *
-	 * @param   array  &$resultArray  An array of objects, each row representing a record
+	 * @return  mixed  An array of data items on success, false on failure.
 	 *
-	 * @return  void
+	 * @since   6.6.0
+	 *
+	 * @throws  RuntimeException
 	 */
-	protected function onProcessList(&$resultArray)
+	public function getItems()
 	{
-		foreach ($resultArray as $key => $result)
+		$items = parent::getItems();
+
+		if ($items)
 		{
-			$result->rules = $this->loadRules($result->csvi_templatefield_id);
-			$resultArray[$key] = $result;
+			foreach ($items as $key => $result)
+			{
+				$result->rules = $this->loadRules($result->csvi_templatefield_id);
+				$items[$key] = $result;
+			}
 		}
-	}
 
-	/**
-	 * This method runs after an item has been gotten from the database in a read
-	 * operation. You can modify it before it's returned to the MVC triad for
-	 * further processing.
-	 *
-	 * @param   FOFTable  &$record  The table instance we fetched
-	 *
-	 * @return  void.
-	 *
-	 * @since   6.0
-	 */
-	protected function onAfterGetItem(&$record)
-	{
-		// Set the template ID
-		$record->csvi_template_id = $this->getState('csvi_template_id', $record->get('csvi_template_id'));
-
-		// Load the rule IDs
-		$record->rules = $this->loadRules($record->csvi_templatefield_id);
-
-		if (empty($record->rules))
-		{
-			$record->rules = '';
-		}
+		return $items;
 	}
 
 	/**
@@ -157,6 +230,8 @@ class CsviModelTemplatefields extends FOFModel
 	 * @return  array  List of rules.
 	 *
 	 * @since   6.2.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	private function loadRules($csvi_templatefield_id)
 	{
@@ -168,170 +243,5 @@ class CsviModelTemplatefields extends FOFModel
 		$this->db->setQuery($query);
 
 		return $this->db->loadColumn();
-	}
-
-	/**
-	 * This method runs before the $data is saved to the $table. Return false to
-	 * stop saving.
-	 *
-	 * @param   array     &$data   The data to save
-	 * @param   FOFTable  &$table  The table to save the data to
-	 *
-	 * @return  boolean  Return false to prevent saving, true to allow it
-	 *
-	 * @since   6.0
-	 */
-	protected function onBeforeSave(&$data, &$table)
-	{
-		if (parent::onBeforeSave($data, $table))
-		{
-			// Auto increment ordering if not set by user
-			if ($data['ordering'] == 0)
-			{
-				// Get the highest ordering number from db
-				$query = $this->db->getQuery(true)
-					->select('MAX(' . $this->db->quoteName('ordering') . ')')
-					->from($this->db->quoteName('#__csvi_templatefields'))
-					->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $data['csvi_template_id']);
-				$this->db->setQuery($query);
-				$ordering = $this->db->loadResult();
-
-				if (count($ordering) > 0)
-				{
-					$data['ordering'] = ++$ordering;
-				}
-			}
-
-			if (isset($data['rules']))
-			{
-				// Remove all rule IDs
-				$query = $this->db->getQuery(true)
-					->delete($this->db->quoteName('#__csvi_templatefields_rules'))
-					->where($this->db->quoteName('csvi_templatefield_id') . ' = ' . (int) $data['csvi_templatefield_id']);
-				$this->db->setQuery($query);
-				$this->db->execute();
-
-				// Store rule IDs
-				$rule_table = FOFTable::getAnInstance('templatefields_rules');
-
-				foreach ($data['rules'] as $rule_id)
-				{
-					if (!empty($rule_id))
-					{
-						$rule_table->save(array('csvi_templatefield_id' => $data['csvi_templatefield_id'], 'csvi_rule_id' => $rule_id));
-						$rule_table->set('csvi_templatefields_rule_id', null);
-					}
-				}
-			}
-
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	/**
-	 * Store a template field.
-	 *
-	 * @return  array  The field option objects.
-	 *
-	 * @throws  Exception
-	 *
-	 * @since   4.3
-	 */
-	public function storeTemplateField()
-	{
-		// Collect the data
-		$data = array();
-		$fieldnames = explode('~', $this->input->get('field_name', '', 'string'));
-		$template_id = $this->input->getInt('template_id', 0);
-
-		// Get the highest field number
-		$db = JFactory::getDbo();
-		$query = $db->getQuery(true)
-			->select('MAX(' . $this->db->quoteName('ordering') . ')')
-			->from($this->db->quoteName('#__csvi_templatefields'))
-			->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $template_id);
-		$db->setQuery($query);
-		$ordering = $db->loadResult();
-
-		foreach ($fieldnames as $fieldname)
-		{
-			if (!empty($fieldname))
-			{
-				$table = $this->getTable('Templatefield');
-				$data['csvi_template_id'] = $template_id;
-				$data['ordering'] = ++$ordering;
-				$data['field_name'] = $fieldname;
-				$data['file_field_name'] = $this->input->get('file_field_name', '', 'string');
-				$data['column_header'] = $this->input->get('column_header', '', 'string');
-				$data['default_value'] = $this->input->get('default_value', '', 'string');
-				$data['enabled'] = $this->input->get('enabled', 1, 'int');
-				$data['sort'] = $this->input->get('sort', 0, 'int');
-				$table->bind($data);
-
-				if (!$table->store())
-				{
-					throw new Exception(JText::_('COM_CSVI_STORE_TEMPLATE_FIELD_FAILED'), 500);
-				}
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Moves the current item up or down in the ordering list
-	 *
-	 * @param   string  $dirn  The direction and magnitude to use (2 means move up by 2 positions, -3 means move down three positions)
-	 *
-	 * @return  boolean  True on success
-	 */
-	public function move($dirn)
-	{
-		$table = $this->getTable($this->table);
-
-		$id = $this->getId();
-		$status = $table->load($id);
-
-		if (!$status)
-		{
-			$this->setError($table->getError());
-		}
-
-		if (!$status)
-		{
-			return false;
-		}
-
-		if (!$this->onBeforeMove($table))
-		{
-			return false;
-		}
-
-		$status = $table->move($dirn, 'csvi_template_id = ' . (int) $table->csvi_template_id);
-
-		if (!$status)
-		{
-			$this->setError($table->getError());
-		}
-		else
-		{
-			$this->onAfterMove($table);
-		}
-
-		return $status;
-	}
-
-	/**
-	 * Creates the WHERE part of the reorder query
-	 *
-	 * @return  string
-	 */
-	public function getReorderWhere()
-	{
-		return 'csvi_template_id = ' . (int) $this->input->getInt('csvi_template_id', 0);
 	}
 }

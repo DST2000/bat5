@@ -161,7 +161,14 @@ require __DIR__ . '/jsstrings.php';
 					<div id="breadcrumbs">
 						<jdoc:include type="modules" name="position-2" />
 					</div>
-					<jdoc:include type="component" />
+					<div class="row">
+						<div class="col-md-2">
+							<jdoc:include type="modules" name="position-15" />
+						</div>
+						<div class="col-md-10">
+							<jdoc:include type="component" />
+						</div>
+					</div>
 					<?php
 					$r = $templateparams->get('nav2cont_ratio','25');
 					if ($navposition == 'left' and $showleft) :

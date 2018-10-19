@@ -3,15 +3,17 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace virtuemart\com_virtuemart\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
+use Joomla\Utilities\ArrayHelper;
+
 
 /**
  * Export VirtueMart user info.
@@ -20,7 +22,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelExportUserinfo extends CsviModelExports
+class Userinfo extends \CsviModelExports
 {
 	/**
 	 * Export the data.
@@ -28,39 +30,35 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 	 * @return  bool  True if body is exported | False if body is not exported.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	protected function exportBody()
 	{
 		if (parent::exportBody())
 		{
 			// Build something fancy to only get the fieldnames the user wants
-			$userfields = array();
+			$userfields   = array();
 			$exportfields = $this->fields->getFields();
 
 			// Group by fields
-			$groupbyfields = json_decode($this->template->get('groupbyfields', '', 'string'));
-			$groupby = array();
+			$groupbyfieldsRaw = json_decode($this->template->get('groupbyfields', '', 'string'));
+			$groupby          = array();
+			$groupbyfields    = array();
 
-			if (isset($groupbyfields->name))
+			if (isset($groupbyfieldsRaw->name))
 			{
-				$groupbyfields = array_flip($groupbyfields->name);
-			}
-			else
-			{
-				$groupbyfields = array();
+				$groupbyfields = array_flip($groupbyfieldsRaw->name);
 			}
 
 			// Sort selected fields
-			$sortfields = json_decode($this->template->get('sortfields', '', 'string'));
-			$sortby = array();
+			$sortfieldsRaw = json_decode($this->template->get('sortfields', '', 'string'));
+			$sortby        = array();
+			$sortbyfields  = array();
 
-			if (isset($sortfields->name))
+			if (isset($sortfieldsRaw->name))
 			{
-				$sortbyfields = array_flip($sortfields->name);
-			}
-			else
-			{
-				$sortbyfields = array();
+				$sortbyfields = array_flip($sortfieldsRaw->name);
 			}
 
 			foreach ($exportfields as $field)
@@ -74,7 +72,6 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 					case 'created_by':
 					case 'modified_by':
 					case 'locked_by':
-					case 'name':
 					case 'agreed':
 						$userfields[] = $this->db->quoteName('#__virtuemart_userinfos.' . $field->field_name);
 
@@ -108,16 +105,31 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 						}
 						break;
 					case 'id':
-						$userfields[] = $this->db->quoteName('#__users.id');
+					case 'name':
+					case 'username':
+					case 'email':
+					case 'password':
+					case 'block':
+					case 'sendEmail':
+					case 'registerDate':
+					case 'lastvisitDate':
+					case 'activation':
+					case 'params':
+					case 'lastResetTime':
+					case 'resetCount':
+					case 'otpKey':
+					case 'otep':
+					case 'requireReset':
+						$userfields[] = $this->db->quoteName('#__users.' . $field->field_name);
 
 						if (array_key_exists($field->field_name, $groupbyfields))
 						{
-							$groupby[] = $this->db->quoteName('#__users.id');
+							$groupby[] = $this->db->quoteName('#__users.' . $field->field_name);
 						}
 
 						if (array_key_exists($field->field_name, $sortbyfields))
 						{
-							$sortby[] = $this->db->quoteName('#__users.id');
+							$sortby[] = $this->db->quoteName('#__users.' . $field->field_name);
 						}
 						break;
 					case 'usergroup_name':
@@ -200,7 +212,7 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 			 * as well as products without a price
 			 */
 			$userfields = array_unique($userfields);
-			$query = $this->db->getQuery(true);
+			$query      = $this->db->getQuery(true);
 			$query->select(implode(",\n", $userfields));
 			$query->from($this->db->quoteName('#__virtuemart_userinfos'));
 			$query->leftJoin(
@@ -216,7 +228,7 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 			$query->leftJoin(
 				$this->db->quoteName('#__virtuemart_shoppergroups') . ' ON ' . $this->db->quoteName('#__virtuemart_shoppergroups.virtuemart_shoppergroup_id') . ' = ' . $this->db->quoteName('#__virtuemart_vmuser_shoppergroups.virtuemart_shoppergroup_id')
 			);
-			$query->leftJoin(
+			$query->rightJoin(
 				$this->db->quoteName('#__users')
 				. ' ON ' . $this->db->quoteName('#__users.id') . ' = ' . $this->db->quoteName('#__virtuemart_userinfos.virtuemart_user_id')
 			);
@@ -250,7 +262,7 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 
 			if ($date)
 			{
-				$userinfomdate = JFactory::getDate($date);
+				$userinfomdate = \JFactory::getDate($date);
 				$query->where($this->db->quoteName('#__virtuemart_userinfos.modified_on') . ' >= ' . $this->db->quote($userinfomdate->toSql()));
 			}
 
@@ -259,7 +271,7 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 
 			if ($date)
 			{
-				$userinfomdate = JFactory::getDate($date);
+				$userinfomdate = \JFactory::getDate($date);
 				$query->where($this->db->quoteName('#__virtuemart_userinfos.modified_on') . ' <= ' . $this->db->quote($userinfomdate->toSql()));
 			}
 
@@ -268,7 +280,7 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 
 			if ($blocked != '')
 			{
-				$query->where($this->db->quoteName('#__users.block') . ' = ' . (int) (($blocked) ? 1 : 0));
+				$query->where($this->db->quoteName('#__users.block') . ' = ' . (int) (($blocked) ? 0 : 1));
 			}
 
 			// Filter by activated status
@@ -284,6 +296,37 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 				elseif ($activated == '1')
 				{
 					$query->where($this->db->quoteName('#__users.activation') . ' = ' . $this->db->quote(''));
+				}
+			}
+
+			// Get the users who are assigned to shopper group
+			$shopper_group = $this->template->get('shopper_groups', array());
+			$condition     = array();
+			$userList      = $this->getNoShoppergroupAssignedUsers();
+
+			// Check if user not assigned to shopper group is filtered
+			if ('no' === $shopper_group[0] && 'none' !== $shopper_group[0] && 0 !== count($shopper_group) && !empty($userList))
+			{
+				$condition[] = "#__users.id IN ('" . implode("','", $userList) . "')";
+			}
+
+			if ($shopper_group && 'none' !== $shopper_group[0] && 0 !== count($shopper_group))
+			{
+				$shopper_group = ArrayHelper::toInteger($shopper_group);
+				$condition[]   = "#__virtuemart_vmuser_shoppergroups.virtuemart_shoppergroup_id IN ('" . implode("','", $shopper_group) . "')";
+			}
+
+			// Filter according to shopper group filter set
+			if (!empty($condition))
+			{
+				$query->where('(' . implode(' OR ', $condition) . ')');
+			}
+			else
+			{
+				// Remove the users who are not in virtuemart shopper group table
+				if (!empty($userList))
+				{
+					$query->where("#__users.id NOT IN ('" . implode("','", $userList) . "')");
 				}
 			}
 
@@ -307,15 +350,16 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -340,8 +384,7 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 							case 'modified_on':
 							case 'locked_on':
 							case 'lastvisitdate':
-								$date = JFactory::getDate($record->$fieldname);
-								$fieldvalue = date($this->template->get('export_date_format'), $date->toUnix());
+								$fieldvalue = $this->fields->getDateFormat($fieldname, $record->$fieldname, $field->column_header);
 								break;
 							case 'address_type':
 								// Check if we have any content otherwise use the default value
@@ -352,11 +395,11 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 
 								if ($fieldvalue == 'BT')
 								{
-									$fieldvalue = JText::_('COM_CSVI_BILLING_ADDRESS');
+									$fieldvalue = \JText::_('COM_CSVI_BILLING_ADDRESS');
 								}
 								elseif ($fieldvalue == 'ST')
 								{
-									$fieldvalue = JText::_('COM_CSVI_SHIPPING_ADDRESS');
+									$fieldvalue = \JText::_('COM_CSVI_SHIPPING_ADDRESS');
 								}
 								break;
 							case 'full_name':
@@ -378,22 +421,32 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 							case 'state_2_code':
 							case 'state_3_code':
 							case 'state_name':
-								$query = $this->db->getQuery(true);
-								$query->select($fieldname);
-								$query->from('#__virtuemart_states');
-								$query->where('virtuemart_state_id = ' . $record->virtuemart_state_id);
-								$this->db->setQuery($query);
-								$fieldvalue = $this->db->loadResult();
+								$fieldvalue = '';
+
+								if ($record->virtuemart_state_id)
+								{
+									$query = $this->db->getQuery(true);
+									$query->select($fieldname);
+									$query->from('#__virtuemart_states');
+									$query->where('virtuemart_state_id = ' . (int) $record->virtuemart_state_id);
+									$this->db->setQuery($query);
+									$fieldvalue = $this->db->loadResult();
+								}
 								break;
 							case 'country_2_code':
 							case 'country_3_code':
 							case 'country_name':
-								$query = $this->db->getQuery(true);
-								$query->select($fieldname);
-								$query->from('#__virtuemart_countries');
-								$query->where('virtuemart_country_id = ' . $record->virtuemart_country_id);
-								$this->db->setQuery($query);
-								$fieldvalue = $this->db->loadResult();
+								$fieldvalue = '';
+
+								if ($record->virtuemart_country_id)
+								{
+									$query = $this->db->getQuery(true);
+									$query->select($fieldname);
+									$query->from('#__virtuemart_countries');
+									$query->where('virtuemart_country_id = ' . $record->virtuemart_country_id);
+									$this->db->setQuery($query);
+									$fieldvalue = $this->db->loadResult();
+								}
 								break;
 						}
 
@@ -410,11 +463,41 @@ class Com_VirtuemartModelExportUserinfo extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();
 			}
 		}
+	}
+
+	/**
+	 * Get a list of users who are not assigned with shopper group.
+	 *
+	 * @return  array list of user ids.
+	 *
+	 * @since   6.6.0
+	 *
+	 * @throws  \RuntimeException
+	 */
+	private function getNoShoppergroupAssignedUsers()
+	{
+		$query = $this->db->getQuery(true);
+		$query->select($this->db->quoteName('#__users.id'));
+		$query->from($this->db->quoteName('#__users'));
+		$query->leftJoin(
+			$this->db->quoteName('#__virtuemart_vmuser_shoppergroups')
+			. ' ON ' . $this->db->quoteName('#__virtuemart_vmuser_shoppergroups.virtuemart_user_id') . ' = ' . $this->db->quoteName('#__users.id')
+		);
+		$query->where($this->db->quoteName('#__virtuemart_vmuser_shoppergroups.virtuemart_user_id') . ' IS NULL');
+		$this->db->setQuery($query);
+		$result = $this->db->loadColumn();
+
+		if (!is_array($result))
+		{
+			$result = array();
+		}
+
+		return $result;
 	}
 }

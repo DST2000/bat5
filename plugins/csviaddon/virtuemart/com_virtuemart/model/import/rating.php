@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  Ratings import
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportRating extends RantaiImportEngine
+class Rating extends \RantaiImportEngine
 {
 	/**
 	 * Rating import
 	 *
-	 * @var    VirtueMartTableRating
+	 * @var    \VirtueMartTableRating
 	 * @since  6.0
 	 */
 	private $ratingTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 	/**
 	 * Rating review table.
 	 *
-	 * @var    VirtueMartTableRatingReview
+	 * @var    \VirtueMartTableRatingReview
 	 * @since  6.0
 	 */
 	private $ratingReviewTable = null;
@@ -39,7 +41,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 	/**
 	 * Rating vote table.
 	 *
-	 * @var    VirtueMartTableRatingVote
+	 * @var    \VirtueMartTableRatingVote
 	 * @since  6.0
 	 */
 	private $ratingVoteTable = null;
@@ -69,7 +71,9 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 						switch ($value)
 						{
 							case 'n':
+							case 'no':
 							case 'N':
+							case 'NO':
 							case '0':
 								$value = 0;
 								break;
@@ -90,7 +94,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 		// Reset loaded state
 		$this->loaded = true;
 
-		// Required fields are calc_kind, calc_value_mathop, calc_value
+		// Required fields are product_sku, username
 		if ($this->getState('virtuemart_product_id', false)
 			&& ($this->getState('username', false) || $this->getState('created_by', false)))
 		{
@@ -114,8 +118,8 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 					// Check if we have an existing item
 					if ($this->getState('virtuemart_rating_review_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 					{
-						$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
-						$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
+						$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
+						$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
 						$this->loaded = false;
 					}
 					else
@@ -131,7 +135,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -152,7 +156,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 			if (!$this->getState('virtuemart_rating_review_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new rules when user chooses to ignore new rules
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('product_sku')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('product_sku')));
 			}
 			else
 			{
@@ -195,19 +199,27 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 				// Store the rating reviews
 				if ($this->ratingReviewTable->store())
 				{
+					$reviewId = $this->ratingReviewTable->virtuemart_rating_review_id;
+
 					// Store the rating votes
 					$this->ratingVoteTable->bind($this->state);
 					$this->ratingVoteTable->check();
 
 					if ($this->ratingVoteTable->store())
 					{
+						$ratingVoteId = $this->ratingVoteTable->virtuemart_rating_vote_id;
+						$review = new \stdClass;
+						$review->virtuemart_rating_review_id = $reviewId;
+						$review->virtuemart_rating_vote_id = $ratingVoteId;
+						$this->ratingReviewTable->save($review);
+
 						// Update product votes
-						$vote = new stdClass;
+						$vote                        = new \stdClass;
 						$vote->virtuemart_product_id = $this->getState('virtuemart_product_id');
-						$vote->created_on = $this->getState('created_on');
-						$vote->created_by = $this->getState('created_by');
-						$vote->modified_on = $this->getState('modified_on');
-						$vote->modified_by = $this->getState('modified_by');
+						$vote->created_on            = $this->getState('created_on');
+						$vote->created_by            = $this->getState('created_by');
+						$vote->modified_on           = $this->getState('modified_on');
+						$vote->modified_by           = $this->getState('modified_by');
 
 						// Check if an entry already exist
 						$query = $this->db->getQuery(true)
@@ -230,8 +242,8 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 
 							// Create the new totals
 							$vote->ratingcount = count($ratings);
-							$vote->rates = array_sum($ratings);
-							$vote->rating = $vote->rates / $vote->ratingcount;
+							$vote->rates       = array_sum($ratings);
+							$vote->rating      = $vote->rates / $vote->ratingcount;
 						}
 						// Vote does not exist
 						else
@@ -247,7 +259,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 				}
 				else
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_PRODUCT_REVIEW_NOT_ADDED', $this->ratingReviewTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_PRODUCT_REVIEW_NOT_ADDED', $this->ratingReviewTable->getError()));
 				}
 			}
 
@@ -309,7 +321,7 @@ class Com_VirtuemartModelImportRating extends RantaiImportEngine
 
 			if (!$created_by)
 			{
-				$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_PRODUCT_REVIEW_NO_USER_ID', $username));
+				$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_PRODUCT_REVIEW_NO_USER_ID', $username));
 
 				return false;
 			}

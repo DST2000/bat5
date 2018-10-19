@@ -18,6 +18,14 @@
 				   type="text"
 				   required="false"
 				   class="input-mini" />
+
+			<field name="combine_empty"
+			       type="list"
+			       default="0"
+			       class="input-small advancedSelect">
+				<option value="0">COM_CSVI_NO</option>
+				<option value="1">COM_CSVI_YES</option>
+			</field>
 		</fieldset>
 	</fields>
 </form>

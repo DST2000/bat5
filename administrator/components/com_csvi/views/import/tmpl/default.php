@@ -2,18 +2,16 @@
 /**
  * Import file
  *
- * @author 		Roland Dalmulder
- * @link 		http://www.csvimproved.com
- * @copyright 	Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author 		RolandD Cyber Produksi
+ * @link 		https://csvimproved.com
+ * @copyright 	Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @version 	$Id: default.php 2389 2013-03-21 09:03:25Z RolandD $
  */
 
 defined('_JEXEC') or die;
 
-JFactory::getDocument()->addScript(JURI::root() . 'administrator/components/com_csvi/assets/js/jquery.timers.js');
-
-$this->step = 4;
+JFactory::getDocument()->addScriptVersion(JUri::root() . 'administrator/components/com_csvi/assets/js/jquery.timers.js');
 
 // Get the template ID
 $runId = $this->input->getInt('runId', false);
@@ -22,7 +20,10 @@ if ($runId) :
 ?>
 <div class="row-fluid">
 	<div class="span2">
-		<?php echo $this->loadAnyTemplate('admin:com_csvi/imports/steps'); ?>
+		<?php
+			$layout = new JLayoutFile('csvi.import.steps');
+			echo $layout->render(array('step' => $this->step));
+		?>
 	</div>
 	<div class="row-fluid form-horizontal span10">
 		<form method="post" action="index.php?option=com_csvi&view=imports" id="adminForm" name="adminForm">
@@ -82,7 +83,7 @@ function submitbutton(task)
 		// Stop the timer
 		jQuery(".uncontrolled-interval span").stopTime('importcounter');
 
-		submitform(task);
+		Joomla.submitform(task);
 	}
 }
 
@@ -109,8 +110,11 @@ function doImport()
 				}
 				else if (data.error == true)
 				{
+					var errorstring = Joomla.JText._('COM_CSVI_ERROR_DURING_PROCESS'),
+						languageString = errorstring.replace('%s', 'import');
+
 					showMsg(
-						Joomla.JText._('COM_CSVI_ERROR_DURING_PROCESS'),
+						languageString,
 						'<span class="error">' + data.message + '</span>',
 						'<?php echo JText::_('COM_CSVI_OK'); ?>'
 					);
@@ -118,20 +122,31 @@ function doImport()
 					jQuery('.ok-btn').on('click', function(e) {
 						e.preventDefault();
 						jQuery('#csviModal').modal('hide');
-						window.location = '<?php echo JURI::root(); ?>' + data.url;
+						window.location = '<?php echo JUri::root(); ?>' + data.url;
 					});
 				}
 				else
 				{
-					window.location = '<?php echo JURI::root(); ?>' + data.url;
+					window.location = '<?php echo JUri::root(); ?>' + data.url;
 				}
 			}
 		},
 		error:function (request, status, error)
 		{
+			var link = '';
+
+			if (request.status == 500)
+			{
+				link = '<br /><div class="error">Explanation: ' + Joomla.JText._('COM_CSVI_ERROR_500') + '</div><br />';
+			}
+
+			var errorstring = Joomla.JText._('COM_CSVI_ERROR_DURING_PROCESS'),
+				languageString = errorstring.replace('%s', 'import');
+
 			showMsg(
-				Joomla.JText._('COM_CSVI_ERROR_DURING_PROCESS'),
+				languageString,
 				'Status error: ' + request.status + '<br />' +
+				link +
 				'Status message: ' + request.statusText + '<br />' +
 				jQuery.trim(request.responseText) ,
 				Joomla.JText._('COM_CSVI_CLOSE_DIALOG')
@@ -140,9 +155,9 @@ function doImport()
 			jQuery('.ok-btn').on('click', function(e) {
 				e.preventDefault();
 				jQuery('#csviModal').modal('hide');
-				window.location = '<?php echo JURI::root(); ?>administrator/index.php?option=com_csvi&view=imports';
+				window.location = '<?php echo JURI::root(); ?>administrator/index.php?option=com_csvi&view=imports&error=1&runId=<?php echo $this->input->getInt('runId', 0); ?>';
 			});
-        }
+		}
 	});
 }
 </script>

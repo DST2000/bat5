@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportAvailabilityProduct extends RantaiImportEngine
+class AvailabilityProduct extends \RantaiImportEngine
 {
 	/**
 	 * The product table
 	 *
-	 * @var    VirtueMartTableProduct
+	 * @var    \VirtueMartTableProduct
 	 * @since  6.0
 	 */
 	private $product = null;
@@ -76,7 +78,7 @@ class Com_VirtuemartModelImportAvailabilityProduct extends RantaiImportEngine
 			{
 				if (!$this->template->get('overwrite_existing_data'))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $this->getState($field, '')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $this->getState($field, '')));
 					$this->loaded = false;
 				}
 			}
@@ -91,7 +93,7 @@ class Com_VirtuemartModelImportAvailabilityProduct extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -111,11 +113,11 @@ class Com_VirtuemartModelImportAvailabilityProduct extends RantaiImportEngine
 			if (!$this->getState('virtuemart_product_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new users when user chooses to ignore new users
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->recordIdentity));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->recordIdentity));
 			}
 			else
 			{
-				$this->log->add(JText::sprintf('COM_CSVI_DEBUG_PROCESS_SKU', $this->recordIdentity));
+				$this->log->add(\JText::sprintf('COM_CSVI_DEBUG_PROCESS_SKU', $this->recordIdentity));
 
 				// Check if we need to do a stock calculation
 				if ($this->getState('product_in_stock', false) !== false)

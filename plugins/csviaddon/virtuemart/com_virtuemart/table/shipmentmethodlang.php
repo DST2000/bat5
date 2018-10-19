@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -77,22 +77,28 @@ class VirtueMartTableShipmentmethodLang extends CsviTableDefault
 		{
 			$query = $this->db->getQuery(true)
 				->select($this->db->quoteName('virtuemart_shipmentmethod_id'))
-				->from($this->db->quoteName('#__virtuemart_shipmentmethods_' . $this->template->get('language')))
-				->where($this->db->quoteName('shipment_name') . ' = ' . $this->db->quote($this->shipment_name));
+				->from($this->db->quoteName('#__virtuemart_shipmentmethods_' . $this->template->get('language')));
+
+			if ($this->slug)
+			{
+				$query->where($this->db->quoteName('slug') . ' = ' . $this->db->quote($this->slug));
+			}
+
+			if ($this->shipment_name)
+			{
+				$query->where($this->db->quoteName('shipment_name') . ' = ' . $this->db->quote($this->shipment_name));
+			}
+
 			$this->db->setQuery($query);
 			$this->log->add('Check if the shipment method exists', true);
 			$id = $this->db->loadResult();
 
-			if ($id)
-			{
-				$this->virtuemart_shipmentmethod_id = $id;
-
-				return true;
-			}
-			else
+			if (!$id)
 			{
 				return false;
 			}
+
+			$this->virtuemart_shipmentmethod_id = $id;
 		}
 
 		return true;

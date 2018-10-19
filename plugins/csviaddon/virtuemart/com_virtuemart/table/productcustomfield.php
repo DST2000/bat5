@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -49,10 +49,13 @@ class VirtueMartTableProductCustomfield extends CsviTableDefault
 			->from($this->db->quoteName($this->_tbl))
 			->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $this->virtuemart_product_id)
 			->where($this->db->quoteName('virtuemart_custom_id') . ' = ' . (int) $this->virtuemart_custom_id)
-			->where($this->db->quoteName('customfield_value') . ' = ' . $this->db->quote($this->customfield_value));
+			->where($this->db->quoteName('customfield_value') . ' = ' . $this->db->quote($this->customfield_value))
+			->where($this->db->quoteName('customfield_price') . ' = ' . $this->db->quote($this->customfield_price));
 
 		$this->db->setQuery($query);
 		$id = $this->db->loadResult();
+
+		$this->log->add('Check if custom field exists');
 
 		if ($id)
 		{
@@ -60,10 +63,8 @@ class VirtueMartTableProductCustomfield extends CsviTableDefault
 
 			return true;
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 
 	/**

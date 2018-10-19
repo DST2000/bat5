@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Helper.Fields
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -67,6 +67,14 @@ class CsviHelperFields
 	 * @since  6.0
 	 */
 	protected $supportedFields = null;
+
+	/**
+	 * Check if needs to process record
+	 *
+	 * @var    bool
+	 * @since  7.0
+	 */
+	private $processRecord = true;
 
 	/**
 	 * Constructor.
@@ -144,7 +152,7 @@ class CsviHelperFields
 
 		$this->supportedFields = $this->db->loadColumn();
 
-		$this->log->add(JText::sprintf('COM_CSVI_LOAD_SUPPORTED_FIELDS', $component, $operation, $action));
+		$this->log->add(sprintf('Loading the supported fields for %s, operation %s and action %s', $component, $operation, $action));
 	}
 
 	/**
@@ -159,5 +167,31 @@ class CsviHelperFields
 	public function isFieldAvailable($field)
 	{
 		return in_array($field, $this->supportedFields);
+	}
+
+	/**
+	 * Set if the record needs to be processed
+	 *
+	 * @param   bool  $value  True or False
+	 *
+	 * @return  void
+	 *
+	 * @since   7.0
+	 */
+	public function setProcessRecord($value)
+	{
+		$this->processRecord = $value;
+	}
+
+	/**
+	 * Get state if the record needs to be processed
+	 *
+	 * @return  bool true if record has to be processed false otherwise
+	 *
+	 * @since   7.0
+	 */
+	public function getProcessRecord()
+	{
+		return $this->processRecord;
 	}
 }

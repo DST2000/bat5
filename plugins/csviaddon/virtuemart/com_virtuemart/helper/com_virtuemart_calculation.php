@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -39,9 +39,9 @@ class CsviVmPrices extends calculationHelper
 		}
 		else
 		{
-			//We store in UTC and use here of course also UTC
+			// We store in UTC and use here of course also UTC
 			$jnow = JFactory::getDate();
-			self::$_instance->_now = $jnow->toSQL();
+			self::$_instance->_now = $jnow->toSql();
 		}
 
 		return self::$_instance;
@@ -51,28 +51,31 @@ class CsviVmPrices extends calculationHelper
 	 * Constructor override because the original fails in it's original form.
 	 *
 	 * @since   6.1
+	 *
+	 * @throws  Exception
 	 */
 	private function __construct()
 	{
-		$this->_db = JFactory::getDBO();
+		$this->_db = JFactory::getDbo();
 		$this->_app = JFactory::getApplication();
 
-		//We store in UTC and use here of course also UTC
+		// We store in UTC and use here of course also UTC
 		$jnow = JFactory::getDate();
-		$this->_now = $jnow->toSQL();
+		$this->_now = $jnow->toSql();
 		$this->_nullDate = $this->_db->getNullDate();
 
 		$this->productVendorId = 1;
 
 		if (!class_exists('CurrencyDisplay'))
 		{
-			require VMPATH_ADMIN . '/helpers/currencydisplay.php';
+			require_once VMPATH_ADMIN . '/helpers/currencydisplay.php';
 		}
 
 		$this->_currencyDisplay = CurrencyDisplay::getInstance();
 		$this->_debug = false;
 
-		if(!empty($this->_currencyDisplay->_vendorCurrency)){
+		if (0 === count($this->_currencyDisplay->_vendorCurrency))
+		{
 			$this->vendorCurrency = $this->_currencyDisplay->_vendorCurrency;
 			$this->vendorCurrency_code_3 = $this->_currencyDisplay->_vendorCurrency_code_3;
 			$this->vendorCurrency_numeric = $this->_currencyDisplay->_vendorCurrency_numeric;
@@ -89,7 +92,7 @@ class CsviVmPrices extends calculationHelper
 		$this->rules['DBTax'] = array();
 		$this->rules['DATax'] = array();
 
-		//round only with internal digits
+		// Round only with internal digits
 		$this->_roundindig = VmConfig::get('roundindig', false);
 	}
 
@@ -101,11 +104,13 @@ class CsviVmPrices extends calculationHelper
 	 * @return  void.
 	 *
 	 * @since   6.1
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function setShopperGroup($shoppergroupId)
 	{
 		// Check if we have a shopper group ID, otherwise use guest
-		if (empty($shoppergroupId))
+		if (0 === count($shoppergroupId))
 		{
 			$query = $this->_db->getQuery(true)
 				->select($this->_db->quoteName('virtuemart_shoppergroup_id'))
@@ -121,5 +126,37 @@ class CsviVmPrices extends calculationHelper
 
 		// Set the shopper group IDs
 		$this->setShopperGroupIds((array) $shoppergroupId);
+	}
+
+	/**
+	 * Create a cart object.
+	 *
+	 * @return  VirtueMartCart  An instance of VirtueMartCart.
+	 *
+	 * @since   6.6.0
+	 */
+	public function getCart()
+	{
+		// Load the cart class
+		if (!class_exists('VirtueMartCart'))
+		{
+			require_once JPATH_SITE . '/components/com_virtuemart/helpers/cart.php';
+		}
+
+		return VirtuemartCart::getCart(true);
+	}
+
+	/**
+	 * Set the cart object.
+	 *
+	 * @param   VirtueMartCart  $cart  An instance of VirtueMartCart.
+	 *
+	 * @return  void.
+	 *
+	 * @since   6.6.0
+	 */
+	public function setCart(VirtueMartCart $cart)
+	{
+		$this->_cart = $cart;
 	}
 }

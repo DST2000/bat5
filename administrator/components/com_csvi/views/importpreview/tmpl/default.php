@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Imports
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -20,7 +20,10 @@ $extraHelp = $settings->get('extraHelp', true);
 ?>
 <div class="row-fluid">
 	<div class="span2">
-		<?php echo $this->loadAnyTemplate('admin:com_csvi/imports/steps'); ?>
+		<?php
+			$layout = new JLayoutFile('csvi.import.steps');
+			echo $layout->render(array('step' => $this->step));
+		?>
 	</div>
 	<div class="span10">
 		<?php if ($extraHelp) : ?>

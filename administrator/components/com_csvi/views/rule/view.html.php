@@ -3,46 +3,154 @@
  * @package     CSVI
  * @subpackage  Templatefield
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
 
 /**
- * Template field edit screen.
+ * Rule edit screen.
  *
  * @package     CSVI
- * @subpackage  Templatefield
+ * @subpackage  Rules
  * @since       6.0
  */
-class CsviViewRule extends FOFViewHtml
+class CsviViewRule extends JViewLegacy
 {
 	/**
-	 * Executes before rendering the page for the Add task.
+	 * The form with the field
 	 *
-	 * @param   string  $tpl  Subtemplate to use
+	 * @var    JForm
+	 * @since  1.0
+	 */
+	protected $form;
+
+	/**
+	 * The property item
 	 *
-	 * @return  boolean  Return true to allow rendering of the page
+	 * @var    object
+	 * @since  1.0
+	 */
+	protected $item;
+
+	/**
+	 * The user state
+	 *
+	 * @var    JObject
+	 * @since  1.0
+	 */
+	protected $state;
+
+	/**
+	 * Hold the user rights
+	 *
+	 * @var    object
+	 * @since  1.0
+	 */
+	private $canDo;
+
+	/**
+	 * List of templates used the rule
+	 *
+	 * @var    array
+	 * @since  7.7.0
+	 */
+	protected $templates = array();
+
+	/**
+	 * Execute and display a template script.
+	 *
+	 * @param   string  $tpl  The name of the template file to parse; automatically searches through the template paths.
+	 *
+	 * @return  mixed  A string if successful, otherwise a JError object.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  Exception
+	 * @throws  RuntimeException
+	 * @throws  InvalidArgumentException
+	 * @throws  UnexpectedValueException
 	 */
-	protected function onAdd($tpl = null)
+	public function display($tpl = null)
 	{
-		// Let the parent get the setting details
-		parent::onAdd($tpl);
+		$this->form  = $this->get('Form');
+		$this->item  = $this->get('Item');
+		$this->state = $this->get('State');
+		$this->canDo = JHelperContent::getActions('com_csvi');
 
-		// Load the helper
-		$helper = new CsviHelperCsvi;
+		// Get the template list where rule has been used
+		$model           = $this->getModel('Rule');
+		$this->templates = $model->getTemplatesList($this->item->csvi_rule_id);
 
-		$form = FOFForm::getInstance('rule', 'rule');
-		$form->bind($this->item->getData());
+		$this->addToolbar();
 
-		$this->form = $helper->renderMyForm($form, $this->getModel(), $this->input);
+		return parent::display($tpl);
+	}
 
-		// Display it all
-		return true;
+	/**
+	 * Add the page title and toolbar.
+	 *
+	 * @return  void
+	 *
+	 * @since   6.6.0
+	 *
+	 * @throws  Exception
+	 */
+	private function addToolbar()
+	{
+		JFactory::getApplication()->input->set('hidemainmenu', true);
+		$isNew      = $this->item->csvi_rule_id === 0;
+		$canDo      = $this->canDo;
+
+		JToolbarHelper::title('CSVI - ' . JText::_('COM_CSVI_TITLE_RULE_EDIT'), 'list-view');
+
+		// If a new item, can save the item.  Allow users with edit permissions to apply changes to prevent returning to grid.
+		if ($isNew && $canDo->get('core.create'))
+		{
+			if ($canDo->get('core.edit'))
+			{
+				JToolbarHelper::apply('rule.apply');
+			}
+
+			JToolbarHelper::save('rule.save');
+		}
+
+		// If not checked out, can save the item.
+		if (!$isNew && $canDo->get('core.edit'))
+		{
+			JToolbarHelper::apply('rule.apply');
+			JToolbarHelper::save('rule.save');
+		}
+
+		// If the user can create new items, allow them to see Save & New
+		if ($canDo->get('core.create'))
+		{
+			JToolbarHelper::save2new('rule.save2new');
+		}
+
+		// If an existing item, can save to a copy only if we have create rights.
+		if (!$isNew && $canDo->get('core.create'))
+		{
+			JToolbarHelper::save2copy('rule.save2copy');
+		}
+
+		if ($isNew)
+		{
+			JToolbarHelper::cancel('rule.cancel');
+		}
+		else
+		{
+			JToolbarHelper::cancel('rule.cancel', 'JTOOLBAR_CLOSE');
+		}
+
+		if ($this->item->csvi_rule_id && $this->templates)
+		{
+			JToolbarHelper::custom('templates', 'list', 'list', JText::_('COM_CSVI_LINKED_TEMPLATES'), false);
+		}
+
+		JToolbarHelper::custom('hidetips', 'help', 'help', JText::_('COM_CSVI_HELP'), false);
 	}
 }

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  File
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -26,7 +26,7 @@ class CsviHelperFileImportXml extends CsviHelperFile
 	 * @var    XMLReader
 	 * @since  3.0
 	 */
-	protected $data = null;
+	protected $data;
 
 	/**
 	 * Contains the record name to read from the XML
@@ -50,7 +50,7 @@ class CsviHelperFileImportXml extends CsviHelperFile
 	 * @var    CsviHelperImportFields
 	 * @since  6.0
 	 */
-	protected $fields = null;
+	protected $fields;
 
 	/**
 	 * Load the column headers from a file.
@@ -185,13 +185,13 @@ class CsviHelperFileImportXml extends CsviHelperFile
 	/**
 	 * Close the file.
 	 *
-	 * @param   bool  $removefolder  Set if the folder should be removed.
+	 * @param   bool  $removeFolder  Set if the folder should be removed.
 	 *
 	 * @return  void.
 	 *
 	 * @since   3.0
 	 */
-	public function closeFile($removefolder = true)
+	public function closeFile($removeFolder = true)
 	{
 		if ($this->data->close())
 		{
@@ -200,7 +200,7 @@ class CsviHelperFileImportXml extends CsviHelperFile
 
 		$this->closed = true;
 
-		parent::closeFile($removefolder);
+		parent::closeFile($removeFolder);
 	}
 
 	/**
@@ -328,7 +328,7 @@ class CsviHelperFileImportXml extends CsviHelperFile
 						case (XMLREADER::END_ELEMENT) :
 							array_pop($parent);
 
-							if ($this->data->name == $this->recordName)
+							if ($this->data->name === $this->recordName)
 							{
 								$this->linepointer++;
 

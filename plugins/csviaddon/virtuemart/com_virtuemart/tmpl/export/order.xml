@@ -30,6 +30,15 @@
 				type="text"
 				class="input-xxlarge" />
 
+			<field name="usedatefield"
+				   type="list"
+				   class="advancedSelect"
+				   default="created_on"
+				   size="1">
+				<option value="created_on">COM_CSVI_CREATED_ON</option>
+				<option value="modified_on">COM_CSVI_MODIFIED_ON</option>
+			</field>
+
 			<field name="orderdaterange"
 				type="list"
 				translate="true"
@@ -41,6 +50,7 @@
 				<option value="yesterday">COM_CSVI_DATE_YESTERDAY</option>
 				<option value="thisweek">COM_CSVI_DATE_THIS_WEEK</option>
 				<option value="lastweek">COM_CSVI_DATE_LAST_WEEK</option>
+				<option value="lastweek">COM_CSVI_DATE_LAST_WEEK</option>
 				<option value="thismonth">COM_CSVI_DATE_THIS_MONTH</option>
 				<option value="lastmonth">COM_CSVI_DATE_LAST_MONTH</option>
 				<option value="thisquarter">COM_CSVI_DATE_THIS_QUARTER</option>
@@ -50,24 +60,28 @@
 			</field>
 
 			<field name="orderdatestart"
-				type="csvicalendar"
+				type="calendar"
 				format="%d-%m-%Y %H:%M:%S"
-				class="input-medium" />
+				class="input-medium"
+				filter="none"/>
 
 			<field name="orderdateend"
-				type="csvicalendar"
+				type="calendar"
 				format="%d-%m-%Y %H:%M:%S"
-				class="input-medium" />
+				class="input-medium"
+				filter="none"/>
 
 			<field name="ordermdatestart"
-				type="csvicalendar"
+				type="calendar"
 				format="%d-%m-%Y %H:%M:%S"
-				class="input-medium" />
+				class="input-medium"
+				filter="none"/>
 
 			<field name="ordermdateend"
-				type="csvicalendar"
+				type="calendar"
 				format="%d-%m-%Y %H:%M:%S"
-				class="input-medium" />
+				class="input-medium"
+				filter="none"/>
 
 			<field name="orderstatus"
 				type="sql"
@@ -87,6 +101,15 @@
 				multiple="true"
 				class="advancedSelect"
 				default="">
+				<option value="">COM_CSVI_DONT_USE</option>
+			</field>
+
+			<field name="ordershipment"
+			       type="Csvivirtuemart.Ordershipment"
+			       translate="false"
+			       multiple="true"
+			       class="advancedSelect"
+			       default="">
 				<option value="">COM_CSVI_DONT_USE</option>
 			</field>
 

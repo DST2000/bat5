@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaCategories
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - [year] RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -59,63 +59,28 @@ class PlgcsviaddoncategoriesInstallerScript
 	{
 		// Load the application
 		$app = JFactory::getApplication();
+		$db  = JFactory::getDbo();
 
-		// Create the folder in the addons location
-		$folder = JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_categories';
-
-		if (JFolder::create($folder))
+		try
 		{
-			// Copy the folder to the correct location
-			$src = JPATH_SITE . '/plugins/csviaddon/categories/com_categories';
-			JFolder::copy($src, $folder, '', true);
-
 			// Enable the plugin
-			$db = JFactory::getDbo();
 			$query = $db->getQuery(true)
-						->update($db->quoteName("#__extensions"))
-						->set($db->quoteName("enabled") . ' =  1')
-						->where($db->quoteName("type") . ' = ' . $db->quote('plugin'))
-						->where($db->quoteName("element") . ' = ' . $db->quote('categories'))
-						->where($db->quoteName("folder") . ' = ' . $db->quote('csviaddon'));
+				->update($db->quoteName('#__extensions'))
+				->set($db->quoteName('enabled') . ' =  1')
+				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+				->where($db->quoteName('element') . ' = ' . $db->quote('categories'))
+				->where($db->quoteName('folder') . ' = ' . $db->quote('csviaddon'));
 
-			$db->setQuery($query);
-
-			if ($db->execute())
-			{
-				$app->enqueueMessage(JText::_('PLG_CSVIADDON_PLUGIN_ENABLED'));
-
-				return true;
-			}
-			else
-			{
-				$app->enqueueMessage(JText::sprintf('PLG_CSVIADDON_PLUGIN_NOT_ENABLED', $db->getErrorMsg()), 'error');
-
-				return false;
-			}
+			$db->setQuery($query)->execute();
+			$app->enqueueMessage(JText::_('PLG_CSVIADDON_PLUGIN_ENABLED'));
 		}
-		else
+		catch (Exception $e)
 		{
-			$app->enqueueMessage(JText::sprintf('PLG_CSVIADDON_FOLDER_NOT_CREATED', $folder), 'error');
+			$app->enqueueMessage($e->getMessage());
 
 			return false;
 		}
-	}
 
-	/**
-	 * Actions to perform after un-installation.
-	 *
-	 * @param   object  $parent  The parent object.
-	 *
-	 * @return  bool  True on success | False on failure.
-	 *
-	 * @since   6.0
-	 */
-	public function uninstall($parent)
-	{
-		// Remove the files
-		if (file_exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_categories'))
-		{
-			JFolder::delete(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_categories');
-		}
+		return true;
 	}
 }

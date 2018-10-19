@@ -3,84 +3,86 @@
  * @package     CSVI
  * @subpackage  Logs
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
-
+JHtml::addIncludePath(JPATH_COMPONENT . '/helpers/html');
 JHtml::_('behavior.modal');
 JHtml::_('formbehavior.chosen');
 JHtml::_('formbehavior.chosen', '.inputbox');
+
+$listOrder  = $this->escape($this->state->get('list.ordering'));
+$listDirn   = $this->escape($this->state->get('list.direction'));
+
+$loggeduser = JFactory::getUser();
 ?>
 
-<form action="<?php echo JRoute::_('index.php?option=com_csvi&view=logs'); ?>" method="post" name="adminForm" id="adminForm">
-	<div class="btn-toolbar" id="filter-bar">
-		<div class="btn-group pull-right hidden-phone">
-			<label for="limit" class="element-invisible"><?php echo JText::_('JFIELD_PLG_SEARCH_SEARCHLIMIT_DESC'); ?></label>
-			<?php echo $this->pagination->getLimitBox(); ?>
-		</div>
+<form action="<?php echo JRoute::_('index.php?option=com_csvi&view=logs', false); ?>" method="post" name="adminForm" id="adminForm">
+	<div id="j-sidebar-container" class="span2">
+		<?php echo $this->sidebar; ?>
 	</div>
+	<div id="j-main-container" class="span10">
+		<?php
+		// Search tools bar
+		echo JLayoutHelper::render('joomla.searchtools.default', array('view' => $this));
+		?>
 	<div id="availablefieldslist">
-		<table class="table table-condensed table-striped table-hover">
+		<table class="table table-striped" id="logsList">
 			<thead>
 			<tr>
-				<th width="20">
-					<input type="checkbox" name="toggle" value="" onclick="Joomla.checkAll(this);" />
+				<th width="1%" class="nowrap center">
+					<?php echo JHtml::_('grid.checkall'); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_ACTION', 'action', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="left">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_ACTION', 'l.action', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_ACTION_TYPE', 'action_type', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_ACTION_TYPE', 'l.action_type', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_TEMPLATE_NAME_TITLE', 'template_name', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_TEMPLATE_NAME_TITLE', 'l.template_name', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_START', 'start', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_START', 'l.start', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_END', 'end', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_END', 'l.end', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_USER', 'userid', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_USER', 'u.name', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_RECORDS', 'records', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_RECORDS', 'l.records', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_RUN_CANCELLED', 'run_cancelled', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_RUN_CANCELLED', 'l.run_cancelled', $listDirn, $listOrder); ?>
 				</th>
-				<th>
-					<?php echo JHtml::_('grid.sort', 'COM_CSVI_FILENAME', 'file_name', $this->lists->order_Dir, $this->lists->order, 'browse'); ?>
+				<th class="nowrap">
+					<?php echo JHtml::_('searchtools.sort', 'COM_CSVI_FILENAME', 'l.file_name', $listDirn, $listOrder); ?>
 				</th>
-				<th>
+				<th class="nowrap">
 					<?php echo JText::_('COM_CSVI_DEBUG_LOG'); ?>
 				</th>
 			</tr>
-			<tr>
-				<th></th>
-				<th>
-					<?php echo JHtml::_(
-						'select.genericlist',
-						$this->get('ActionTypes'),
-						'actiontype',
-						'class="input-medium advancedSelect" onchange="this.form.submit()"',
-						'value',
-						'text',
-						$this->escape($this->getModel()->getState('actiontype', ''))
-					); ?>
-				</th>
-				<th colspan="11"></th>
-			</tr>
 			</thead>
 			<tfoot>
-				<tr>
-					<td colspan="11"><?php echo $this->pagination->getListFooter(); ?></td>
-				</tr>
+			<tr>
+				<td colspan="15">
+					<div class="pull-left">
+						<?php
+						if ($this->pagination->total > 0)
+						{
+							echo $this->pagination->getListFooter();
+						}
+						?>
+					</div>
+					<div class="pull-right"><?php echo $this->pagination->getResultsCounter(); ?></div>
+				</td>
+			</tr>
 			</tfoot>
 			<tbody>
 			<?php
@@ -89,7 +91,6 @@ JHtml::_('formbehavior.chosen', '.inputbox');
 					foreach ($this->items as $i => $item)
 					{
 						$checkedOut = false;
-						$ordering = $this->lists->order == 'ordering';
 						$link 	= 'index.php?option=com_csvi&view=logdetails&run_id=' . $item->csvi_log_id;
 						?>
 						<tr>
@@ -137,28 +138,28 @@ JHtml::_('formbehavior.chosen', '.inputbox');
 							</td>
 							<td>
 								<?php
-								if ($item->action == 'import' || $item->action == 'export')
+								if ($item->action === 'import' || $item->action === 'export')
 								{
-									if (file_exists(JPATH_SITE . '/logs/com_csvi.log.' . $item->csvi_log_id . '.php'))
+									if (file_exists(CSVIPATH_DEBUG . '/com_csvi.log.' . $item->csvi_log_id . '.php'))
 									{
 										$attribs = 'class="modal" onclick="" rel="{handler: \'iframe\', size: {x: 950, y: 500}}"';
 										echo JHtml::_(
 											'link',
-											JRoute::_('index.php?option=com_csvi&view=logs&task=logreader&tmpl=component&run_id=' . $item->csvi_log_id),
+											JRoute::_('index.php?option=com_csvi&view=logs&layout=logreader&tmpl=component&run_id=' . $item->csvi_log_id),
 											JText::_('COM_CSVI_SHOW_LOG'),
 											$attribs
 										);
 										echo ' | ';
 										echo JHtml::_(
 											'link',
-											JRoute::_('index.php?option=com_csvi&view=logs&task=logreader&tmpl=component&run_id=' . $item->csvi_log_id),
+											JRoute::_('index.php?option=com_csvi&view=logs&layout=logreader&tmpl=component&run_id=' . $item->csvi_log_id),
 											JText::_('COM_CSVI_OPEN_LOG'),
 											'target="_new"'
 										);
 										echo ' | ';
 										echo JHtml::_(
 											'link',
-											JRoute::_('index.php?option=com_csvi&view=logs&task=downloaddebug&run_id=' . $item->csvi_log_id),
+											JRoute::_('index.php?option=com_csvi&task=logs.downloadDebug&run_id=' . $item->csvi_log_id),
 											JText::_('COM_CSVI_DOWNLOAD_LOG')
 										);
 									}
@@ -185,10 +186,9 @@ JHtml::_('formbehavior.chosen', '.inputbox');
 			</tbody>
 		</table>
 	</div>
-	<input type="hidden" id="task" name="task" value="browse" />
+	</div>
+	<input type="hidden" id="task" name="task" value="" />
 	<input type="hidden" name="boxchecked" value="0" />
-	<input type="hidden" name="filter_order" id="filter_order" value="<?php echo $this->lists->order ?>" />
-	<input type="hidden" name="filter_order_Dir" id="filter_order_Dir" value="<?php echo $this->lists->order_Dir ?>" />
 	<?php echo JHtml::_('form.token'); ?>
 </form>
 
@@ -200,27 +200,14 @@ echo $layout->render(array('cancel-button' => true));
 
 <script type="text/javascript">
 	Joomla.submitbutton = function(task) {
-		if (task != 'logdetails') {
-			// Set the task
-			document.adminForm.task.value = task;
-			if (task == 'remove')
-			{
-				showMsg(
-					'<?php echo JText::_('COM_CSVI_DELETE'); ?>',
-					'<?php echo JText::_('COM_CSVI_LOG_ARE_YOU_SURE_REMOVE'); ?>',
-					'<?php echo JText::_('COM_CSVI_OK'); ?>',
-					''
-				);
-			}
-			else if (task == 'remove_all')
-			{
-				showMsg(
-					'<?php echo JText::_('COM_CSVI_DELETE_ALL'); ?>',
-					'<?php echo JText::_('COM_CSVI_LOG_ARE_YOU_SURE_REMOVE_ALL'); ?>',
-					'<?php echo JText::_('COM_CSVI_OK'); ?>',
-					''
-				);
-			}
+		if (task == 'logs.deleteAll')
+		{
+			showMsg(
+				'<?php echo JText::_('COM_CSVI_DELETE_ALL'); ?>',
+				'<?php echo JText::_('COM_CSVI_LOG_ARE_YOU_SURE_REMOVE_ALL'); ?>',
+				'<?php echo JText::_('COM_CSVI_OK'); ?>',
+				''
+			);
 
 			jQuery('.ok-btn').on('click', function(e) {
 				e.preventDefault();
@@ -233,14 +220,8 @@ echo $layout->render(array('cancel-button' => true));
 				jQuery('#csviModal').modal('hide');
 			});
 		}
-		else {
-			if (task == 'logdetails')
-			{
-				// Set the task
-				document.adminForm.task.value = '';
-				var task = 'browse';
-				jQuery('form').attr('action', '<?php echo html_entity_decode(JRoute::_('index.php?option=com_csvi&view=logdetails')); ?>');
-			}
+		else
+		{
 			Joomla.submitform(task);
 		}
 	}

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Helper
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -26,7 +26,7 @@ final class CsviHelperCsvi
 	 * @var    CsviHelperLog
 	 * @since  6.0
 	 */
-	protected $log = null;
+	protected $log;
 
 	/**
 	 * Database connector
@@ -34,7 +34,7 @@ final class CsviHelperCsvi
 	 * @var    JDatabase
 	 * @since  6.0
 	 */
-	protected $db = null;
+	protected $db;
 
 	/**
 	 * Array of available languages
@@ -76,6 +76,33 @@ final class CsviHelperCsvi
 	{
 		// Set the logger
 		$this->log = $log;
+	}
+
+	/**
+	 * Render submenu.
+	 *
+	 * @param   string  $vName  The name of the current view.
+	 *
+	 * @return  void.
+	 *
+	 * @since   2.8
+	 */
+	public function addSubmenu($vName)
+	{
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_CPANEL'), 'index.php?option=com_csvi&view=csvi', $vName == 'csvi');
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_IMPORTS'), 'index.php?option=com_csvi&view=imports', $vName == 'imports');
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_EXPORTS'), 'index.php?option=com_csvi&view=exports', $vName == 'exports');
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_TEMPLATES'), 'index.php?option=com_csvi&view=templates', $vName == 'templates');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_TEMPLATEFIELDS'), 'index.php?option=com_csvi&view=templatefields', $vName == 'templatefields');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_RULES'), 'index.php?option=com_csvi&view=rules', $vName == 'rules');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_MAPS'), 'index.php?option=com_csvi&view=maps', $vName == 'maps');
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_MAINTENANCE'), 'index.php?option=com_csvi&view=maintenance', $vName == 'maintenance');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_AVAILABLEFIELDS'), 'index.php?option=com_csvi&view=availablefields', $vName == 'availablefields');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_ANALYZER'), 'index.php?option=com_csvi&view=analyzer', $vName == 'analyzer');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_TASKS'), 'index.php?option=com_csvi&view=tasks', $vName == 'tasks');
+		JHtmlSidebar::addEntry(' - ' . JText::_('COM_CSVI_TITLE_PROCESSES'), 'index.php?option=com_csvi&view=processes', $vName == 'processes');
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_LOGS'), 'index.php?option=com_csvi&view=logs', $vName == 'logs');
+		JHtmlSidebar::addEntry(JText::_('COM_CSVI_TITLE_ABOUT'), 'index.php?option=com_csvi&view=about', $vName == 'about');
 	}
 
 	/**
@@ -185,14 +212,22 @@ final class CsviHelperCsvi
 	 *
 	 * Note: The time taken to check a valid format url:  0.10 secs, regardless of whether the file exists
 	 *
-	 * @param   string  $file  The URL to be checked
+	 * @param   string  $file            The URL to be checked.
+	 * @param   string  $user            The username for the URL.
+	 * @param   string  $pass            The password for the URL.
+	 * @param   string  $method          The method to use to retrieve the file.
+	 * @param   string  $userField       The name of the user field to post.
+	 * @param   string  $passField       The name of the password field to post.
+	 * @param   string  $credentialType  The type of login screen presented
+	 * @param   int     $encodeUrl       If the URL has to be encoded or not
 	 *
 	 * @return  boolean  true if file exists | false if file does not exist.
 	 *
 	 * @since   2.17
 	 */
-	public function fileExistsRemote($file)
+	public function fileExistsRemote($file, $user = '', $pass = '', $method = 'GET', $userField = 'user', $passField =  'password', $credentialType = 'htaccess', $encodeUrl = 1)
 	{
+		$method = strtoupper($method);
 		$url_parts = @parse_url($file);
 
 		if ($this->log)
@@ -207,8 +242,6 @@ final class CsviHelperCsvi
 
 		// The parameters for the URL
 		$documentpath = '';
-		$user = false;
-		$pass = false;
 
 		if (!isset($url_parts['path']) || empty($url_parts['path']))
 		{
@@ -224,29 +257,44 @@ final class CsviHelperCsvi
 			$documentpath .= '?' . $url_parts['query'];
 		}
 
-		if (isset($url_parts['user']))
+		if (!$user && array_key_exists('user', $url_parts) && $url_parts['user'])
 		{
 			$user = $url_parts['user'];
 		}
 
-		if (isset($url_parts['pass']))
+		if (!$pass && array_key_exists('pass', $url_parts) && $url_parts['pass'])
 		{
 			$pass = ':' . $url_parts['pass'] . '@';
 		}
 
 		$host = $url_parts['host'];
 
-		if (substr($url_parts['scheme'], 0, 4) == 'http')
+		if (0 === strpos($url_parts['scheme'], 'http'))
 		{
+			if (strtoupper($method) === 'POST')
+			{
+				$http = JHttpFactory::getHttp(null, array('curl', 'stream'));
+				$data = array($userField => $user, $passField => $pass);
+
+				if ($credentialType === 'htaccess')
+				{
+					$http->setOption('userauth', $user);
+					$http->setOption('passwordauth', $pass);
+					$data = array();
+				}
+
+				$answer = $http->post($file, $data);
+
+				return $answer->code === 200;
+			}
+
 			if (!isset($url_parts['port']) || empty($url_parts['port']))
 			{
-				if ($url_parts['scheme'] == 'https')
+				$port = '80';
+
+				if ($url_parts['scheme'] === 'https')
 				{
 					$port = '443';
-				}
-				else
-				{
-					$port = '80';
 				}
 			}
 			else
@@ -254,76 +302,48 @@ final class CsviHelperCsvi
 				$port = $url_parts['port'];
 			}
 
-			if ($url_parts['scheme'] == 'https')
+			$sslhost = $host;
+
+			if ($url_parts['scheme'] === 'https')
 			{
 				$sslhost = 'ssl://' . $host;
-			}
-			else
-			{
-				$sslhost = $host;
 			}
 
 			$errno = null;
 			$errstr = null;
-			$documentpath = str_replace(' ', '%20', $documentpath);
 
-			// Open the connection
-			if ($this->log)
+			// Clean up the filename
+			$uri      = JUri::getInstance($documentpath);
+			$dirPath  = dirname($documentpath);
+			$fileName = basename($uri->getPath());
+			$query    = $uri->getQuery();
+
+			if ($encodeUrl)
 			{
-				$this->log->add('Opening socket to ' . $sslhost . ' at port ' . $port, false);
+				$fileName = rawurlencode(basename($uri->getPath()));
+				$query    = rawurlencode($uri->getQuery());
 			}
 
-			$socket = @fsockopen($sslhost, $port, $errno, $errstr, 30);
+			$documentpath = $dirPath . '/' . $fileName . ($query ? '?' . $query : '');
 
-			if ($socket)
+			// Call the image server
+			if (!$this->callImageServer($documentpath, $host, $sslhost, $port, $url_parts, $user, $pass))
 			{
-				// Send the username if present
-				if ($user)
-				{
-					fwrite($socket, "USER $user\r\n");
-				}
+				// Call failed but let's see if we use space replacement
+				$documentpath = str_replace(' ', '%20', $dirPath . '/' . $fileName . ($query ? '?' . $query : ''));
 
-				// Send the password if present
-				if ($pass)
-				{
-					fwrite($socket, "PASS $pass\r\n");
-				}
-
-				// Call the page
-				fwrite($socket, "HEAD $documentpath HTTP/1.1\r\nUser-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.11) Gecko/20071127 Firefox/2.0.0.11\r\nHost:  $host\r\n\r\n");
-
-				// Get the response
-				$http_response = fgets($socket, 25);
-
-				// Close the connection
-				fclose($socket);
-
-				if ($this->log)
-				{
-					// Parse the result
-					$this->log->add('HTTP response:' . $http_response, false);
-				}
-
-				// Verify the response code
-				if (stripos($http_response, '200 OK') === false
-					&& stripos($http_response, '302 Found') === false
-					|| (substr($url_parts['path'], 0, -3) == 'xml' && stripos($http_response, 'DOCTYPE HTML PUBLIC') == false))
-				{
-					return false;
-				}
-				else
-				{
-					return true;
-				}
+				return $this->callImageServer($documentpath, $host, $sslhost, $port, $url_parts, $user, $pass);
 			}
+
+			return true;
 		}
-		elseif (substr($url_parts['scheme'], 0, 3) == 'ftp')
+		elseif (0 === strpos($url_parts['scheme'], 'ftp'))
 		{
 			$host = $url_parts['host'];
 
 			if ($host)
 			{
-				$port = (isset($url_parts['port'])) ? $url_parts['port'] : 21;
+				$port = isset($url_parts['port']) ? $url_parts['port'] : 21;
 				$user = $url_parts['user'];
 				$pass = $url_parts['pass'];
 
@@ -351,6 +371,74 @@ final class CsviHelperCsvi
 	}
 
 	/**
+	 * Call the image server.
+	 *
+	 * @param   string  $url        The URL to call
+	 * @param   string  $host       The hostname
+	 * @param   string  $sslhost    The SSL hostname
+	 * @param   string  $port       The port to connect to
+	 * @param   string  $url_parts  The image URL parts
+	 * @param   string  $user       The username for authentication
+	 * @param   string  $pass       The password for authentication
+	 *
+	 * @return  boolean  True on success | False on failure.
+	 *
+	 * @since   7.7.0
+	 */
+	private function callImageServer($url, $host, $sslhost, $port, $url_parts, $user, $pass)
+	{
+		// Open the connection
+		if ($this->log)
+		{
+			$this->log->add('Opening socket to ' . $sslhost . ' at port ' . $port, false);
+		}
+
+		$socket = @fsockopen($sslhost, $port, $errno, $errstr, 30);
+
+		if ($socket)
+		{
+			// Send the username if present
+			if ($user)
+			{
+				fwrite($socket, "USER $user\r\n");
+			}
+
+			// Send the password if present
+			if ($pass)
+			{
+				fwrite($socket, "PASS $pass\r\n");
+			}
+
+			// Call the page
+			fwrite($socket, "HEAD $url HTTP/1.1\r\nUser-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.11) Gecko/20071127 Firefox/2.0.0.11\r\nHost:  $host\r\n\r\n");
+
+			// Get the response
+			$http_response = fgets($socket, 25);
+
+			// Close the connection
+			fclose($socket);
+
+			if ($this->log)
+			{
+				// Parse the result
+				$this->log->add('HTTP response:' . $http_response, false);
+			}
+
+			// Verify the response code
+			if ((stripos($http_response, '200 OK') === false
+					&& stripos($http_response, '302 Found') === false)
+				|| (0 === strrpos($url_parts['path'], 'xml') && stripos($http_response, 'DOCTYPE HTML PUBLIC') === false))
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Find the primary key of a given table.
 	 *
 	 * @param   string  $tablename  The table name to find the primary key for
@@ -358,6 +446,8 @@ final class CsviHelperCsvi
 	 * @return  string  The fieldname that is the primary key.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function getPrimaryKey($tablename)
 	{
@@ -382,6 +472,8 @@ final class CsviHelperCsvi
 	 * @return  array  Array of supported components.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function getComponents()
 	{
@@ -395,8 +487,9 @@ final class CsviHelperCsvi
 		$query->group($this->db->quoteName('component'));
 		$this->db->setQuery($query);
 
-		$components = $this->db->loadObjectList();
+		$components       = $this->db->loadObjectList();
 		$sortedComponents = array();
+		$language         = new CsviHelperLanguage;
 
 		// Load the language files too and translate the component name
 		foreach ($components as $component)
@@ -405,7 +498,7 @@ final class CsviHelperCsvi
 			if (JPluginHelper::isEnabled('csviaddon', substr($component->value, 4)))
 			{
 				// Load language
-				$this->loadLanguage($component->value);
+				$language->loadAddonLanguage($component->value);
 
 				// Translate component
 				$component->text = JText::_($component->text);
@@ -422,22 +515,21 @@ final class CsviHelperCsvi
 	/**
 	 * Method to get the field options.
 	 *
-	 * @param   FOFForm   $form    The form to render.
-	 * @param   FOFModel  $model   The model to use.
-	 * @param   FOFInput  $input   The input to use.
-	 * @param   string    $render  The name of the renderer to use.
+	 * @param   JForm   $form   The form to render.
+	 * @param   JInput  $input  The input to use.
 	 *
 	 * @return  string    The HTML rendering of the form.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  UnexpectedValueException
 	 */
-	public function renderMyForm(FOFForm $form, FOFModel $model, FOFInput $input, $render='csvi')
+	public function renderCsviForm(JForm $form, JInput $input)
 	{
-		require_once JPATH_ADMINISTRATOR . '/components/com_csvi/assets/render/' . $render . '.php';
-		$rendername = 'FOFRenderAssets' . $render;
-		$renderer = new $rendername;
+		require_once JPATH_ADMINISTRATOR . '/components/com_csvi/helper/form.php';
+		$renderer = new CsviForm;
 
-		return $renderer->renderForm($form, $model, $input, 'edit', true);
+		return $renderer->renderForm($form, $input, 'edit');
 	}
 
 	/**
@@ -449,15 +541,13 @@ final class CsviHelperCsvi
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @deprecated 8.0
 	 */
 	public function loadLanguage($addon, $reload=true)
 	{
-		if (!empty($addon))
-		{
-			$jlang = JFactory::getLanguage();
-			$langdefault = $jlang->getDefault();
-			$jlang->load('com_csvi', JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $addon, $langdefault, $reload);
-		}
+		$language = new CsviHelperLanguage;
+		$language->loadAddonLanguage($addon, $reload);
 	}
 
 	/**
@@ -487,6 +577,8 @@ final class CsviHelperCsvi
 	 * @return  array  List of languages.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function getLanguages($key = 'default')
 	{
@@ -522,45 +614,50 @@ final class CsviHelperCsvi
 	 * @return  void.
 	 *
 	 * @since   6.4.3
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function setDownloadId()
 	{
 		// Update the download ID
 		$params = JComponentHelper::getParams('com_csvi');
-		$dlid = $params->get('downloadid');
+		$downloadId = $params->get('downloadid');
+		$downloadId = trim($downloadId);
 
-		// If the Download ID seems legit let's apply it
-		if (preg_match('/^([0-9]{1,}:)?[0-9a-f]{32}$/i', $dlid))
-		{
-			// Get the extension IDs
-			$ids = array();
+		// Get the extension IDs
+		$ids = array();
 
-			// Get the component ID
-			$query = $this->db->getQuery(true)
-				->select($this->db->quoteName('update_site_id'))
-				->from($this->db->quoteName('#__update_sites_extensions', 'se'))
-				->leftJoin(
-					$this->db->quoteName('#__extensions', 'e')
-					. ' ON ' . $this->db->quoteName('e.extension_id') . ' = ' . $this->db->quoteName('se.extension_id')
-				)
-				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('component'))
-				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('com_csvi'));
-			$this->db->setQuery($query);
-			$ids[] = $this->db->loadResult();
+		// Get the component ID
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('update_site_id'))
+			->from($this->db->quoteName('#__update_sites_extensions', 'se'))
+			->leftJoin(
+				$this->db->quoteName('#__extensions', 'e')
+				. ' ON ' . $this->db->quoteName('e.extension_id') . ' = ' . $this->db->quoteName('se.extension_id')
+			)
+			->where($this->db->quoteName('type') . ' = ' . $this->db->quote('component'))
+			->where($this->db->quoteName('element') . ' = ' . $this->db->quote('com_csvi'));
+		$this->db->setQuery($query);
+		$ids[] = $this->db->loadResult();
 
-			// Get the plugin IDs
-			$query->clear('where')
-				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
-				->where($this->db->quoteName('folder') . ' IN (' . $this->db->quote('csviaddon') . ',' . $this->db->quote('csvirules') . ',' . $this->db->quote('csviext') . ')');
-			$this->db->setQuery($query);
-			$ids = array_merge($ids, $this->db->loadColumn());
+		// Get the plugin IDs
+		$query->clear('where')
+			->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
+			->where(
+				$this->db->quoteName('folder') . ' IN (' .
+					$this->db->quote('csviaddon') . ',' . $this->db->quote('csvirules') . ',' . $this->db->quote('csviext')
+				. ')'
+			);
+		$this->db->setQuery($query);
+		$ids = array_merge($ids, $this->db->loadColumn());
 
-			$query->clear()
-				->update($this->db->quoteName('#__update_sites'))
-				->set($this->db->quoteName('extra_query') . ' = ' . $this->db->quote('dlid=' . $dlid))
-				->where($this->db->quoteName('update_site_id') . ' IN (' . implode(',', $ids) . ')');
-			$this->db->setQuery($query)->execute();
-		}
+		// Make sure we only have IDs
+		$ids = \Joomla\Utilities\ArrayHelper::toInteger($ids);
+
+		$query->clear()
+			->update($this->db->quoteName('#__update_sites'))
+			->set($this->db->quoteName('extra_query') . ' = ' . $this->db->quote('dlid=' . $downloadId))
+			->where($this->db->quoteName('update_site_id') . ' IN (' . implode(',', $ids) . ')');
+		$this->db->setQuery($query)->execute();
 	}
-
 }

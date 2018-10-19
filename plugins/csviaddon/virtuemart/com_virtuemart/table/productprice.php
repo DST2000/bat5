@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -57,9 +57,15 @@ class VirtueMartTableProductPrice extends CsviTableDefault
 		$query = $this->db->getQuery(true);
 		$query->select($this->db->quoteName($this->_tbl_key))
 			->from($this->db->quoteName($this->_tbl))
-			->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $this->get('virtuemart_product_id'))
-			->where($this->db->quoteName('price_quantity_start') . ' = ' . (int) $this->get('price_quantity_start', 0))
-			->where($this->db->quoteName('price_quantity_end') . ' = ' . (int) $this->get('price_quantity_end', 0));
+			->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $this->get('virtuemart_product_id'));
+
+		$query->where('(' .
+			$this->db->quoteName('price_quantity_start') . ' = ' . (int) $this->get('price_quantity_start', 0) . ' OR ' .
+			$this->db->quoteName('price_quantity_start') . ' IS NULL)');
+
+		$query->where('(' .
+			$this->db->quoteName('price_quantity_end') . ' = ' . (int) $this->get('price_quantity_end', 0) . ' OR ' .
+			$this->db->quoteName('price_quantity_end') . ' IS NULL)');
 
 		if ($this->get('virtuemart_shoppergroup_id', false) !== false)
 		{
@@ -67,7 +73,9 @@ class VirtueMartTableProductPrice extends CsviTableDefault
 		}
 		else
 		{
-			$query->where($this->db->quoteName('virtuemart_shoppergroup_id') . ' IS NULL');
+			$query->where('(' .
+				$this->db->quoteName('virtuemart_shoppergroup_id') . ' = 0 OR ' .
+				$this->db->quoteName('virtuemart_shoppergroup_id') . ' IS NULL)');
 		}
 
 		if ($this->get('product_currency', false))
@@ -85,7 +93,9 @@ class VirtueMartTableProductPrice extends CsviTableDefault
 		}
 		else
 		{
-			$query->where($this->db->quoteName('product_price_publish_up') . ' IS NULL');
+			$query->where('(' .
+				$this->db->quoteName('product_price_publish_up') . ' = ' . $this->db->quote('0000-00-00 00:00:00') . ' OR ' .
+				$this->db->quoteName('product_price_publish_up') . ' IS NULL)');
 		}
 
 		if ($this->get('product_price_publish_down', false))
@@ -94,7 +104,9 @@ class VirtueMartTableProductPrice extends CsviTableDefault
 		}
 		else
 		{
-			$query->where($this->db->quoteName('product_price_publish_down') . ' IS NULL');
+			$query->where('(' .
+				$this->db->quoteName('product_price_publish_down') . ' = ' . $this->db->quote('0000-00-00 00:00:00') . ' OR ' .
+				$this->db->quoteName('product_price_publish_down') . ' IS NULL)');
 		}
 
 		$this->db->setQuery($query);

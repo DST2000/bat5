@@ -34,24 +34,28 @@
 			</field>
 
 			<field name="orderitemdatestart"
-				   type="csvicalendar"
+				   type="calendar"
 				   format="%d-%m-%Y %H:%M:%S"
-				   class="input-medium" />
+				   class="input-medium"
+				   filter="none"/>
 
 			<field name="orderitemdateend"
-				   type="csvicalendar"
+				   type="calendar"
 				   format="%d-%m-%Y %H:%M:%S"
-				   class="input-medium" />
+				   class="input-medium"
+				   filter="none"/>
 
 			<field name="orderitemmdatestart"
-				   type="csvicalendar"
+				   type="calendar"
 				   format="%d-%m-%Y %H:%M:%S"
-				   class="input-medium" />
+				   class="input-medium"
+				   filter="none"/>
 
 			<field name="orderitemmdateend"
-				   type="csvicalendar"
+				   type="calendar"
 				   format="%d-%m-%Y %H:%M:%S"
-				   class="input-medium" />
+				   class="input-medium"
+				   filter="none"/>
 
 			<field name="orderitemstatus"
 				   type="sql"

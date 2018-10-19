@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  Templates
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+use Joomla\Registry\Registry;
 
 defined('_JEXEC') or die;
 
@@ -26,7 +28,7 @@ class CsviHelperTemplate
 	 * @var    JRegistry
 	 * @since  3.0
 	 */
-	private $settings = null;
+	private $settings;
 
 	/**
 	 * The name of the template
@@ -34,7 +36,7 @@ class CsviHelperTemplate
 	 * @var    string
 	 * @since  3.0
 	 */
-	private $name = null;
+	private $name;
 
 	/**
 	 * The ID of the template
@@ -42,7 +44,7 @@ class CsviHelperTemplate
 	 * @var    int
 	 * @since  3.0
 	 */
-	private $id = null;
+	private $id;
 
 	/**
 	 * If the template can be used for front-end/cron usage
@@ -87,14 +89,14 @@ class CsviHelperTemplate
 	/**
 	 * Construct the template helper.
 	 *
-	 * @param   int             $id      The ID of the template to load.
-	 * @param   CsviHelperCsvi  $helper  An instance of CsviHelperCsvi
-	 *
-	 * @throws  Exception
+	 * @param   int  $id  The ID of the template to load.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  CsviException
+	 * @throws  RuntimeException
 	 */
-	public function __construct($id, CsviHelperCsvi $helper)
+	public function __construct($id)
 	{
 		if ($id)
 		{
@@ -124,13 +126,14 @@ class CsviHelperTemplate
 
 			if ($template)
 			{
-				$options = new JRegistry;
+				$options = new Registry;
 				$options->loadArray(json_decode($template->settings, true));
 				$template->options = $options;
+				$template->csvi_template_id = (int) $template->csvi_template_id;
 
-				if ($template->csvi_template_id != $this->id)
+				if ($template->csvi_template_id !== $this->id)
 				{
-					throw new Exception(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
+					throw new CsviException(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
 				}
 
 				// Set the name
@@ -155,16 +158,17 @@ class CsviHelperTemplate
 				$this->enabled = $template->enabled;
 
 				// Load the language
-				$helper->loadLanguage($this->get('component'));
+				$language = new CsviHelperLanguage;
+				$language->loadAddonLanguage($this->get('component'));
 			}
 			else
 			{
-				throw new Exception(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
+				throw new CsviException(JText::sprintf('COM_CSVI_TEMPLATE_NOT_FOUND', $this->id));
 			}
 		}
 		else
 		{
-			$this->settings = new JRegistry;
+			$this->settings = new Registry;
 		}
 	}
 
@@ -192,7 +196,7 @@ class CsviHelperTemplate
 		$value = $this->settings->get($name, '');
 
 		// Return the found value
-		if (is_array($value) && empty($value))
+		if (is_array($value) && 0 === count($value))
 		{
 			$value = $default;
 		}
@@ -208,13 +212,28 @@ class CsviHelperTemplate
 			{
 				case 'language':
 				case 'target_language':
-					if ($this->settings->get('component') == 'com_virtuemart' && is_string($value))
+					if (in_array($this->settings->get('component'), array('com_virtuemart', 'com_productbuilder'), true))
 					{
-						$value = strtolower(str_replace('-', '_', $value));
+						if (is_string($value))
+						{
+							$value = strtolower(str_replace('-', '_', $value));
+						}
+
+						// If no language set in the template, take the default language
+						if (!$value)
+						{
+							// Load all the helpers needed
+							$settings = new CsviHelperSettings($this->db);
+							$log      = new CsviHelperLog($settings, $this->db);
+							$fields   = new CsviHelperFields($this, $log, $this->db);
+							require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart.php';
+							$helperConfig = new Com_VirtuemartHelperCom_Virtuemart($this, $log, $fields, $this->db);
+							$value        = $helperConfig->getDefaultLanguage();
+						}
 					}
 					break;
 				case 'field_delimiter':
-					if (strtolower($value) == 't')
+					if (strtolower($value) === 't')
 					{
 						$value = "\t";
 					}
@@ -223,7 +242,7 @@ class CsviHelperTemplate
 		}
 
 		// Clean up and return
-		if (is_null($filter) && $mask == 0)
+		if (null === $filter && $mask === 0)
 		{
 			return $value;
 		}

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Tasks
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,156 +18,165 @@ defined('_JEXEC') or die;
  * @subpackage  Tasks
  * @since       6.0
  */
-class CsviModelTasks extends FOFModel
+class CsviModelTasks extends JModelList
 {
 	/**
-	 * Collect the values to filter on.
+	 * The database class
 	 *
-	 * @return  object  List of filter values.
+	 * @var    JDatabaseDriver
+	 * @since  6.0
+	 */
+	protected $db;
+
+	/**
+	 * Construct the class.
+	 *
+	 * @param   array  $config  An optional associative array of configuration settings.
 	 *
 	 * @since   6.0
 	 */
-	private function getFilterValues()
+	public function __construct($config = array())
 	{
-		return (object) array(
-				'name'		=> $this->getState('name', '', 'string'),
-				'process'	=> $this->getState('process', '*', 'string'),
-				'component'	=> $this->getState('component', '', 'string'),
-				'published'	=> $this->getState('published', '*', 'string')
-		);
+		if (empty($config['filter_fields']))
+		{
+			$config['filter_fields'] = array(
+				'ordering', 'a.ordering',
+				'csvi_task_id', 'a.csvi_task_id',
+				'task_name', 'a.task_name',
+				'action', 'a.action',
+				'component', 'a.component',
+				'enabled', 'a.enabled',
+			);
+		}
+
+		// Load the basics
+		$this->db = JFactory::getDbo();
+
+		parent::__construct($config);
 	}
 
 	/**
-	 * Builds the SELECT query
+	 * Method to auto-populate the model state.
 	 *
-	 * @param   boolean  $overrideLimits  Are we requested to override the set limits?
+	 * Note. Calling getState in this method will result in recursion.
 	 *
-	 * @return  JDatabaseQuery
+	 * @param   string  $ordering   An optional ordering field.
+	 * @param   string  $direction  An optional direction (asc|desc).
 	 *
-	 * @since   6.0
+	 * @return  void
+	 *
+	 * @since   6.6.0
 	 */
-	public function buildQuery($overrideLimits = false)
+	protected function populateState($ordering = 'a.component', $direction = 'ASC')
 	{
-		$db = JFactory::getDbo();
+		// List state information.
+		parent::populateState($ordering, $direction);
+	}
 
+	/**
+	 * Method to get a store id based on the model configuration state.
+	 *
+	 * This is necessary because the model is used by the component and
+	 * different modules that might need different sets of data or different
+	 * ordering requirements.
+	 *
+	 * @param   string  $id  An identifier string to generate the store id.
+	 *
+	 * @return  string  A store id.
+	 *
+	 * @since   12.2
+	 */
+	protected function getStoreId($id = '')
+	{
+		// Add the list state to the store id.
+		$id .= ':' . $this->getState('list.start');
+		$id .= ':' . $this->getState('list.limit');
+		$id .= ':' . $this->getState('list.ordering');
+		$id .= ':' . $this->getState('list.direction');
+		$id .= ':' . $this->getState('filter.search');
+		$id .= ':' . $this->getState('filter.action');
+		$id .= ':' . $this->getState('filter.component');
+		$id .= ':' . $this->getState('filter.task_name');
+
+		return md5($this->context . ':' . $id);
+	}
+
+	/**
+	 * Build an SQL query to load the list data.
+	 *
+	 * @return  JDatabaseQuery  The query to execute.
+	 *
+	 * @since   4.0
+	 *
+	 * @throws  RuntimeException
+	 */
+	protected function getListQuery()
+	{
 		// Get the parent query
-		$this->setState('filter_order', $this->getState('filter_order', 'ordering'));
-		$query = parent::buildQuery($overrideLimits);
+		$query = $this->db->getQuery(true)
+			->from($this->db->quoteName('#__csvi_tasks', 'a'))
+			->leftJoin(
+				$this->db->quoteName('#__users', 'u')
+				. ' ON ' . $this->db->quoteName('a.locked_by') . ' = ' . $this->db->quoteName('u.id')
+			)
+			->select(
+				$this->db->quoteName(
+					array(
+						'csvi_task_id',
+						'task_name',
+						'action',
+						'component',
+						'url',
+						'enabled',
+						'ordering',
+					)
+				)
+			)
+			->select($this->db->quoteName('u.name', 'editor'));
 
-		// Join the user table to get the editor
-		$query->select($db->quoteName('u.name', 'editor'));
-		$query->leftJoin(
-			$db->quoteName('#__users', 'u')
-			. ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('#__csvi_tasks.locked_by')
+		// Filter by search field
+		$search = $this->getState('filter.search');
+
+		if ($search)
+		{
+			$query->where($this->db->quoteName('a.task_name') . ' LIKE ' . $this->db->quote('%' . $search . '%'));
+		}
+
+		// Filter by action
+		$action = $this->getState('filter.action');
+
+		if ($action)
+		{
+			$query->where($this->db->quoteName('a.action') . ' = ' . $this->db->quote($action));
+		}
+
+		// Filter by component
+		$component = $this->getState('filter.component');
+
+		if ($component)
+		{
+			$query->where($this->db->quoteName('component') . ' = ' . $this->db->quote($component));
+		}
+
+		// Filter by published
+		$enabled = $this->getState('filter.enabled', '');
+
+		if ('' !== $enabled)
+		{
+			$query->where($this->db->quoteName('enabled') . ' = ' . $enabled);
+		}
+
+		// Add the list ordering clause.
+		$query->order(
+			$this->db->quoteName(
+				$this->db->escape(
+					$this->getState('list.ordering', 'a.component')
+				)
+			)
+			. ' ' . $this->db->escape($this->getState('list.direction', 'ASC'))
 		);
-
-		// Get the filters
-		$state = $this->getFilterValues();
-
-		if ($state->name)
-		{
-			$query->where($db->quoteName('task_name') . ' LIKE ' . $db->quote('%' . $state->name . '%'));
-		}
-
-		if ($state->process != '*')
-		{
-			$query->where($db->quoteName('action') . ' = ' . $db->quote($state->process));
-		}
-
-		if ($state->component)
-		{
-			$query->where($db->quoteName('component') . ' = ' . $db->quote($state->component));
-		}
-
-		if ($state->published != '*')
-		{
-			$query->where($db->quoteName('enabled') . ' = ' . $state->published);
-		}
 
 		return $query;
-	}
-
-	/**
-	 * Load the template types for a given selection.
-	 *
-	 * @param   string  $action     The import or export option.
-	 * @param   string  $component  The component.
-	 *
-	 * @return  array  List of available tasks.
-	 *
-	 * @since   3.5
-	 */
-	public function loadTasks($action, $component)
-	{
-		$db = JFactory::getDbo();
-		$query = $db->getQuery(true);
-		$query->select($db->quoteName('task_name'))
-			->from($db->quoteName('#__csvi_tasks'))
-			->where($db->quoteName('action') . ' = ' . $db->quote($action))
-			->where($db->quoteName('component') . ' = ' . $db->quote($component))
-			->where($db->quoteName('enabled') . ' = 1');
-		$db->setQuery($query);
-		$types = $db->loadColumn();
-
-		// Get translations
-		$trans = array();
-
-		foreach ($types as $type)
-		{
-			$trans[$type] = JText::_('COM_CSVI_' . $component . '_' . $type);
-		}
-
-		// Sort by task name
-		ksort($trans);
-
-		return $trans;
-	}
-
-	/**
-	 * Reset the tasks.
-	 *
-	 * @return  bool  True if no errors are found | False if an SQL error has been found.
-	 *
-	 * @since   5.4
-	 */
-	public function reload()
-	{
-		$db = JFactory::getDbo();
-
-		// Empty the tasks table
-		$db->truncateTable('#__csvi_availabletables');
-		$db->truncateTable('#__csvi_tasks');
-
-		jimport('joomla.filesystem.file');
-		jimport('joomla.filesystem.folder');
-		$files = JFolder::files(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/', 'tasks.sql', true, true);
-
-		if (!empty($files))
-		{
-			foreach ($files as $file)
-			{
-				$queries = $db->splitSql(file_get_contents($file));
-
-				foreach ($queries as $query)
-				{
-					$query = trim($query);
-
-					if (!empty($query))
-					{
-						$db->setQuery($query);
-
-						if (!$db->execute())
-						{
-							$this->setError($db->getErrorMsg());
-
-							return false;
-						}
-					}
-				}
-			}
-		}
-
-		return true;
 	}
 
 	/**
@@ -179,36 +188,30 @@ class CsviModelTasks extends FOFModel
 	 * @return  array  List of template types.
 	 *
 	 * @since   3.0
+	 *          
+	 * @throws  RuntimeException
 	 */
-	public function getOperations($type=false, $component=false)
+	public function getOperations($type, $component)
 	{
 		$types = array();
 
 		if ($type && $component)
 		{
-			$db = JFactory::getDbo();
-			$query = $db->getQuery(true);
-			$query->select(
-				"CONCAT('COM_CSVI_', " . $db->quoteName('component') . ", '_', " . $db->quoteName('task_name') . ") AS " . $db->quoteName('name')
-				. ',' . $db->quoteName('task_name', 'value')
-			)
-			->from($db->quoteName('#__csvi_tasks'));
+			$query = $this->db->getQuery(true)
+				->select(
+					"CONCAT('COM_CSVI_', " . $this->db->quoteName('component') . ", '_', " . $this->db->quoteName('task_name') . ") AS " . $this->db->quoteName('name')
+					. ',' . $this->db->quoteName('task_name', 'value')
+				)
+				->from($this->db->quoteName('#__csvi_tasks'));
 
 			// Check any selectors
-			if ($type)
-			{
-				$query->where($db->quoteName('action') . ' = ' . $db->quote($type));
-			}
-
-			if ($component)
-			{
-				$query->where($db->quoteName('component') . ' = ' . $db->quote($component));
-			}
+			$query->where($this->db->quoteName('action') . ' = ' . $this->db->quote($type));
+			$query->where($this->db->quoteName('component') . ' = ' . $this->db->quote($component));
 
 			// Order by name
-			$query->order($db->quoteName('ordering'));
-			$db->setQuery($query);
-			$types = $db->loadObjectList();
+			$query->order($this->db->quoteName('ordering'));
+			$this->db->setQuery($query);
+			$types = $this->db->loadObjectList();
 
 			// Translate the strings
 			foreach ($types as $key => $type)
@@ -231,23 +234,23 @@ class CsviModelTasks extends FOFModel
 	 * @return  array  List of option tabs.
 	 *
 	 * @since   4.0
+	 *          
+	 * @throws  RuntimeException
 	 */
-
-	public function getOptions($component, $action, $operation)
+	public function getTaskOptions($component, $action, $operation)
 	{
 		$options = array();
 
 		if ($component && $action && $operation)
 		{
-			$db = JFactory::getDbo();
-			$query = $db->getQuery(true);
-			$query->select($db->quoteName('options'))
-				->from($db->quoteName('#__csvi_tasks'))
-				->where($db->quoteName('task_name') . ' = ' . $db->quote($operation))
-				->where($db->quoteName('action') . ' = ' . $db->quote($action))
-				->where($db->quoteName('component') . ' = ' . $db->quote($component));
-			$db->setQuery($query);
-			$result = $db->loadResult();
+			$query = $this->db->getQuery(true)
+				->select($this->db->quoteName('options'))
+				->from($this->db->quoteName('#__csvi_tasks'))
+				->where($this->db->quoteName('task_name') . ' = ' . $this->db->quote($operation))
+				->where($this->db->quoteName('action') . ' = ' . $this->db->quote($action))
+				->where($this->db->quoteName('component') . ' = ' . $this->db->quote($component));
+			$this->db->setQuery($query);
+			$result = $this->db->loadResult();
 			$options = explode(',', $result);
 		}
 

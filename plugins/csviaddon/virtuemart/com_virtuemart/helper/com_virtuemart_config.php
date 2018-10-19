@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -72,12 +72,32 @@ class Com_VirtuemartHelperCom_Virtuemart_Config
 	{
 		if (isset($this->vmcfg[$setting]))
 		{
-			return $this->vmcfg[$setting];
+			$value = $this->vmcfg[$setting];
+
+			// Check for duplicates
+            if ($setting === 'active_languages')
+            {
+	            $languageCodes = array();
+
+	            if (!is_array($value))
+	            {
+		            $value = array($value);
+	            }
+
+	            // Change the upper case to standard lower case letters
+	            foreach ($value as $language)
+	            {
+		            $languageCodes[] = strtolower(str_replace('-', '_', $language));
+	            }
+
+                // Remove any duplicate languages
+                $value = array_unique($languageCodes);
+            }
+
+            return $value;
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 
 	/**

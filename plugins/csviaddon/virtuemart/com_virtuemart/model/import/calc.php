@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportCalc extends RantaiImportEngine
+class Calc extends \RantaiImportEngine
 {
 	/**
 	 * The calculation rule table
 	 *
-	 * @var    VirtuemartTableCalc
+	 * @var    \VirtuemartTableCalc
 	 * @since  6.0
 	 */
 	private $calcTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportCalc extends RantaiImportEngine
 	/**
 	 * The category class
 	 *
-	 * @var    Com_virtuemartHelperCategory
+	 * @var    \Com_virtuemartHelperCategory
 	 * @since  6.0
 	 */
 	private $categoryModel = null;
@@ -162,8 +164,8 @@ class Com_VirtuemartModelImportCalc extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_calc_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('calc_value')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('calc_value')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('calc_value')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('calc_value')));
 					$this->loaded = false;
 				}
 				else
@@ -178,7 +180,7 @@ class Com_VirtuemartModelImportCalc extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -198,7 +200,7 @@ class Com_VirtuemartModelImportCalc extends RantaiImportEngine
 			if (!$this->getState('virtuemart_calc_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new rules when user chooses to ignore new rules
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('calc_value')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('calc_value')));
 			}
 			else
 			{
@@ -241,7 +243,7 @@ class Com_VirtuemartModelImportCalc extends RantaiImportEngine
 				}
 				else
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_CALC_NOT_ADDED', $this->calcTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CALC_NOT_ADDED', $this->calcTable->getError()));
 
 					return false;
 				}
@@ -301,7 +303,7 @@ class Com_VirtuemartModelImportCalc extends RantaiImportEngine
 			// Add any new categories
 			if (is_null($this->categoryModel))
 			{
-				$this->categoryModel = new Com_virtuemartHelperCategory(
+				$this->categoryModel = new \Com_virtuemartHelperCategory(
 					$this->db,
 					$this->template,
 					$this->log,

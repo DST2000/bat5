@@ -3,13 +3,14 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
+require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart.php';
 
 /**
  * VirtueMart maintenance.
@@ -71,17 +72,19 @@ class Com_VirtuemartMaintenance
 	/**
 	 * Constructor.
 	 *
-	 * @param   JDatabase       $db          The database class
-	 * @param   CsviHelperLog   $log         The CSVI logger
-	 * @param   CsviHelperCsvi  $csvihelper  The CSVI helper
+	 * @param   JDatabaseDriver  $db          The database class
+	 * @param   CsviHelperLog    $log         The CSVI logger
+	 * @param   CsviHelperCsvi   $csvihelper  The CSVI helper
+	 * @param   bool             $isCli       Set if we are running CLI mode
 	 *
 	 * @since   6.0
 	 */
-	public function __construct($db, $log, $csvihelper)
+	public function __construct(JDatabaseDriver $db, CsviHelperLog $log, CsviHelperCsvi $csvihelper, $isCli = false)
 	{
-		$this->db = $db;
-		$this->log = $log;
+		$this->db         = $db;
+		$this->log        = $log;
 		$this->csvihelper = $csvihelper;
+		$this->isCli      = $isCli;
 	}
 
 	/**
@@ -94,18 +97,21 @@ class Com_VirtuemartMaintenance
 	public function getOperations()
 	{
 		return array('options' => array(
-						'' => JText::_('COM_CSVI_MAKE_CHOICE'),
-						'sortcategories' => JText::_('COM_CSVI_SORTCATEGORIES_LABEL'),
-						'removeemptycategories' => JText::_('COM_CSVI_REMOVEEMPTYCATEGORIES_LABEL'),
-						'removeproductprices' => JText::_('COM_CSVI_REMOVEPRODUCTPRICES_LABEL'),
-						'unpublishproductbycategory' => JText::_('COM_CSVI_UNPUBLISHPRODUCTBYCATEGORY_LABEL'),
-						'removeproductmedialink' => JText::_('COM_CSVI_REMOVEPRODUCTMEDIALINK_LABEL'),
-						'backupvm' => JText::_('COM_CSVI_BACKUPVM_LABEL'),
-						'emptydatabase' => JText::_('COM_CSVI_EMPTYDATABASE_LABEL'),
-						'vmexchangerates' => JText::_('COM_CSVI_VMEXCHANGERATES_LABEL'),
-						'ecbexchangerates' => JText::_('COM_CSVI_ECBEXCHANGERATES_LABEL'),
-						'cleanmediafiles' => JText::_('COM_CSVI_CLEANMEDIAFILES_LABEL')
-				)
+			''                           => JText::_('COM_CSVI_MAKE_CHOICE'),
+			'sortcategories'             => JText::_('COM_CSVI_SORTCATEGORIES_LABEL'),
+			'removeemptycategories'      => JText::_('COM_CSVI_REMOVEEMPTYCATEGORIES_LABEL'),
+			'removeproductprices'        => JText::_('COM_CSVI_REMOVEPRODUCTPRICES_LABEL'),
+			'unpublishproductbycategory' => JText::_('COM_CSVI_UNPUBLISHPRODUCTBYCATEGORY_LABEL'),
+			'removeproductmedialink'     => JText::_('COM_CSVI_REMOVEPRODUCTMEDIALINK_LABEL'),
+			'backupvm'                   => JText::_('COM_CSVI_BACKUPVM_LABEL'),
+			'emptydatabase'              => JText::_('COM_CSVI_EMPTYDATABASE_LABEL'),
+			'vmexchangerates'            => JText::_('COM_CSVI_VMEXCHANGERATES_LABEL'),
+			'ecbexchangerates'           => JText::_('COM_CSVI_ECBEXCHANGERATES_LABEL'),
+			'cleanmediafiles'            => JText::_('COM_CSVI_CLEANMEDIAFILES_LABEL'),
+			'checkduplicateskus'         => JText::_('COM_CSVI_CHECKDUPLICATESKUS_LABEL'),
+			'refreshsefurls'             => JText::_('COM_CSVI_REFRESHSEFURLS_LABEL'),
+			'relatedproductsduplicates'  => JText::_('COM_CSVI_RELATEDPRODUCTSDUPLICATES_LABEL'),
+		)
 		);
 	}
 
@@ -123,8 +129,7 @@ class Com_VirtuemartMaintenance
 		switch ($operation)
 		{
 			case 'sortcategories':
-				$language = JFactory::getLanguage();
-				$known = $language->getKnownLanguages();
+				$known = JLanguageHelper::getKnownLanguages();
 				$options = array();
 
 				foreach ($known as $lang)
@@ -145,12 +150,14 @@ class Com_VirtuemartMaintenance
 				break;
 			case 'removeemptycategories':
 				$layout = new JLayoutFile('csvi.modal');
+
 				return $layout->render(
 					array(
 						'modal-header' => JText::_('COM_CSVI_' . $operation . '_LABEL'),
 						'modal-body' => JText::_('COM_CSVI_CONFIRM_CATEGORY_DELETE'),
 						'cancel-button' => true
-					));
+					)
+				);
 				break;
 			case 'emptydatabase':
 				$layout = new JLayoutFile('csvi.modal');
@@ -160,8 +167,53 @@ class Com_VirtuemartMaintenance
 						'modal-header' => JText::_('COM_CSVI_' . $operation . '_LABEL'),
 						'modal-body' => JText::_('COM_CSVI_CONFIRM_DB_DELETE'),
 						'cancel-button' => true
-					));
+					)
+				);
+
 				return $html;
+				break;
+			case 'backupvm':
+				$options = array(
+					JHtml::_('select.option',  '0', JText::_('JNO')),
+					JHtml::_('select.option',  '1', JText::_('JYES'))
+				);
+
+				return '<div class="control-group ">
+							<div class="control-label">
+								<label title="" class="hasTooltip" for="jform_title" id="jform_title-lbl" data-original-title=" ' . JText::_('COM_CSVI_DROPTABLE_DESC') . '">
+									' . JText::_('COM_CSVI_DROPTABLE_LABEL') . '
+								</label>
+							</div>
+							<div class="controls">
+								' . JHtml::_('select.genericlist', $options, 'form[droptable]', 'class="input-small"') . '
+							</div>
+						</div>';
+				break;
+			case 'refreshsefurls':
+				$layoutPath = JPATH_PLUGINS . '/csviaddon/csvi/com_csvi/layouts';
+				$layout     = new JLayoutFile('maintenance.' . $operation, $layoutPath);
+
+				return $layout->render();
+				break;
+			case 'removeproductprices':
+				$settings     = new CsviHelperSettings($this->db);
+				$log          = new CsviHelperLog($settings, $this->db);
+				$template     = new CsviHelperTemplate($template = '');
+				$fields       = new CsviHelperFields($template, $log, $this->db);
+				$helperFile   = new Com_VirtuemartHelperCom_Virtuemart($template, $this->log, $fields, $this->db);
+				$language     = strtolower(str_replace('-', '_', JComponentHelper::getParams('com_languages')->get('site')));
+				$manufacturer = $helperFile->getManufacturers($language);
+
+				return '<div class="control-group ">
+							<div class="control-label">
+								<label title="" class="hasTooltip" for="jform_title" id="jform_title-lbl" data-original-title=" ' . JText::_('COM_CSVI_SELECT_MANUFACTURER_DESC') . '">
+									' . JText::_('COM_CSVI_SELECT_MANUFACTURER_LABEL') . '
+								</label>
+							</div>
+							<div class="controls">
+								' . JHtml::_('select.genericlist', $manufacturer, 'form[manufacturer]', 'class="input-large"') . '
+							</div>
+						</div>';
 				break;
 			default:
 				return '<span class="help-block">' . JText::_('COM_CSVI_' . $operation . '_DESC') . '</span>';
@@ -172,11 +224,13 @@ class Com_VirtuemartMaintenance
 	/**
 	 * Sorts all VirtueMart categories in alphabetical order.
 	 *
-	 * @return  bool  True if categories are sorted | False if an error occured.
+	 * @param   JInput  $input  An instance of JInput.
+	 *
+	 * @return  bool  True if categories are sorted | False if an error occurred.
 	 *
 	 * @since   3.0
 	 */
-	public function sortCategories(FOFInput $input)
+	public function sortCategories(JInput $input)
 	{
 		$jinput = JFactory::getApplication()->input;
 		$linenumber = 1;
@@ -475,15 +529,51 @@ class Com_VirtuemartMaintenance
 	/**
 	 * Remove all product prices.
 	 *
+	 * @param   JInput  $input  An instance of JInput.
+	 *
 	 * @return  bool  Always returns true.
 	 *
 	 * @since   5.9.5
 	 */
-	public function removeProductPrices()
+	public function removeProductPrices(JInput $input)
 	{
-		$this->db->truncateTable('#__virtuemart_product_prices');
-		$this->log->setLineNumber(1);
-		$this->log->addStats('empty', JText::_('COM_CSVI_VM_PRICES_EMPTIED'));
+		$manufacturer = $input->get('manufacturer');
+
+		if ($manufacturer && $manufacturer !== 'none')
+		{
+			$pidArray = array();
+			$query    = $this->db->getQuery(true)
+				->select($this->db->quoteName('virtuemart_product_id'))
+				->from($this->db->quoteName('#__virtuemart_product_manufacturers'))
+				->where($this->db->quoteName('virtuemart_manufacturer_id') . ' = ' . (int) $manufacturer);
+			$this->db->setQuery($query);
+			$productIds = $this->db->loadRowList();
+
+			foreach ($productIds as $productId)
+			{
+				$pidArray[] = $productId[0];
+			}
+
+			try
+			{
+				$query->clear()
+					->delete($this->db->quoteName('#__virtuemart_product_prices'))
+					->where($this->db->quoteName('virtuemart_product_id') . ' IN (' . implode(', ', $pidArray) . ')');
+				$this->db->setQuery($query);
+				$this->db->execute();
+				$this->log->setLineNumber(1);
+				$this->log->addStats('empty', JText::_('COM_CSVI_DEBUG_DELETE_PRODUCT_PRICES_MANUFACTURER'));
+			} catch (Exception $e)
+			{
+				$this->log->addStats('error', $e->getMessage());
+			}
+		}
+		else
+		{
+			$this->db->truncateTable('#__virtuemart_product_prices');
+			$this->log->setLineNumber(1);
+			$this->log->addStats('empty', JText::_('COM_CSVI_VM_PRICES_EMPTIED'));
+		}
 
 		return true;
 	}
@@ -562,21 +652,26 @@ class Com_VirtuemartMaintenance
 	/**
 	 * Export all VirtueMart tables.
 	 *
+	 * @param   JInput  $input  A JInput instance.
+	 *
 	 * @return  bool  Always returns true.
 	 *
 	 * @since   3.0
 	 */
-	public function backupVm()
+	public function backupVm(JInput $input)
 	{
 		jimport('joomla.filesystem.file');
 		jimport('joomla.filesystem.folder');
 		$jinput = JFactory::getApplication()->input;
 
-		$filepath = JPATH_SITE . '/tmp/com_csvi';
+		$filepath = CSVIPATH_TMP;
 		$filename = 'virtuemart_' . time() . '.sql';
 		$file = $filepath . '/' . $filename;
 		$sqlstring = '';
 		$fp = fopen($file, "w+");
+
+		// Load the form values, if drop statement need to be included
+		$dropTable = $input->get('droptable');
 
 		if ($fp)
 		{
@@ -595,6 +690,12 @@ class Com_VirtuemartMaintenance
 				$this->db->setQuery($q);
 				$tcreate = $this->db->loadAssocList();
 				$sqlstring .= "-- Table structure for table " . $this->db->quoteName($table) . "\n\n";
+
+				if ($dropTable)
+				{
+					$sqlstring .= "DROP TABLE IF EXISTS " . $this->db->quoteName($table) . ";\n";
+				}
+
 				$sqlstring .= $tcreate[0]['Create Table'] . ";\n\n";
 
 				// Check if there is any data in the table
@@ -1168,6 +1269,8 @@ class Com_VirtuemartMaintenance
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	public function updateAvailableFields()
 	{
@@ -1208,13 +1311,13 @@ class Com_VirtuemartMaintenance
 					// Assign the value to it's group
 					$values = json_decode($value);
 
-					if ($group == 'selectoptions' && is_array($values))
+					if ($group === 'selectoptions' && is_array($values))
 					{
 						foreach ($values as $ramification)
 						{
 							$csvi_name = trim($ramification->voption);
 
-							if ($ramification->voption == 'clabels')
+							if ($ramification->voption === 'clabels')
 							{
 								$csvi_name = trim($ramification->clabel);
 							}
@@ -1255,9 +1358,11 @@ class Com_VirtuemartMaintenance
 	/**
 	 * Update Custom available fields that require extra processing.
 	 *
-	 * @return  void.
+	 * @return  void
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	public function customAvailableFields()
 	{
@@ -1269,25 +1374,69 @@ class Com_VirtuemartMaintenance
 
 		$taxes = $this->db->loadColumn();
 
+		// Insert custom_value available field for multi language support
+		require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart_config.php';
+		$helperConfig = new Com_VirtuemartHelperCom_Virtuemart_Config;
+		$languages    = $helperConfig->get('active_languages');
+
 		// Start the query
 		$query->clear()
 			->insert($this->db->quoteName('#__csvi_availablefields'))
 			->columns($this->db->quoteName(array('csvi_name', 'component_name', 'component_table', 'component', 'action')));
 
+		$runQuery = false;
+
 		if (count($taxes) > 0)
 		{
 			foreach ($taxes as $tax)
 			{
-				$query->values(
-					$this->db->quote($tax) . ',' .
-					$this->db->quote($tax) . ',' .
-					$this->db->quote('order') . ',' .
-					$this->db->quote('com_virtuemart') . ',' .
-					$this->db->quote('export')
-				);
+				if ($tax)
+				{
+					$query->values(
+						$this->db->quote($tax) . ',' .
+						$this->db->quote($tax) . ',' .
+						$this->db->quote('order') . ',' .
+						$this->db->quote('com_virtuemart') . ',' .
+						$this->db->quote('export')
+					);
 
+					$runQuery = true;
+				}
 			}
+		}
 
+
+		if ($languages)
+		{
+			foreach ($languages as $language)
+			{
+				if ($language && $language !== 'en-GB')
+				{
+					$languageCode = strtolower(str_replace('-', '_', $language));
+					$fieldName    = 'custom_param_' . $languageCode;
+					$query->values(
+						$this->db->quote($fieldName) . ',' .
+						$this->db->quote($fieldName) . ',' .
+						$this->db->quote('product') . ',' .
+						$this->db->quote('com_virtuemart') . ',' .
+						$this->db->quote('import')
+					);
+
+					$query->values(
+						$this->db->quote($fieldName) . ',' .
+						$this->db->quote($fieldName) . ',' .
+						$this->db->quote('product') . ',' .
+						$this->db->quote('com_virtuemart') . ',' .
+						$this->db->quote('export')
+					);
+
+					$runQuery = true;
+				}
+			}
+		}
+
+		if ($runQuery)
+		{
 			$this->db->setQuery($query)->execute();
 		}
 	}
@@ -1391,5 +1540,247 @@ class Com_VirtuemartMaintenance
 		$jinput->set('linesprocessed', $linenumber);
 
 		return true;
+	}
+
+	/**
+	 * Check for Duplicate skus in VirtueMart product table.
+	 *
+	 * @return  bool  Always returns true.
+	 *
+	 * @since   7.0
+	 */
+	public function checkDuplicateSKUs()
+	{
+		$jinput = JFactory::getApplication()->input;
+		$linenumber = 1;
+
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('product_sku'))
+			->select('COUNT(' . $this->db->quoteName('product_sku') . ') as skucount')
+			->from($this->db->quoteName('#__virtuemart_products'))
+			->group($this->db->quoteName('product_sku'))
+			->having('COUNT(' . $this->db->quoteName('product_sku') . ') > 1');
+		$this->db->setQuery($query);
+
+		$duplicateSKUs = $this->db->loadObjectList();
+
+		if ($duplicateSKUs)
+		{
+			foreach ($duplicateSKUs as $SKUs)
+			{
+				$this->log->setLinenumber($linenumber++);
+
+				if (!$SKUs->product_sku)
+				{
+					$this->log->addStats('error', JText::sprintf('COM_CSVI_CHECKDUPLICATESKUS_EMPTY_MESSAGE', $SKUs->skucount));
+				}
+				else
+				{
+					$this->log->addStats('error', JText::sprintf('COM_CSVI_CHECKDUPLICATESKUS_MESSAGE', $SKUs->product_sku, $SKUs->skucount));
+				}
+			}
+		}
+		else
+		{
+			$this->log->addStats('information', JText::_('COM_CSVI_CHECKDUPLICATESKUS_NO_DUPLICATES'));
+		}
+
+		// Store the log count
+		$linenumber--;
+		$jinput->set('linesprocessed', $linenumber);
+
+		return true;
+	}
+
+	/**
+	 * Threshold available fields for extension
+	 *
+	 * @return  int Hardcoded available fields
+	 *
+	 * @since   7.0
+	 */
+	public function availableFieldsThresholdLimit()
+	{
+		return 798;
+	}
+
+	/**
+	 * Refresh the SEF URLs.
+	 *
+	 * @param   JInput  $input  An instance of JInput.
+	 *
+	 * @return  bool  Always returns true.
+	 *
+	 * @since   7.1.0
+	 */
+	public function refreshSefUrls(JInput $input)
+	{
+		// Load all the needed helpers
+		$settings = new CsviHelperSettings($this->db);
+		$template = new CsviHelperTemplate($input->getInt('template', 0));
+		$fields   = new CsviHelperFields($template, $this->log, $this->db);
+		$helper   = new Com_VirtuemartHelperCom_Virtuemart($template, $this->log, $fields, $this->db);
+		$sef      = new CsviHelperSef($settings, $template, $this->log);
+
+		// Make sure the languages are sorted base on locale instead of random sorting
+		$languages = JLanguageHelper::createLanguageList('', JPATH_SITE, true, true);
+
+		if (count($languages) > 1)
+		{
+			usort(
+				$languages,
+				function ($a, $b)
+				{
+					return strcmp($a['value'], $b['value']);
+				}
+			);
+		}
+
+		// Clean the SEF URL table
+		if ($input->get('emptytable', false))
+		{
+			$this->db->truncateTable('#__csvi_sefurls');
+		}
+
+		// Get all the products
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName(array('virtuemart_product_id', 'product_parent_id')))
+			->from($this->db->quoteName('#__virtuemart_products'));
+		$this->db->setQuery($query);
+
+		$records = $this->db->getIterator();
+		$urls    = array();
+
+		// Keep track on the number of records
+		$count = 1;
+
+		foreach ($records as $record)
+		{
+			// Get the category id
+			$category_id = $helper->getCategoryId($record->virtuemart_product_id);
+
+			// Check to see if we have a child product
+			if ($category_id == 0 && $record->product_parent_id > 0)
+			{
+				$category_id = $helper->getCategoryId($record->product_parent_id);
+			}
+
+			if ($category_id > 0)
+			{
+				// Collect URLs
+				$urls[] = 'index.php?option=com_virtuemart&view=productdetails&' .
+					'virtuemart_product_id=' . $record->virtuemart_product_id .
+					'&virtuemart_category_id=' . $category_id .
+					'&Itemid=' . $template->get('vm_itemid', 1, 'int');
+			}
+
+			// Process batches of 500 records
+			if ($count > 500)
+			{
+				if ($urls)
+				{
+					foreach ($languages as $language)
+					{
+						$sef->getSefUrls($urls, $language['value']);
+
+						$this->log->setLinenumber($this->log->getLinenumber() + count($urls));
+					}
+
+					// Clean up
+					$urls = array();
+					$count = 0;
+				}
+			}
+
+			$count++;
+		}
+
+		// Process the final batch of URLs
+		if ($urls)
+		{
+			foreach ($languages as $language)
+			{
+				$sef->getSefUrls($urls, $language['value']);
+
+				$this->log->setLinenumber($this->log->getLinenumber() + count($urls));
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check for Duplicate related products and categories
+	 *
+	 * @return  bool  returns true if row is updated false otherwise.
+	 *
+	 * @since   7.4.0
+	 */
+	public function relatedProductsDuplicates()
+	{
+		$jinput = JFactory::getApplication()->input;
+		$linenumber = 1;
+		$query = $this->db->getQuery(true)
+			->update($this->db->quoteName('#__virtuemart_customs'))
+			->set($this->db->quoteName('virtuemart_vendor_id') . ' = 0')
+			->where($this->db->quoteName('custom_title') . ' = ' . $this->db->quote('COM_VIRTUEMART_RELATED_PRODUCTS'), 'OR')
+			->where($this->db->quoteName('custom_title') . ' = ' . $this->db->quote('COM_VIRTUEMART_RELATED_CATEGORIES'));
+		$this->db->setQuery($query);
+
+		if ($this->db->execute())
+		{
+			$this->log->addStats('information', JText::_('COM_CSVI_RELATED_PRODUCT_CATEGORY_FIXED_DUPLICATES'));
+			$linenumber--;
+			$jinput->set('linesprocessed', $linenumber);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check for language in example templates
+	 *
+	 * @param   array  $template  The template to check
+	 *
+	 * @return  array Updated template
+	 *
+	 * @since   7.7.0
+	 */
+	public function checkTemplatesLanguage($template)
+	{
+		// Check language for VirtueMart table and only when there is a language setting
+		if (isset($template['settings']['language']))
+		{
+			// Get the tables
+			$tableList = $this->db->getTableList();
+
+			// Get the table name to check
+			$tableName = $this->db->getPrefix() . 'virtuemart_products_en_gb';
+
+			// Check if default English (en_gb) table exists
+			if (!in_array($tableName, $tableList))
+			{
+				require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart_config.php';
+				$helperConfig = new Com_VirtuemartHelperCom_Virtuemart_Config;
+				$languages    = $helperConfig->get('active_languages');
+
+				if ($languages)
+				{
+					// Take the first language to set in template
+					$languageCode = strtolower(str_replace('-', '_', $languages[0]));
+					$tableName    = $this->db->getPrefix() . 'virtuemart_products_' . $languageCode;
+
+					if (in_array($tableName, $tableList))
+					{
+						// Update language to available language in VM
+						$template['settings']['language'] = $languages[0];
+					}
+				}
+			}
+		}
+
+		return $template;
 	}
 }

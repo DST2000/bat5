@@ -215,14 +215,6 @@ div.edittemplatefield {
     padding-top: 4px;
 }
 
-.save_template {
-	text-align: center;
-	font-size: 16px;
-	font-weight: bold;
-	color: #FF0000;
-	text-decoration: underline;
-}
-
 .reorder {
 	float: none;
 }
@@ -425,4 +417,122 @@ div.toolbar-list li {
 	margin-bottom: 0;
 	font-style: italic;
 	display: block;
+}
+
+div.modal-body {
+	padding: 10px;
+}
+
+.componentOptions{
+	width: 20em;
+	overflow: auto;
+}
+.componentOptions p{
+	width: 7em;
+	text-align: right;
+}
+.componentOptions label{
+	width: 12em;
+	margin-top: 8px;
+}
+
+/**
+ * Checkbox Five
+ */
+.checkboxList {
+	width: 25px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	position: relative;
+}
+
+/**
+ * Create the box for the checkbox
+ */
+.checkboxList label {
+	cursor: pointer;
+	position: absolute;
+	width: 450px;
+	height: 25px;
+	top: 0;
+	left: 0;
+	background: #eee;
+	border:1px solid #ddd;
+	padding-left: 25px;
+	padding-top: 4px;
+}
+
+/**
+ * Display the tick inside the checkbox
+ */
+.checkboxList label:after {
+	opacity: 0.2;
+	content: '';
+	position: absolute;
+	width: 9px;
+	height: 5px;
+	background: transparent;
+	top: 6px;
+	left: 7px;
+	border: 3px solid #333;
+	border-top: none;
+	border-right: none;
+
+	transform: rotate(-45deg);
+}
+
+/**
+ * Create the hover event of the tick
+ */
+.checkboxList label:hover::after {
+	opacity: 0.5;
+}
+
+/**
+ * Create the checkbox state for the tick
+ */
+.checkboxList input[type=checkbox]:checked + label:after {
+	opacity: 1;
+}
+
+.textareaclass{
+	width: auto;
+	overflow-y: scroll; overflow-x: hidden; resize: none
+}
+
+/**
+ * Style the dropzone on template wizard
+ */
+#headers {
+	float: left;
+}
+
+#dropzoneField {
+	border-left: 1px solid #F0F0F0;
+	height: 205px;
+	color: #A4A4A4;
+	overflow: hidden;
+}
+
+#dropzoneField .btn:hover {
+	cursor: pointer;
+}
+
+#dropzoneField .dz-message {
+	border: 5px dashed #F0F0F0;
+	padding: 43px 55px;
+	text-align: center;
+}
+
+#mapTemplateFields {
+	display: table;
+	width: 25%;
+}
+
+.mapRow {
+	display: table-row;
+}
+
+.mapCell {
+	display: table-cell;
 }

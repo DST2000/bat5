@@ -9,16 +9,24 @@
 			type="hidden"
 			emptylabel="true"/>
 
+		<field name="fromdatabase"
+		       type="hidden"
+		       emptylabel="true" />
+
 		<field name="field_name"
 			type="csviavailablefields"
 			size="1"
 			required="true"
-			idfield="csvi_templatefield_id"
+			idfield="csvi_template_id"
 			class="advancedSelect" />
 
-        <field name="xml_node"
-           type="text"
-           class="input-xxlarge" />
+		<field name="source_field"
+		       type="csvi.databasetablefields"
+		       class="input-large advancedSelect" />
+
+		<field name="xml_node"
+		       type="text"
+		       class="input-xxlarge" />
 
 		<field name="default_value"
 			type="text"

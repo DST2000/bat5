@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  JoomlaUsers
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace users\com_users\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export Joomla Usergroups.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  JoomlaUsers
  * @since       6.5.0
  */
-class Com_UsersModelExportUsergroup extends CsviModelExports
+class Usergroup extends \CsviModelExports
 {
 	/**
 	 * List of usergroups based on ID.
@@ -88,6 +88,19 @@ class Com_UsersModelExportUsergroup extends CsviModelExports
 							$sortby[] = $this->db->quoteName('u.parent_id');
 						}
 						break;
+					case 'title_path':
+						$userfields[] = $this->db->quoteName('id');
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName('u.id');
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName('u.id');
+						}
+						break;
 					case 'custom':
 						break;
 					default:
@@ -132,30 +145,28 @@ class Com_UsersModelExportUsergroup extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
 					foreach ($exportfields as $field)
 					{
 						$fieldname = $field->field_name;
+						$fieldvalue = '';
 
 						// Set the field value
 						if (isset($record->$fieldname))
 						{
 							$fieldvalue = $record->$fieldname;
-						}
-						else
-						{
-							$fieldvalue = '';
 						}
 
 						// Process the field
@@ -165,9 +176,9 @@ class Com_UsersModelExportUsergroup extends CsviModelExports
 								if (!array_key_exists($record->parent_id, $this->usergroups))
 								{
 									$query = $this->db->getQuery(true)
-											->select($this->db->quoteName('title'))
-											->from($this->db->quoteName('#__usergroups'))
-											->where($this->db->quoteName('id') . ' = ' . $record->parent_id);
+										->select($this->db->quoteName('title'))
+										->from($this->db->quoteName('#__usergroups'))
+										->where($this->db->quoteName('id') . ' = ' . $record->parent_id);
 									$this->db->setQuery($query);
 
 									$fieldvalue = $this->db->loadResult();
@@ -178,6 +189,15 @@ class Com_UsersModelExportUsergroup extends CsviModelExports
 								{
 									$fieldvalue = $this->usergroups[$record->parent_id];
 								}
+								break;
+							case 'title_path':
+								$groupPaths = $this->helper->getGroupPath($record->id, true);
+
+								if (is_array($groupPaths))
+								{
+									$fieldvalue = implode('|', $groupPaths);
+								}
+
 								break;
 						}
 
@@ -194,7 +214,7 @@ class Com_UsersModelExportUsergroup extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();

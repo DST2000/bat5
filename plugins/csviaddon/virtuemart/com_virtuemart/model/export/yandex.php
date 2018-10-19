@@ -3,15 +3,17 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace virtuemart\com_virtuemart\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
+use Joomla\Utilities\ArrayHelper;
+
 
 /**
  * Export VirtueMart products for Yandex.
@@ -20,7 +22,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelExportYandex extends CsviModelExports
+class Yandex extends \CsviModelExports
 {
 	/**
 	 * The domain name for URLs.
@@ -65,7 +67,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 	/**
 	 * VirtueMart helper
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart
 	 * @since  6.0
 	 */
 	protected $helper = null;
@@ -73,10 +75,10 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 	/**
 	 * VirtueMart helper config
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart_Config
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart_Config
 	 * @since  6.0
 	 */
-	protected $helperconfig = null;
+	protected $helperConfig = null;
 
 	/**
 	 * Export the data.
@@ -85,7 +87,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 	 *
 	 * @since   6.0
 	 *
-	 * @throws  CsviException
+	 * @throws  \CsviException
 	 */
 	protected function exportBody()
 	{
@@ -96,18 +98,18 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 
 			if (!$language)
 			{
-				throw new CsviException(JText::_('COM_CSVI_NO_LANGUAGE_SET'));
+				throw new \CsviException(\JText::_('COM_CSVI_NO_LANGUAGE_SET'));
 			}
 
 			// Get some basic data
-			$jinput = JFactory::getApplication()->input;
+			$jinput = \JFactory::getApplication()->input;
 			$this->domainname = $this->settings->get('hostname');
 			$this->loadCustomFields();
 			$this->loadMultiVariantFields();
 			$exportfields = $this->fields->getFields();
 
 			// Load the plugins
-			$dispatcher = new RantaiPluginDispatcher;
+			$dispatcher = new \RantaiPluginDispatcher;
 			$dispatcher->importPlugins('csviext', $this->db);
 
 			$jinput->set('vmlang', substr($language, 0, 2) . '-' . strtoupper(substr($language, 3)));
@@ -447,7 +449,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 			$productcategories = $this->template->get('product_categories', false);
 
 			// Sanity check
-			Joomla\Utilities\ArrayHelper::toInteger($productcategories);
+			ArrayHelper::toInteger($productcategories);
 
 			if ($productcategories && $productcategories[0] != '')
 			{
@@ -690,7 +692,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 						{
 							if (strpos($sku, '%'))
 							{
-								$wildcard .= "#__virtuemart_products.product_sku LIKE ".$this->db->quote($sku)." OR ";
+								$wildcard .= "#__virtuemart_products.product_sku LIKE " . $this->db->quote($sku) . " OR ";
 							}
 							else
 							{
@@ -706,13 +708,13 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 
 					if (!empty($wildcard) && !empty($normal))
 					{
-						$query->where("(".$wildcard." OR #__virtuemart_products.product_sku IN (" . implode(',', $normal) . "))");
+						$query->where("(" . $wildcard . " OR #__virtuemart_products.product_sku IN (" . implode(',', $normal) . "))");
 					}
-					else if (!empty($wildcard))
+					elseif (!empty($wildcard))
 					{
 						$query->where("(" . $wildcard . ")");
 					}
-					else if (!empty($normal))
+					elseif (!empty($normal))
 					{
 						if (!empty($wildcard) && !empty($normal))
 						{
@@ -769,10 +771,10 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 
 			// Filter on price from
 			$priceoperator = $this->template->get('priceoperator', 'gt');
-			$pricefrom = $this->template->get('pricefrom', 0, 'float');
+			$pricefrom = $this->template->get('pricefrom', false);
 			$priceto = $this->template->get('priceto', 0, 'float');
 
-			if (!empty($pricefrom))
+			if ($pricefrom !== false)
 			{
 				switch ($priceoperator)
 				{
@@ -863,11 +865,12 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
@@ -878,8 +881,13 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 				// Add the offers
 				$this->addExportContent('<offers>' . chr(10));
 
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
+					if (in_array($this->exportFormat, $this->nodeformats))
+					{
+						$this->addExportContent($this->exportclass->NodeStart($record->virtuemart_product_id));
+					}
+
 					$this->log->incrementLinenumber();
 
 					// Reset the prices
@@ -991,8 +999,8 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 									// Check if we need to create a dynamic image name
 									if (substr($image, -3) == '-_-')
 									{
-										$width = $this->helperconfig->get('img_width', 90);
-										$height = $this->helperconfig->get('img_height', 90);
+										$width = $this->helperConfig->get('img_width', 90);
+										$height = $this->helperConfig->get('img_height', 90);
 
 										// Remove marker
 										$image = substr($image, 0, -3);
@@ -1000,9 +1008,9 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 										// Construct the new image name
 										$image = dirname($image)
 											. '/resized/'
-											. basename(JFile::stripExt($image))
+											. basename(\JFile::stripExt($image))
 											. '_' . $width . 'x' . $height . '.'
-											. JFile::getExt($image);
+											. \JFile::getExt($image);
 									}
 
 									$images[$i] = $this->domainname . '/' . $image;
@@ -1085,8 +1093,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 							case 'created_on':
 							case 'modified_on':
 							case 'locked_on':
-								$date = JFactory::getDate($record->$fieldname);
-								$fieldvalue = date($this->template->get('export_date_format'), $date->toUnix());
+								$fieldvalue = $this->fields->getDateFormat($fieldname, $record->$fieldname, $field->column_header);
 								break;
 							case 'product_box':
 								if (strpos($record->product_params, '|'))
@@ -1168,11 +1175,11 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 									if ($category_id > 0)
 									{
 										// Let's create a SEF URL
-										$_SERVER['QUERY_STRING'] = 'option=com_virtuemart&view=productdetails&virtuemart_product_id='
+										$url = 'option=com_virtuemart&view=productdetails&virtuemart_product_id='
 											. $record->virtuemart_product_id . '&virtuemart_category_id='
 											. $category_id . '&Itemid='
 											. $this->template->get('vm_itemid', 1, 'int');
-										$fieldvalue = $this->sef->getSiteRoute('index.php?' . $_SERVER['QUERY_STRING']);
+										$fieldvalue = $this->sef->getSefUrl('index.php?' . $url);
 									}
 									else
 									{
@@ -1287,7 +1294,8 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 									$query->where($this->db->quoteName('f.virtuemart_custom_id') . ' IN (' . implode(',', $title_filter) . ')');
 								}
 
-								$query->order($this->db->quoteName('f.ordering'), $this->db->quoteName('f.virtuemart_custom_id'));
+								$query->order($this->db->quoteName('f.ordering'))
+									->order($this->db->quoteName('f.virtuemart_custom_id'));
 								$this->db->setQuery($query);
 								$titles = $this->db->loadColumn();
 
@@ -1446,7 +1454,8 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 									$query->where($this->db->quoteName('cf.virtuemart_custom_id') . ' IN (' . implode(',', $title_filter) . ')');
 								}
 
-								$query->order($this->db->quoteName('cf.ordering'), $this->db->quoteName('cf.virtuemart_custom_id'));
+								$query->order($this->db->quoteName('cf.ordering'))
+									->order($this->db->quoteName('cf.virtuemart_custom_id'));
 								$this->db->setQuery($query);
 								$customfields = $this->db->loadObjectList();
 
@@ -1498,13 +1507,22 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 								$this->db->setQuery($query);
 								$titles = $this->db->loadColumn();
 
+								$fieldvalue = '';
+								$images = array();
+
 								if (is_array($titles))
 								{
 									$fieldvalue = implode('|', $titles);
-								}
-								else
-								{
-									$fieldvalue = '';
+
+									if ($fieldname === 'file_url' || $fieldname === 'file_url_thumb')
+									{
+										foreach ($titles as $i => $title)
+										{
+											$images[] = $this->domainname . '/' . $title;
+										}
+
+										$fieldvalue = implode('|', $images);
+									}
 								}
 								break;
 							case 'file_ordering':
@@ -1702,6 +1720,11 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 
 					// Output the contents
 					$this->writeOutput();
+
+					if (in_array($this->exportFormat, $this->nodeformats))
+					{
+						$this->addExportContent($this->exportclass->NodeEnd($record->virtuemart_product_id));
+					}
 				}
 
 				$this->addExportContent('</offers>' . chr(10));
@@ -1709,7 +1732,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();
@@ -1786,17 +1809,17 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 			}
 
 			// Load the calculation helper
-			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_virtuemart/helper/com_virtuemart_calculation.php';
+			require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart_calculation.php';
 
 			// Load the configuration for the currency formatting
 			require_once JPATH_ADMINISTRATOR . '/components/com_virtuemart/helpers/config.php';
 
 			// Load the VirtueMart configuration
-			VmConfig::loadConfig();
+			\VmConfig::loadConfig();
 
 			// Load the calculation helper
-			/** @var CsviVmPrices $calc */
-			$calc = CsviVmPrices::getInstance();
+			/** @var \CsviVmPrices $calc */
+			$calc = \CsviVmPrices::getInstance();
 
 			// Check if we need to use a template shopper group
 			$force = $this->template->get('force_shopper_group_price', 'none');
@@ -1836,7 +1859,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 
 			// Load the product helper
 			require_once JPATH_ADMINISTRATOR . '/components/com_virtuemart/models/product.php';
-			$product = new VirtueMartModelProduct;
+			$product = new \VirtueMartModelProduct;
 
 			// Get the prices
 			$product = $product->getProductSingle($product_id, true, 1, false, $virtuemart_shoppergroup_id);
@@ -2132,7 +2155,7 @@ class Com_VirtuemartModelExportYandex extends CsviModelExports
 		$imageURL = $this->db->loadColumn();
 
 		// Debug log entry for query
-		$this->log->add(JText::_('COM_CSVI_FIND_PRODUCT_PARENT_IMAGE'), true);
+		$this->log->add(\JText::_('COM_CSVI_FIND_PRODUCT_PARENT_IMAGE'), true);
 
 		// Do the check till the image is retrieved from product anchestors
 		if (count($imageURL) == 0)

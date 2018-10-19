@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Helper
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 use Joomla\Registry\Registry;
@@ -31,7 +31,7 @@ if (file_exists(dirname(dirname(dirname(dirname(__DIR__)))) . '/defines.php'))
 
 if (!defined('_JDEFINES'))
 {
-	define('JPATH_BASE', dirname(dirname(dirname(dirname(__DIR__)))));
+	define('JPATH_BASE', dirname(dirname(dirname(__DIR__))));
 	require_once JPATH_BASE . '/includes/defines.php';
 }
 
@@ -64,15 +64,15 @@ JFactory::getApplication('administrator');
 JFactory::getApplication()->input->set('option', 'com_csvi');
 
 // All Joomla loaded, set our exception handler
-require_once JPATH_BASE . '/administrator/components/com_csvi/rantai/error/exception.php';
+require_once JPATH_ROOT . '/administrator/components/com_csvi/rantai/error/exception.php';
 
 // Set our component define
-define('JPATH_COMPONENT', JPATH_BASE . '/components/com_csvi');
-define('JPATH_COMPONENT_SITE', JPATH_BASE . '/components/com_csvi');
+define('JPATH_COMPONENT', JPATH_ROOT . '/components/com_csvi');
+define('JPATH_COMPONENT_SITE', JPATH_ROOT . '/components/com_csvi');
 define('JPATH_COMPONENT_ADMINISTRATOR', JPATH_ADMINISTRATOR . '/components/com_csvi');
 
 // Define our version number
-define('CSVI_VERSION', '6.5.4');
+define('CSVI_VERSION', '7.9.0');
 
 // Define the tmp folder
 $config = JFactory::getConfig();
@@ -83,19 +83,12 @@ define('CSVIPATH_DEBUG', JPath::clean($config->get('log_path'), '/'));
 // Setup the autoloader
 JLoader::registerPrefix('Csvi', JPATH_ADMINISTRATOR . '/components/com_csvi', true);
 JLoader::registerPrefix('Rantai', JPATH_ADMINISTRATOR . '/components/com_csvi/rantai', true);
+JLoader::registerNamespace('phpseclib', JPATH_ADMINISTRATOR . '/components/com_csvi/assets/phpseclib/phpseclib', false, false, 'psr4');
 
 // Load the default classes
 require_once JPATH_ADMINISTRATOR . '/components/com_csvi/controllers/default.php';
 require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/default.php';
 require_once JPATH_ADMINISTRATOR . '/components/com_csvi/tables/default.php';
-
-// Load FOF
-include_once JPATH_LIBRARIES . '/fof/include.php';
-
-if (!defined('FOF_INCLUDED'))
-{
-	throw new Exception('FOF is not installed', 500);
-}
 
 /**
  * Runs a CSVI cron job
@@ -172,7 +165,9 @@ class Csvicron extends JApplicationCli
 		// Close the application if we are not executed from the command line
 		if (array_key_exists('REQUEST_METHOD', $_SERVER))
 		{
-			echo 'You are not supposed to access this script from the web. You have to run it from the command line. If you don\'t understand what this means, you must not try to use this file before reading the documentation. Thank you.';
+			echo 'You are not supposed to access this script from the web. You have to run it from the command line. ' .
+				'If you don\'t understand what this means, you must not try to use this file before reading the ' .
+				'documentation. Thank you.';
 			$this->close();
 		}
 
@@ -195,34 +190,41 @@ class Csvicron extends JApplicationCli
 			{
 				if ($cgiMode)
 				{
-					$query = "";
+					// We need to add the cron.php as the first value because that is expected to be the filename
+					$query = 'cron.php ';
+
 					if (!empty($_GET))
 					{
 						foreach ($_GET as $k => $v)
 						{
 							$query .= " $k";
-							if ($v != "")
+
+							if ($v != '')
 							{
 								$query .= "=$v";
 							}
 						}
 					}
-					$query	 = ltrim($query);
-					$argv	 = explode(' ', $query);
+
+					$query = ltrim($query);
+					$argv  = explode(' ', $query);
 
 					$_SERVER['argv'] = $argv;
 				}
 
 				if (class_exists('JInputCLI'))
 				{
-					$this->input = new JInputCLI();
+					$this->input = new JInputCLI;
 				}
 				else
 				{
-					$this->input = new JInputCli();
+					$this->input = new JInputCli;
 				}
 			}
 		}
+
+		// Set CLI mode
+		define('CSVI_CLI', true);
 
 		// If a config object is given use it.
 		if ($config instanceof Registry)
@@ -306,7 +308,7 @@ class Csvicron extends JApplicationCli
 			switch ($task)
 			{
 				case 'maintenance':
-					$addon = $this->input->get('addon');
+					$addon     = $this->input->get('addon');
 					$operation = $this->input->get('operation');
 					$this->out(JText::sprintf('COM_CSVI_START_MAINTENANCE_OPERATION', $operation));
 					$this->runMaintenance($addon, $operation);
@@ -318,7 +320,7 @@ class Csvicron extends JApplicationCli
 					if ($template_id)
 					{
 						/** @var CsviModelDefault $model */
-						$model = FOFModel::getAnInstance('Default', 'CsviModel');
+						$model = JModelLegacy::getInstance('Default', 'CsviModel');
 
 						// Load the template
 						if ($model->loadTemplate($template_id))
@@ -327,8 +329,9 @@ class Csvicron extends JApplicationCli
 							$this->template = $model->getTemplate();
 
 							// Set needed environment variables
-							$domainname = $this->settings->get('hostname', 'www.example.com');
-							$_SERVER['HTTP_HOST'] = $domainname;
+							$domainname                = $this->settings->get('hostname', 'www.example.com');
+							$uri                       = JUri::getInstance($domainname);
+							$_SERVER['HTTP_HOST']      = $uri->getHost();
 							$_SERVER['REQUEST_METHOD'] = 'GET';
 
 							$this->out(JText::sprintf('COM_CSVI_PROCESSING_STARTED', date('jS F Y, g:i a')));
@@ -345,10 +348,19 @@ class Csvicron extends JApplicationCli
 									if (!empty($secret))
 									{
 										// Check if the secret key matches
-										$key = $this->input->get('key', '', 'string');
+										$key = $this->input->get('key', '', 'raw');
 
 										if ($key == $secret)
 										{
+											// Prepare the log
+											$this->log = new CsviHelperLog($this->settings, $this->db);
+											$this->log->setActive($this->template->getLog());
+											$this->log->setAddon($this->template->get('component'));
+											$this->log->setAction($this->template->get('action'));
+											$this->log->setActionType($this->template->get('operation'));
+											$this->log->setTemplateName($this->template->getName());
+											$this->log->initialise();
+
 											// Set the template settings
 											$this->setTemplateSettings();
 
@@ -359,7 +371,8 @@ class Csvicron extends JApplicationCli
 													try
 													{
 														$this->runImport();
-													} catch (Exception $e)
+													}
+													catch (Exception $e)
 													{
 														$this->log->add($e->getMessage());
 
@@ -369,8 +382,13 @@ class Csvicron extends JApplicationCli
 												case 'export':
 													try
 													{
+														// Get the model
+														/** @var CsviModelExports $model */
+														JModelLegacy::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_csvi/models');
+														JModelLegacy::getInstance('Exports', 'CsviModel');
 														$this->runExport();
-													} catch (Exception $e)
+													}
+													catch (Exception $e)
 													{
 														$this->log->add($e->getMessage());
 
@@ -425,7 +443,7 @@ class Csvicron extends JApplicationCli
 	{
 		// Check if we have a template name or ID
 		$template_name = $this->input->get('template_name', false, 'string');
-		$template_id = $this->input->get('template_id', false, 'int');
+		$template_id   = $this->input->get('template_id', false, 'int');
 
 		if ($template_id || $template_name)
 		{
@@ -468,15 +486,6 @@ class Csvicron extends JApplicationCli
 	 */
 	private function initialiseRun()
 	{
-		// Prepare the log
-		$this->log = new CsviHelperLog($this->settings, $this->db);
-		$this->log->setActive($this->template->getLog());
-		$this->log->setAddon($this->template->get('component'));
-		$this->log->setAction($this->template->get('action'));
-		$this->log->setActionType($this->template->get('operation'));
-		$this->log->setTemplateName($this->template->getName());
-		$this->log->initialise();
-
 		// Load the CSVI helper
 		$this->helper = new CsviHelperCsvi;
 		$this->helper->initialise($this->log);
@@ -485,20 +494,20 @@ class Csvicron extends JApplicationCli
 		$this->db->truncateTable('#__csvi_processed');
 
 		// Process the file to use for import
-		$source = new CsviHelperSource;
-		$data = array('file' => $this->input->getString('file', ''));
-		$location = ($this->template->get('source') == 'fromupload') ? 'fromserver' : $this->template->get('source');
-		$processfolder = $source->validateFile($location, $data, $this->template, $this->log, $this->helper);
+		$source        = new CsviHelperSource;
+		$data          = array('file' => $this->input->getString('file', ''));
+		$location      = ($this->template->get('source') == 'fromupload') ? 'fromserver' : $this->template->get('source');
+		$processFolder = $source->validateFile($location, $data, $this->template, $this->log, $this->helper);
 
 		// Assemble the columns and values
 		$columns = array($this->db->quoteName('csvi_template_id'), $this->db->quoteName('csvi_log_id'), $this->db->quoteName('userId'));
-		$values = (int) $this->template->getId() . ', ' . (int) $this->log->getLogId() . ', 0';
+		$values  = (int) $this->template->getId() . ', ' . (int) $this->log->getLogId() . ', 0';
 
 		// Check if the process file exists
-		if ($processfolder)
+		if ($processFolder)
 		{
 			$columns[] = $this->db->quoteName('processfolder');
-			$values .= ', ' . $this->db->quote($processfolder);
+			$values .= ', ' . $this->db->quote($processFolder);
 		}
 
 		$query = $this->db->getQuery(true)
@@ -638,33 +647,70 @@ class Csvicron extends JApplicationCli
 	{
 		$runId = $this->initialiseRun();
 
-		JLoader::registerPrefix('Rantai', JPATH_BASE . '/administrator/components/com_csvi/rantai/');
-		require_once JPATH_BASE . '/administrator/components/com_csvi/rantai/model.php';
+		JLoader::registerPrefix('Rantai', JPATH_ADMINISTRATOR . '/components/com_csvi/rantai/');
+		require_once JPATH_ADMINISTRATOR . '/components/com_csvi/rantai/model.php';
 
 		$model = new RantaiImportModel($this->input);
 
-		// Set the result
-		$result = array();
-
 		if ($runId)
 		{
-			// 1. Initialise the import
-			$model->initialiseImport($runId);
+			$continue = true;
 
-			// 2. onBeforeImport
-			$model->onBeforeImport();
+			while ($continue)
+			{
+				// 1. Initialise the import
+				$model->initialiseImport($runId);
 
-			// 3. runImport
-			// Load the table
-			require_once JPATH_BASE . '/administrator/components/com_csvi/tables/default.php';
+				// 2. onBeforeImport
+				$model->onBeforeImport();
 
-			// Fire the import
-			$model->runImport(true);
+				// 3. runImport
+				// Load the table
+				require_once JPATH_ADMINISTRATOR . '/components/com_csvi/tables/default.php';
 
-			// Store the lines processed
-			$model->storeLinesProcessed();
+				// Fire the import
+				$model->runImport(true);
 
-			$result['records'] = $model->getLinesProcessed();
+				// 4. onAfterImport
+				$model->onAfterImport();
+
+				// Store the lines processed
+				$model->storeLinesProcessed();
+
+				if ($this->log->isActive())
+				{
+					$linesProcessed = $model->getLinesProcessed();
+					$this->out(JText::sprintf('COM_CSVI_LOG_LINES', $linesProcessed));
+
+					// Output the processed record statistics
+					$this->out(JText::_('COM_CSVI_TOTAL_RECORDS_STATUS'));
+
+					$resultStats = $model->getStatistics();
+
+					if ($resultStats)
+					{
+						foreach ($resultStats as $stats)
+						{
+							$this->out($stats->area . ' ' . $stats->status . ': ' . $stats->total);
+						}
+					}
+				}
+
+				// Clean the log
+				$this->log->cleanStats();
+
+				$continue = $model->moreFiles();
+
+				// If import is done so some cleaning
+				if (!$continue)
+				{
+					$model->cleanup();
+				}
+
+				// Garbage cleaning since we can't restart in CLI mode
+				gc_collect_cycles();
+			}
+
 			$this->out(JText::_('COM_CSVI_IMPORT_FINISHED'));
 		}
 		else
@@ -682,15 +728,42 @@ class Csvicron extends JApplicationCli
 	 */
 	private function runExport()
 	{
+		$db = JFactory::getDbo();
+
 		// Get the component and operation
 		$component = $this->template->get('component');
+		$extension = substr($component, 4);
 		$operation = $this->template->get('operation');
+		$override  = $this->template->get('override');
+
+		// Get the administrator template
+		$query = $db->getQuery(true)
+			->select($db->quoteName('template'))
+			->from($db->quoteName('#__template_styles'))
+			->where($db->quoteName('client_id') . ' = 1')
+			->where($db->quoteName('home') . ' = 1');
+		$db->setQuery($query)->execute();
+		$adminTemplate = $db->loadResult();
 
 		// Setup the component autoloader
-		JLoader::registerPrefix(ucfirst($component), JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component);
+		JLoader::registerPrefix(ucfirst($component), JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component);
+		JLoader::registerNamespace($extension, JPATH_PLUGINS . '/csviaddon/');
 
-		// Load the export routine
-		$classname = ucwords($component) . 'ModelExport' . ucwords($operation);
+		// Set the classname
+		$classname = '\\' . $extension . '\\' . $component . '\\model\export\\' . $operation;
+
+		if ($override
+			&& file_exists(JPATH_ADMINISTRATOR . '/templates/' . $adminTemplate . '/html/com_csvi/' . $component . '/model/export/' . $override . '.php'))
+		{
+			JLoader::registerPrefix(ucfirst($component), JPATH_ADMINISTRATOR . '/templates/' . $adminTemplate . '/html/com_csvi/' . $component);
+			$classname = ucwords($component) . 'ModelExport' . ucwords($override);
+
+			if (!class_exists($classname))
+			{
+				$classname = '\\' . $extension . '\\' . $component . '\\model\export\\' . $operation;
+			}
+		}
+
 		/** @var CsviModelExports $exportModel */
 		$exportModel = new $classname;
 
@@ -700,6 +773,9 @@ class Csvicron extends JApplicationCli
 		$this->template->set('ordernoend', $this->input->getInt('ordernoend', $this->template->get('ordernoend')));
 
 		$exportModel->setTemplate($this->template);
+
+		// Make the log ID known
+		$exportModel->setLogId($this->log->getLogId());
 
 		// Create a run ID
 		$csvi_process_id = $exportModel->initialiseRun();
@@ -718,7 +794,8 @@ class Csvicron extends JApplicationCli
 				->update($this->db->quoteName('#__csvi_processes'))
 				->set($this->db->quoteName('processfile') . ' = ' . $this->db->quote($localfile))
 				->where($this->db->quoteName('csvi_process_id') . ' = ' . (int) $csvi_process_id);
-			$this->db->setQuery($query)->execute();
+			$this->db->setQuery($query)
+				->execute();
 		}
 
 		// Prepare for export
@@ -727,8 +804,40 @@ class Csvicron extends JApplicationCli
 		// Run the onBefore
 		$exportModel->onBeforeExport($component);
 
-		// Start the import
-		$exportModel->runExport();
+		// Start the export
+		if ($exportModel->runExport())
+		{
+			// Check the destination and show user a message
+			$destinations = $this->template->get('exportto', 'todownload');
+
+			if (!is_array($destinations))
+			{
+				$destinations = array($destinations);
+			}
+
+			$fileName = $exportModel->getProcessfile();
+
+			// Check output destinations
+			foreach ($destinations as $destination)
+			{
+				switch ($destination)
+				{
+					case 'todownload':
+						$this->out(JText::sprintf('COM_CSVI_EXPORTFILE_DOWNLOADED', $fileName));
+						break;
+					case 'tofile':
+						$location = $this->template->get('localpath', JPATH_SITE) . '/' . basename($fileName);
+						$this->out(JText::sprintf('COM_CSVI_EXPORTFILE_CREATED', $location));
+						break;
+					case 'toftp':
+						$this->out(JText::sprintf('COM_CSVI_FILE_SAVED_ON_FTP', basename($fileName)));
+						break;
+					case 'toemail':
+						$this->out(JText::_('COM_CSVI_MAIL_SEND'));
+						break;
+				}
+			}
+		}
 	}
 
 	/**
@@ -749,22 +858,25 @@ class Csvicron extends JApplicationCli
 		{
 			// Load the model
 			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/default.php';
-			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/maintenances.php';
-			$model = new CsviModelMaintenances;
+			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/maintenance.php';
+
+			// Send the input values as args to model
+			$config['input'] = $this->input;
+
+			/** @var CsviModelMaintenance $model */
+			$model = new CsviModelMaintenance($config);
 
 			// Get the result from the operation
 			$result = $model->runOperation('com_' . $addon, $operation, 0, true);
 
 			if (!$result['cancel'])
 			{
-				if (!$result['continue'])
-				{
-					$result['process'] = false;
+				$result['process'] = false;
 
-					// Set the forward URL
-					$result['url'] = JURI::root() . 'administrator/index.php?option=com_csvi&view=logdetails&run_id=' . $result['run_id'];
-				}
-				else
+				// Set the forward URL
+				$result['url'] = JUri::root() . 'administrator/index.php?option=com_csvi&view=logdetails&run_id=' . $result['run_id'];
+
+				if ($result['continue'])
 				{
 					$result['process'] = true;
 				}
@@ -777,13 +889,13 @@ class Csvicron extends JApplicationCli
 				 * - url: Where to send the user to
 				 * - msg: The message to show to the user
 				 */
-				$jinput = JFactory::getApplication()->input;
+				$jinput        = JFactory::getApplication()->input;
 				$canceloptions = $jinput->get('canceloptions', array(), 'array');
 
 				if (!empty($canceloptions))
 				{
 					// Set the redirect options
-					$result['url'] = $canceloptions['url'];
+					$result['url']    = $canceloptions['url'];
 					$result['run_id'] = 0;
 				}
 			}
@@ -813,13 +925,15 @@ class Csvicron extends JApplicationCli
 		{
 			echo "\n";
 		}
+
+		return $this;
 	}
 }
 
-
 try
 {
-	JApplicationCli::getInstance('Csvicron')->execute();
+	JApplicationCli::getInstance('Csvicron')
+		->execute();
 }
 catch (Exception $e)
 {

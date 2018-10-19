@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Import
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,28 +18,8 @@ defined('_JEXEC') or die;
  * @subpackage  Import
  * @since       6.0
  */
-class CsviControllerImport extends CsviControllerDefault
+class CsviControllerImports extends JControllerLegacy
 {
-	/**
-	 * Executes a given controller task. The onBefore<task> and onAfter<task>
-	 * methods are called automatically if they exist.
-	 *
-	 * @param   string  $task  The task to execute, e.g. "browse"
-	 *
-	 * @return  null|bool  False on execution failure
-	 *
-	 * @since   6.0
-	 */
-	public function execute($task)
-	{
-		if (!in_array(strtolower($task), array('cancel', 'start', 'selectsource', 'import', 'clearsession')))
-		{
-			$task = 'detail';
-		}
-
-		parent::execute($task);
-	}
-
 	/**
 	 * Handle the template selection.
 	 *
@@ -53,7 +33,7 @@ class CsviControllerImport extends CsviControllerDefault
 
 		// Prepare the template
 		/** @var CsviModelImports $model */
-		$model = $this->getThisModel();
+		$model = $this->getModel('Imports', 'CsviModel');
 		$model->initialise($template_id);
 
 		// Prepare the logger
@@ -63,43 +43,8 @@ class CsviControllerImport extends CsviControllerDefault
 		$csvi_log_id = $model->initialiseRun();
 
 		// Redirect to the template view
-		$this->setRedirect('index.php?option=com_csvi&view=importsource&runId=' . $csvi_log_id);
+		$this->setRedirect('index.php?option=com_csvi&task=importsource.source&runId=' . $csvi_log_id);
 		$this->redirect();
-	}
-
-	/**
-	 * Load the import page and start the import.
-	 *
-	 * @return  boolean  Always returns true.
-	 *
-	 * @throws  CsviException
-	 *
-	 * @since   6.0
-	 */
-	public function start()
-	{
-		// Get the template ID
-		$runId = $this->input->getInt('runId', false);
-
-		if ($runId)
-		{
-			// Load the model
-			/** @var CsviModelImports $model */
-			$model = $this->getThisModel();
-
-			// Prepare for import
-			$model->initialiseImport($runId);
-
-			// Make the template available
-			$view = $this->getThisView();
-			$view->set('template', $model->getTemplate());
-		}
-		else
-		{
-			throw new CsviException(JText::_('COM_CSVI_NO_RUNID_FOUND'));
-		}
-
-		return parent::detail();
 	}
 
 	/**

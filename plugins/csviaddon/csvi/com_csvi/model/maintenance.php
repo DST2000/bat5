@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Maintenance
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -53,6 +53,14 @@ class Com_CsviMaintenance
 	private $key = 0;
 
 	/**
+	 * Total restored templates
+	 *
+	 * @var    int
+	 * @since  7.2.1
+	 */
+	private $totalRestoredTemplates = 0;
+
+	/**
 	 * Hold the message to show on a JSON run
 	 *
 	 * @var    string
@@ -69,6 +77,14 @@ class Com_CsviMaintenance
 	private $isCli = false;
 
 	/**
+	 * Set download file
+	 *
+	 * @var    bool
+	 * @since  6.6.0
+	 */
+	private $downloadfile = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param   JDatabaseDriver  $db          Joomla Database connector
@@ -81,10 +97,10 @@ class Com_CsviMaintenance
 	public function __construct(JDatabaseDriver $db, CsviHelperLog $log, CsviHelperCsvi $csvihelper, $isCli = false)
 	{
 		// Load the database class
-		$this->db = $db;
-		$this->log = $log;
+		$this->db         = $db;
+		$this->log        = $log;
 		$this->csvihelper = $csvihelper;
-		$this->isCli = $isCli;
+		$this->isCli      = $isCli;
 	}
 
 	/**
@@ -96,19 +112,21 @@ class Com_CsviMaintenance
 	 */
 	public function getOperations()
 	{
-		return array('options' => array(
-						'' => JText::_('COM_CSVI_MAKE_CHOICE'),
-						'loadpatch' => JText::_('COM_CSVI_PATCH_FILE_LABEL'),
-						'updateavailablefields' => JText::_('COM_CSVI_UPDATEAVAILABLEFIELDS_LABEL'),
-						'cleantemp' => JText::_('COM_CSVI_CLEANTEMP_LABEL'),
-						'icecatindex' => JText::_('COM_CSVI_ICECATINDEX_LABEL'),
-						'backuptemplates' => JText::_('COM_CSVI_BACKUPTEMPLATES_LABEL'),
-						'restoretemplates' => JText::_('COM_CSVI_RESTORETEMPLATES_LABEL'),
-						'exampletemplates' => JText::_('COM_CSVI_EXAMPLETEMPLATES_LABEL'),
-						'optimizetables' => JText::_('COM_CSVI_OPTIMIZETABLES_LABEL'),
-						'deletetables' => JText::_('COM_CSVI_DELETETABLES_LABEL')
+		return
+			array('options' =>
+				array(
+					''                      => JText::_('COM_CSVI_MAKE_CHOICE'),
+					'loadpatch'             => JText::_('COM_CSVI_PATCH_FILE_LABEL'),
+					'updateavailablefields' => JText::_('COM_CSVI_UPDATEAVAILABLEFIELDS_LABEL'),
+					'cleantemp'             => JText::_('COM_CSVI_CLEANTEMP_LABEL'),
+					'icecatindex'           => JText::_('COM_CSVI_ICECATINDEX_LABEL'),
+					'backuptemplates'       => JText::_('COM_CSVI_BACKUPTEMPLATES_LABEL'),
+					'restoretemplates'      => JText::_('COM_CSVI_RESTORETEMPLATES_LABEL'),
+					'exampletemplates'      => JText::_('COM_CSVI_EXAMPLETEMPLATES_LABEL'),
+					'optimizetables'        => JText::_('COM_CSVI_OPTIMIZETABLES_LABEL'),
+					'deletetables'          => JText::_('COM_CSVI_DELETETABLES_LABEL'),
 				)
-		);
+			);
 	}
 
 	/**
@@ -122,192 +140,32 @@ class Com_CsviMaintenance
 	 */
 	public function getOptions($operation)
 	{
+		$layoutPath = JPATH_PLUGINS . '/csviaddon/csvi/com_csvi/layouts';
+
 		switch ($operation)
 		{
 			case 'loadpatch':
-				return '
-				<div class="control-group">
-					<label for="template_name" class="control-label ">
-					' . JText::_('COM_CSVI_CHOOSE_PATCH_FILE_LABEL') . '
-					</label>
-					<div class="controls">
-					<input type="file" name="form[patch_file]" id="file" class="span5" />
-					<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_CHOOSE_PATCH_FILE_DESC') . '</span>
-					</div>
-				</div>';
-				break;
 			case 'updateavailablefields':
-				return '<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_UPDATE_AVAILABLEFIELDS_DESC') . '</span>';
-				break;
 			case 'cleantemp':
-				return '<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_CLEANTEMP_DESC') . '</span>';
-				break;
 			case 'backuptemplates':
-				$html  = '<div class="control-group">
-						<label for="template_name" class="control-label ">
-						' . JText::_('COM_CSVI_CHOOSE_BACKUP_LOCATION_LABEL') . '
-						</label>
-						<div class="controls">
-							<input type="text" name="backup_location" id="backup_location" value="' . JPATH_SITE . '/tmp/com_csvi" class="input-xxlarge" />
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_CHOOSE_BACKUP_LOCATION_DESC') . '</span>
-						</div>
-					</div>';
-
-				// Load the list of templates
-				$templates = FOFModel::getTmpInstance('Templates', 'CsviModel')->getTemplates();
-				$html .= '<div class="control-group">
-						<label for="template_name" class="control-label ">
-						' . JText::_('COM_CSVI_BACKUPTEMPLATES_LABEL') . '
-						</label>
-						<div class="controls">
-							<input
-								type="checkbox"
-								onclick="Joomla.checkAll(this)"
-								checked="checked"
-								title="' . JText::_('COM_CSVI_CHECK_ALL_FIELDS') . '"
-								value=""
-								name="checkall-toggle"
-							/> '
-							. JText::_('COM_CSVI_CHECK_ALL_FIELDS') . '
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_BACKUPTEMPLATES_DESC') . '</span>
-						</div>
-					</div>
-					<div class="span12">';
-
-				foreach ($templates as $key => $template)
-				{
-					if ($key > 0)
-					{
-						if (empty($template->value))
-						{
-							if ($key > 1)
-							{
-								$html .= '</ul></div>';
-							}
-
-							$html .= '<div class="span5"><label>' . $template->text . '</label>
-							<ul class="unstyled">';
-						}
-						else
-						{
-							$html .= '
-								<li>
-									<input type="checkbox" checked="checked" name="form[templates][]" id="cb' . $key . '" value="' . $template->value . '" /> '
-									. $template->text .
-								'</li>';
-						}
-					}
-				}
-
-				$html .= '</div>';
-
-				return $html;
-				break;
 			case 'restoretemplates':
-				return '
-				<div class="control-group">
-					<label for="template_name" class="control-label ">
-					' . JText::_('COM_CSVI_CHOOSE_RESTORE_FILE_LABEL') . '
-					</label>
-					<div class="controls">
-					<input type="file" name="form[restore_file]" id="file" class="span5" />
-					<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_CHOOSE_RESTORE_FILE_DESC') . '</span>
-					</div>
-				</div>';
-				break;
 			case 'icecatindex':
-				$html = '
-				<div class="span12">
-					<h3>' . JText::_('COM_CSVI_MAINTENANCE_ICECAT') . '</h3>
-					<div class="control-group">
-						<label class="control-label" for="icecatlocation">
-						' . JText::_('COM_CSVI_ICECAT_LOCATION_LABEL') . '
-						</label>
-						<div class="controls">
-							<input type="text" id="icecatlocation" name="form[icecatlocation]" value="' . CSVIPATH_TMP . '" class="input-xxlarge" />
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_LOCATION_DESC') . '</span>
-						</div>
-					</div>
-					<div class="control-group">
-						<label class="control-label" for="form_icecat_gzip">
-						' . JText::_('COM_CSVI_ICECAT_GZIP_LABEL') . '
-						</label>
-						<div class="controls">
-							' . JHtml::_('select.booleanlist', 'form[icecat_gzip]', '', 1) . '
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_GZIP_DESC') . '</span>
-						</div>
-					</div>
-				<div>
-				<div class="span12">
-					<h3>' . JText::_('COM_CSVI_MAINTENANCE_ICECAT_FILE') . '</h3>
-					<div class="control-group">
-						<label class="control-label" for="icecatfile">
-						' . JText::_('COM_CSVI_ICECAT_FILE_LABEL') . '
-						</label>
-						<div class="controls">
-							<input type="checkbox" id="icecatfile" name="form[icecat][]" value="icecat_index" checked="checked" />
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_FILE_DESC') . '</span>
-						</div>
-					</div>
-					<div class="control-group">
-						<label class="control-label" for="form_loadtype">
-						' . JText::_('COM_CSVI_ICECAT_FILE_LOAD_LABEL') . '
-						</label>
-						<div class="controls">
-							' . JHtml::_('select.booleanlist', 'form[loadtype]', '', 0, JText::_('COM_CSVI_ICECAT_FILE_SINGLE'), JText::_('COM_CSVI_ICECAT_FILE_FULL')) . '
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_FILE_LOAD_DESC') . '</span>
-						</div>
-					</div>
-					<div class="control-group">
-						<label class="control-label" for="icecat_records">
-						' . JText::_('COM_CSVI_ICECAT_FILE_LOAD_RECORDS_LABEL') . '
-						</label>
-						<div class="controls">
-							<input type="text" id="icecat_records" name="form[icecat_records]" value="1000" />
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_FILE_LOAD_RECORDS_DESC') . '</span>
-						</div>
-					</div>
-					<div class="control-group">
-						<label class="control-label" for="icecat_wait">
-						' . JText::_('COM_CSVI_ICECAT_FILE_LOAD_WAIT_LABEL') . '
-						</label>
-						<div class="controls">
-							<input type="text" id="icecat_wait" name="form[icecat_wait]" value="5" />
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_FILE_LOAD_WAIT_DESC') . '</span>
-						</div>
-					</div>
-				<div>
-				<div class="span12">
-					<h3>' . JText::_('COM_CSVI_MAINTENANCE_ICECAT_SUPPLIER') . '</h3>
-					<div class="control-group">
-						<label class="control-label" for="icecat_supplier">
-						' . JText::_('COM_CSVI_ICECAT_SUPPLIER_LABEL') . '
-						</label>
-						<div class="controls">
-							<input type="checkbox" id="icecat_supplier" name="form[icecat][]" value="icecat_supplier" checked="checked" />
-							<span class="help-block" style="display: none;">' . JText::_('COM_CSVI_ICECAT_SUPPLIER_DESC') . '</span>
-						</div>
-					</div>
-				<div>';
+			case 'optimizetables':
+			case 'exampletemplates':
+				$layout = new JLayoutFile('maintenance.' . $operation, $layoutPath);
 
-				return $html;
+				return $layout->render();
 				break;
 			case 'deletetables':
 				$layout = new JLayoutFile('csvi.modal');
 
 				return $layout->render(
 					array(
-						'modal-header' => JText::_('COM_CSVI_' . $operation . '_LABEL'),
-						'modal-body' => JText::_('COM_CSVI_CONFIRM_TABLES_DELETE'),
+						'modal-header'  => JText::_('COM_CSVI_' . $operation . '_LABEL'),
+						'modal-body'    => JText::_('COM_CSVI_CONFIRM_TABLES_DELETE'),
 						'cancel-button' => true
 					)
 				);
-				break;
-			case 'optimizetables':
-				return JText::_('COM_CSVI_OPTIMIZETABLES_DESC');
-				break;
-			case 'exampletemplates':
-				return JText::_('COM_CSVI_EXAMPLETEMPLATES_DESC');
 				break;
 			default:
 				return '';
@@ -318,14 +176,14 @@ class Com_CsviMaintenance
 	/**
 	 * Optimize all database tables.
 	 *
-	 * @param   FOFInput  $input  The input model
-	 * @param   mixed     $key    A reference used by the method.
+	 * @param   JInput  $input  The input model
+	 * @param   mixed   $key    A reference used by the method.
 	 *
 	 * @return  bool  Always returns true.
 	 *
 	 * @since   6.0
 	 */
-	public function optimizeTables(FOFInput $input, $key)
+	public function optimizeTables(JInput $input, $key)
 	{
 		// Get the list of tables to optimize
 		$tables = $this->db->getTableList();
@@ -387,13 +245,13 @@ class Com_CsviMaintenance
 		// Execute query
 		if ($this->db->execute())
 		{
-			$this->log->addStats('information', JText::sprintf('COM_CSVI_TABLE_HAS_BEEN_OPTIMIZED', $table), $table);
+			$this->log->addStats('information', JText::sprintf('COM_CSVI_TABLE_HAS_BEEN_OPTIMIZED', $table), 'MAINTENANCE');
 
 			return true;
 		}
 		else
 		{
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_TABLE_HAS_NOT_BEEN_OPTIMIZED', $table), $table);
+			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_TABLE_HAS_NOT_BEEN_OPTIMIZED', $table), 'MAINTENANCE');
 
 			return false;
 		}
@@ -428,34 +286,33 @@ class Com_CsviMaintenance
 	/**
 	 * Update available fields.
 	 *
-	 * @param   FOFInput  $input  The input model
-	 * @param   mixed     $key    A reference used by the method.
+	 * @param   JInput  $input  The input model
+	 * @param   mixed   $key    A reference used by the method.
 	 *
 	 * @return  bool  True on success, false on failure.
 	 *
 	 * @since   3.3
+	 *
+	 * @throws  \RuntimeException
 	 */
-	public function updateAvailableFields(FOFInput $input, $key)
+	public function updateAvailableFields(JInput $input, $key)
 	{
 		$result = false;
 
 		// Check if we need to prepare the available fields
-		if ($key == 0)
+		if ($key === 0)
 		{
 			$this->prepareAvailableFields();
 		}
 
-		// Check if we are running a cron job
-		list($isCli, $isAdmin) = FOFDispatcher::isCliAdmin();
-
-		if ($isCli)
+		if (CSVI_CLI)
 		{
 			$continue = true;
 
 			while ($continue)
 			{
 				$result = $this->indexAvailableFields();
-				$continue = $input->get('continue');
+				$continue = $this->key;
 			}
 		}
 		else
@@ -477,6 +334,8 @@ class Com_CsviMaintenance
 	 * @return  void.
 	 *
 	 * @since   3.5
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function prepareAvailableFields()
 	{
@@ -494,86 +353,33 @@ class Com_CsviMaintenance
 			$this->log->addStats('delete', 'COM_CSVI_AVAILABLE_FIELDS_TABLE_DELETED', 'availablefields');
 
 			// Create table again so index is proper
-			if ($this->createAvailableFieldsTable())
+			$this->createAvailableFieldsTable();
+
+			// Index the custom tables used in CSVI import/export
+			$this->indexCustomTables();
+
+			// Do component specific updates
+			$override = new stdClass;
+			$override->value = 'custom';
+			$components = $this->csvihelper->getComponents();
+			$components[] = $override;
+			jimport('joomla.filesystem.file');
+
+			foreach ($components as $component)
 			{
-				// Add the custom fields for each specific custom table in use
-				$query = $this->db->getQuery(true)
-					->select($this->db->quoteName('template_table'))
-					->from($this->db->quoteName('#__csvi_availabletables'))
-					->where($this->db->quoteName('task_name') . ' = ' . $this->db->quote('custom'))
-					->where($this->db->quoteName('component') . ' = ' . $this->db->quote('com_csvi'))
-					->where($this->db->quoteName('action') . ' = ' . $this->db->quote('import'));
-				$this->db->setQuery($query);
-
-				$importTables = $this->db->loadColumn();
-
-				$query->clear('where')
-					->where($this->db->quoteName('task_name') . ' = ' . $this->db->quote('custom'))
-					->where($this->db->quoteName('component') . ' = ' . $this->db->quote('com_csvi'))
-					->where($this->db->quoteName('action') . ' = ' . $this->db->quote('export'));
-				$this->db->setQuery($query);
-
-				$exportTables = $this->db->loadColumn();
-
-				$query = 'INSERT IGNORE INTO ' . $this->db->quoteName('#__csvi_availablefields')
-					. '(' . $this->db->quoteName('csvi_name') . ', '
-					. $this->db->quoteName('component_name') . ', '
-					. $this->db->quoteName('component_table') . ', '
-					. $this->db->quoteName('component') . ', '
-					. $this->db->quoteName('action') . ')';
-
-				$customFields = array();
-
-				foreach ($importTables as $importTable)
+				if (JComponentHelper::isInstalled($component->value))
 				{
-					$customFields[] = '(' . $this->db->quote('skip') . ', '
-						. $this->db->quote('skip') . ', '
-						. $this->db->quote($importTable) . ', '
-						. $this->db->quote('com_csvi') . ', '
-						. $this->db->quote('import') . ')';
+					$extension = substr($component->value, 4);
 
-					$customFields[] = '(' . $this->db->quote('combine') . ', '
-						. $this->db->quote('combine') . ', '
-						. $this->db->quote($importTable) . ', '
-						. $this->db->quote('com_csvi') . ', '
-						. $this->db->quote('import') . ')';
-				}
-
-				foreach ($exportTables as $exportTable)
-				{
-					$customFields[] = '(' . $this->db->quote('custom') . ', '
-						. $this->db->quote('custom') . ', '
-						. $this->db->quote($exportTable) . ', '
-						. $this->db->quote('com_csvi') . ', '
-						. $this->db->quote('export') . ')';
-				}
-
-				if (!empty($customFields))
-				{
-					$query .= ' VALUES ' . implode(', ', $customFields);
-
-					$this->db->setQuery($query)->execute();
-				}
-
-
-				// Do component specific updates
-				$override = new stdClass;
-				$override->value = 'custom';
-				$components = $this->csvihelper->getComponents();
-				$components[] = $override;
-				jimport('joomla.filesystem.file');
-
-				foreach ($components as $component)
-				{
 					// Load any component specific file
 					if ($component->value
-						&& $component->value != 'com_csvi'
-						&& $component->value != 'custom'
-						&& file_exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component->value . '/model/maintenance.php'))
+						&& $component->value !== 'com_csvi'
+						&& $component->value !== 'custom'
+						&& file_exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component->value . '/model/maintenance.php'))
 					{
-						require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component->value . '/model/maintenance.php';
+						require_once JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component->value . '/model/maintenance.php';
 						$extensionClassname = ucfirst($component->value) . 'Maintenance';
-						$extensionModel = new $extensionClassname($this->db, $this->log, $this->csvihelper);
+						$extensionModel     = new $extensionClassname($this->db, $this->log, $this->csvihelper);
 
 						if (method_exists($extensionModel, 'updateAvailableFields'))
 						{
@@ -582,12 +388,14 @@ class Com_CsviMaintenance
 					}
 
 					// Process all extra available fields
-					$filename = JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component->value . '/install/availablefields.sql';
+					$filename = JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component->value . '/install/availablefields.sql';
 
 					if (JFile::exists($filename))
 					{
 						// Check if the component is installed
-						if (substr($component->value, 0, 4) == 'com_')
+						$ext_id = true;
+
+						if (0 === strpos($component->value, 'com_'))
 						{
 							$query = $this->db->getQuery(true)
 								->select($this->db->quoteName('extension_id'))
@@ -596,26 +404,38 @@ class Com_CsviMaintenance
 							$this->db->setQuery($query);
 							$ext_id = $this->db->loadResult();
 						}
-						else
-						{
-							$ext_id = true;
-						}
 
 						if ($ext_id)
 						{
 							// Increment line number
 							$this->log->incrementLinenumber();
 
-							$queries = JInstallerHelper::splitSql(JFile::read($filename));
+							$queries = JDatabaseDriver::splitSql(file_get_contents($filename));
 
-							foreach ($queries as $step => $q)
+							// Get the admin template name
+							$adminTemplate = JFactory::getApplication()->getTemplate();
+
+							// Check if there are any override files for custom available fields
+							$overrideFilename = JPATH_ADMINISTRATOR . '/templates/' . $adminTemplate . '/html/com_csvi/' . $component->value . '/install/override.sql';
+
+							if (JFile::exists($overrideFilename))
+							{
+								$overrideQueries = JDatabaseDriver::splitSql(file_get_contents($overrideFilename));
+
+								if (!empty($overrideQueries))
+								{
+									$queries = array_merge($queries, $overrideQueries);
+								}
+							}
+
+							foreach ($queries as $step => $splitQuery)
 							{
 								// Clean the string of any trailing whitespace
-								$q = trim($q);
+								$splitQuery = trim($splitQuery);
 
-								if (!empty($q))
+								if ($splitQuery)
 								{
-									$this->db->setQuery($q);
+									$this->db->setQuery($splitQuery);
 
 									if ($this->db->execute())
 									{
@@ -629,7 +449,7 @@ class Com_CsviMaintenance
 									{
 										$this->log->add(
 											'incorrect',
-											JText::sprintf('COM_CSVI_CUSTOM_AVAILABLE_FIELDS_HAVE_NOT_BEEN_ADDED', JText::_('COM_CSVI_' . $component->value), $step + 1, $q),
+											JText::sprintf('COM_CSVI_CUSTOM_AVAILABLE_FIELDS_HAVE_NOT_BEEN_ADDED', JText::_('COM_CSVI_' . $component->value), $step + 1, $splitQuery),
 											$component->value . '_CUSTOM'
 										);
 									}
@@ -637,11 +457,11 @@ class Com_CsviMaintenance
 							}
 
 							// Execute any specific available fields that are not in an SQL file
-							if (file_exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component->value . '/model/maintenance.php'))
+							if (file_exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component->value . '/model/maintenance.php'))
 							{
-								require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component->value . '/model/maintenance.php';
+								require_once JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component->value . '/model/maintenance.php';
 								$classname = $component->value . 'Maintenance';
-								$addon = new $classname($this->db, $this->log, $this->csvihelper);
+								$addon     = new $classname($this->db, $this->log, $this->csvihelper);
 
 								if (method_exists($addon, 'customAvailableFields'))
 								{
@@ -651,14 +471,89 @@ class Com_CsviMaintenance
 						}
 					}
 				}
-
-				// Increment line number
-				$this->log->decrementLinenumber();
 			}
+
+			// Increment line number
+			$this->log->decrementLinenumber();
 		}
 		catch (Exception $e)
 		{
 			$this->log->addStats('error', $e->getMessage(), 'availablefields');
+
+			throw new CsviException($e->getMessage(), $e->getCode());
+		}
+	}
+
+	/**
+	 * Process the custom tables for import/export.
+	 *
+	 * @return  void.
+	 *
+	 * @since   6.5.6
+	 *
+	 * @throws  \RuntimeException
+	 */
+	private function indexCustomTables()
+	{
+		// Add the custom fields for each specific custom table in use
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('template_table'))
+			->from($this->db->quoteName('#__csvi_availabletables'))
+			->where($this->db->quoteName('task_name') . ' = ' . $this->db->quote('custom'))
+			->where($this->db->quoteName('component') . ' = ' . $this->db->quote('com_csvi'))
+			->where($this->db->quoteName('action') . ' = ' . $this->db->quote('import'));
+		$this->db->setQuery($query);
+
+		$importTables = $this->db->loadColumn();
+
+		$query->clear('where')
+			->where($this->db->quoteName('task_name') . ' = ' . $this->db->quote('custom'))
+			->where($this->db->quoteName('component') . ' = ' . $this->db->quote('com_csvi'))
+			->where($this->db->quoteName('action') . ' = ' . $this->db->quote('export'));
+		$this->db->setQuery($query);
+
+		$exportTables = $this->db->loadColumn();
+
+		$query = 'INSERT IGNORE INTO ' . $this->db->quoteName('#__csvi_availablefields')
+			. '(' . $this->db->quoteName('csvi_name') . ', '
+			. $this->db->quoteName('component_name') . ', '
+			. $this->db->quoteName('component_table') . ', '
+			. $this->db->quoteName('component') . ', '
+			. $this->db->quoteName('action') . ')';
+
+		$customFields = array();
+
+		foreach ($importTables as $importTable)
+		{
+			// Add the custom available fields for each import table
+			$customFields[] = '(' . $this->db->quote('skip') . ', '
+				. $this->db->quote('skip') . ', '
+				. $this->db->quote($importTable) . ', '
+				. $this->db->quote('com_csvi') . ', '
+				. $this->db->quote('import') . ')';
+
+			$customFields[] = '(' . $this->db->quote('combine') . ', '
+				. $this->db->quote('combine') . ', '
+				. $this->db->quote($importTable) . ', '
+				. $this->db->quote('com_csvi') . ', '
+				. $this->db->quote('import') . ')';
+		}
+
+		foreach ($exportTables as $exportTable)
+		{
+			// Add the custom available fields for each export table
+			$customFields[] = '(' . $this->db->quote('custom') . ', '
+				. $this->db->quote('custom') . ', '
+				. $this->db->quote($exportTable) . ', '
+				. $this->db->quote('com_csvi') . ', '
+				. $this->db->quote('export') . ')';
+		}
+
+		if (0 !== count($customFields))
+		{
+			$query .= ' VALUES ' . implode(', ', $customFields);
+
+			$this->db->setQuery($query)->execute();
 		}
 	}
 
@@ -668,6 +563,8 @@ class Com_CsviMaintenance
 	 * @return  bool  True on success | False on failure.
 	 *
 	 * @since   3.5
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function indexAvailableFields()
 	{
@@ -680,11 +577,11 @@ class Com_CsviMaintenance
 
 		$query = $this->db->getQuery(true);
 		$query->select(
-				$this->db->quoteName('csvi_availabletable_id') . ',' .
-				$this->db->quoteName('template_table') . ',' .
-				$this->db->quoteName('component') . ',' .
-				$this->db->quoteName('action')
-			)
+			$this->db->quoteName('csvi_availabletable_id') . ',' .
+			$this->db->quoteName('template_table') . ',' .
+			$this->db->quoteName('component') . ',' .
+			$this->db->quoteName('action')
+		)
 			->from($this->db->quoteName('#__csvi_availabletables'))
 			->where($this->db->quoteName('indexed') . ' = 0')
 			->where($this->db->quoteName('enabled') . ' = 1')
@@ -700,7 +597,7 @@ class Com_CsviMaintenance
 			// Check if the table exists
 			$tables = $this->db->getTableList();
 
-			if (in_array($this->db->getPrefix() . $table->template_table, $tables))
+			if (in_array($this->db->getPrefix() . $table->template_table, $tables, true))
 			{
 				// Increment line number
 				$this->log->incrementLinenumber();
@@ -766,19 +663,23 @@ class Com_CsviMaintenance
 	/**
 	 * Index a single table.
 	 *
-	 * @param   object  $table  The table to index
+	 * @param   object   $table        The table to index
+	 * @param   boolean  $showMessage  Show availablefields updated message
 	 *
-	 * @return  void  .
+	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \RuntimeException
 	 */
-	public function indexTable($table)
+	public function indexTable($table, $showMessage = true)
 	{
 		// Get the primary key for the table
-		$primarykey = $this->csvihelper->getPrimaryKey($table->template_table);
+		$primaryKey = $this->csvihelper->getPrimaryKey($table->template_table);
 
 		// Load the language
-		$this->csvihelper->loadLanguage($table->component, false);
+		$language = new CsviHelperLanguage;
+		$language->loadAddonLanguage($table->component, false);
 
 		$fields = $this->dbFields($table->template_table, true);
 
@@ -788,13 +689,11 @@ class Com_CsviMaintenance
 			foreach ($fields as $name => $value)
 			{
 				// Check if the field is a primary field
-				if ($primarykey == $name)
+				$primary = 0;
+
+				if ($primaryKey === $name)
 				{
 					$primary = 1;
-				}
-				else
-				{
-					$primary = 0;
 				}
 
 				if ($name)
@@ -809,17 +708,26 @@ class Com_CsviMaintenance
 						. $this->db->quote($primary) . ')';
 					$this->db->setQuery($q);
 
-					if ($this->db->execute())
+					try
 					{
-						$this->log->addStats('added', JText::sprintf('COM_CSVI_AVAILABLE_FIELDS_HAVE_BEEN_ADDED', $table->template_table), 'maintenance_index_availablefields');
-						$this->message = JText::sprintf('COM_CSVI_AVAILABLE_FIELDS_HAVE_BEEN_ADDED', $table->template_table);
+						$this->db->execute();
 					}
-					else
+					catch (Exception $e)
 					{
 						$this->log->addStats('error', 'COM_CSVI_AVAILABLE_FIELDS_HAVE_NOT_BEEN_ADDED', 'maintenance_index_availablefields');
-						$this->message = $this->db->getErrorMsg();
+						$this->message = $e->getMessage();
 					}
 				}
+			}
+
+			if ($showMessage)
+			{
+				$this->log->addStats(
+					'added',
+					JText::sprintf('COM_CSVI_AVAILABLE_FIELDS_HAVE_BEEN_ADDED', $table->template_table),
+					'maintenance_index_availablefields'
+				);
+				$this->message = JText::sprintf('COM_CSVI_AVAILABLE_FIELDS_HAVE_BEEN_ADDED', $table->template_table);
 			}
 		}
 	}
@@ -827,12 +735,16 @@ class Com_CsviMaintenance
 	/**
 	 * This is called after the available fields have been updated for post-processing.
 	 *
-	 * @return  bool  Always true.
+	 * @return  array  Results of the update.
 	 *
 	 * @since   6.0
 	 */
 	public function onAfterUpdateAvailableFields()
 	{
+		// Clean the cache
+		$cache = JFactory::getCache('com_csvi', '');
+		$cache->clean('com_csvi');
+
 		if ($this->key)
 		{
 			// Return data
@@ -853,15 +765,16 @@ class Com_CsviMaintenance
 	/**
 	 * Load a patch provided by the forum.
 	 *
-	 * @param   FOFInput  $input  The FOFInput class.
+	 * @param   JInput  $input  The JInput class.
 	 *
 	 * @return  bool  True on success, false on failure.
 	 *
-	 * throws   RuntimeException
+	 * @throws   CsviException
+	 * @throws   RuntimeException
 	 *
 	 * @since   5.6
 	 */
-	public function loadPatch(FOFInput $input)
+	public function loadPatch(JInput $input)
 	{
 		// Load the necessary libraries
 		jimport('joomla.filesystem.file');
@@ -871,14 +784,14 @@ class Com_CsviMaintenance
 		clearstatcache();
 
 		// Get the uploaded details
-		$upload = $input->get('patch_file', false);
+		$upload = $input->get('patch_file', '', 'array');
 
 		// Check if the file upload has an error
-		if (empty($upload))
+		if (empty($upload) || !array_key_exists('error', $upload))
 		{
 			$this->log->addStats('incorrect', 'COM_CSVI_NO_UPLOADED_FILE_PROVIDED', 'maintenance');
 
-			return false;
+			throw new CsviException(JText::_('COM_CSVI_NO_UPLOADED_FILE_PROVIDED'));
 		}
 		elseif ($upload['error'] == 0)
 		{
@@ -1067,11 +980,11 @@ class Com_CsviMaintenance
 					$query = $this->db->getQuery(true)
 						->select(
 							'CONCAT('
-								. $this->db->quote(CSVIPATH_DEBUG . '/com_csvi.log.')
-								. ', '
-								. $this->db->quoteName('csvi_log_id')
-								. ', '
-								. $this->db->quote('.php') . ') AS ' . $this->db->quoteName('filename')
+							. $this->db->quote(CSVIPATH_DEBUG . '/com_csvi.log.')
+							. ', '
+							. $this->db->quoteName('csvi_log_id')
+							. ', '
+							. $this->db->quote('.php') . ') AS ' . $this->db->quoteName('filename')
 						)
 						->from($this->db->quoteName('#__csvi_logs'))
 						->order($this->db->quoteName('csvi_log_id'));
@@ -1101,86 +1014,136 @@ class Com_CsviMaintenance
 	/**
 	 * Backup selected templates.
 	 *
-	 * @param   FOFInput  $input  FOFInput object
+	 * @param   JInput  $input  JInput object
 	 *
 	 * @return  bool  Always true.
 	 *
-	 * @throws  CsviException
-	 *
 	 * @since   3.0
+	 *
+	 * @throws  CsviException
+	 * @throws  RuntimeException
+	 * @throws  UnexpectedValueException
 	 */
-	public function backupTemplates(FOFInput $input)
+	public function backupTemplates(JInput $input)
 	{
-		$linenumber = 1;
-		$ids = $input->get('templates', array(), 'array');
+		$lineNumber = 1;
+		$ids        = $input->get('templates', array(), 'array');
 
 		if (!$ids)
 		{
 			throw new CsviException(JText::_('COM_CSVI_NO_TEMPLATES_SELECTED'));
 		}
 
-		// Create the backup file
-		$filepath = JPATH_SITE . $input->get('backup_location', '/tmp/com_csvi', 'string');
-		$filename = 'csvi_templates_' . date('Ymd', time()) . '.xml';
-		$file = JPath::clean($filepath . '/' . $filename, '/');
-
-		$xml = new DOMDocument;
+		$xml               = new DOMDocument;
 		$xml->formatOutput = true;
-		$csvi_element = $xml->createElement('csvi');
-		$templates = FOFModel::getTmpInstance('Templates', 'CsviModel')->getList();
+		$csvi_element      = $xml->createElement('csvi');
+
+		/** @var CsviModelTemplates $templateModel */
+		$templateModel = JModelLegacy::getInstance('Templates', 'CsviModel', array('ignore_request' => true));
+		$templates     = $templateModel->getItems();
+		/** @var array $ignoreFields */
+		$ignoreFields = array('ftpusername', 'ftppass', 'urlusername', 'urlpass', 'secret');
 
 		foreach ($templates as $template)
 		{
 			$template = (array) $template;
 
-			if (in_array($template['csvi_template_id'], $ids))
+			if (in_array($template['csvi_template_id'], $ids, true))
 			{
 				// Create the template node
+				/** @var DOMElement $xml_template */
 				$xml_template = $xml->createElement('template');
 
 				// Add the settings
+				/** @var DOMElement $template_settings */
 				$template_settings = $xml->createElement('settings');
 				$settings = json_decode($template['settings']);
 
 				foreach ($settings as $name => $value)
 				{
-					$ruleelement = $xml->createElement($name);
-
-					if (is_array($value))
+					if (in_array($name, $ignoreFields, true))
 					{
-						foreach ($value as $key => $subvalue)
+						$value = '';
+					}
+
+					/** @var DOMElement $ruleElement */
+					$ruleElement = $xml->createElement($name);
+
+					if ($name === 'custom_table')
+					{
+						$notObject = false;
+
+						if (is_object($value))
 						{
-							$subelement = $xml->createElement('option');
-							$subelement->appendChild($xml->createCDATASection($subvalue));
-							$ruleelement->appendChild($subelement);
+							foreach ($value as $customName => $customValue)
+							{
+								if (is_object($customValue))
+								{
+									foreach ($customValue as $customLevelKey => $customLevelName)
+									{
+										$element_param = $xml->createElement($customLevelKey);
+										$element_param->appendChild($xml->createCDATASection($customLevelName));
+										$ruleElement->appendChild($element_param);
+									}
+								}
+								else
+								{
+									$notObject = true;
+								}
+							}
+						}
+						else
+						{
+							$notObject = true;
+						}
+
+						if ($notObject)
+						{
+							$element_param = $xml->createElement($name);
+							$element_param->appendChild($xml->createCDATASection($value));
+							$ruleElement->appendChild($element_param);
 						}
 					}
 					else
 					{
-						// Convert 1/0 to yes/no so 0 wont become empty
-						switch ($value)
+						if (is_array($value))
 						{
-							case '0':
-								$val = 'no';
-								break;
-							case '1':
-								$val = 'yes';
-								break;
-							default:
-								$val = $value;
-								break;
+							foreach ($value as $key => $subValue)
+							{
+								/** @var DOMElement $subElement */
+								$subElement = $xml->createElement('option');
+								$subElement->appendChild($xml->createCDATASection($subValue));
+								$ruleElement->appendChild($subElement);
+							}
 						}
+						else
+						{
+							// Convert 1/0 to yes/no so 0 wont become empty
+							switch ($value)
+							{
+								case '0':
+									$val = 'no';
+									break;
+								case '1':
+									$val = 'yes';
+									break;
+								default:
+									$val = $value;
+									break;
+							}
 
-						$ruleelement->appendChild($xml->createCDATASection($val));
+							$ruleElement->appendChild($xml->createCDATASection($val));
+						}
 					}
 
-					$template_settings->appendChild($ruleelement);
+					$template_settings->appendChild($ruleElement);
 				}
 
 				// Add the settings to the XML
 				$xml_template->appendChild($template_settings);
 
 				// Array of fields to export
+				/** @var array $nodes */
 				$nodes = array(
 					'template_name',
 					'advanced',
@@ -1194,21 +1157,31 @@ class Com_CsviMaintenance
 				);
 
 				// Add all the template options
-				foreach ($nodes as $rulenode)
+				/** @var string $ruleNode */
+				foreach ($nodes as $ruleNode)
 				{
-					$ruleelement = $xml->createElement($rulenode);
-					$ruleelement->appendChild($xml->createCDATASection($template[$rulenode]));
-					$xml_template->appendChild($ruleelement);
+					if (in_array($ruleNode, $ignoreFields, true))
+					{
+						$template[$ruleNode] = '';
+					}
+
+					$ruleElement = $xml->createElement($ruleNode);
+					$ruleElement->appendChild($xml->createCDATASection($template[$ruleNode]));
+					$xml_template->appendChild($ruleElement);
 				}
 
 				// Add the fields for this template
-				$fields = FOFModel::getTmpInstance('Templatefields', 'CsviModel')->csvi_template_id($template['csvi_template_id'])->getList();
+				/** @var CsviModelTemplatefields $fieldsModel */
+				$fieldsModel = JModelLegacy::getInstance('Templatefields', 'CsviModel', array('ignore_request' => true));
+				$fieldsModel->setState('filter.csvi_template_id', $template['csvi_template_id']);
+				$fields = $fieldsModel->getItems();
 
 				if (count($fields) > 0)
 				{
 					$nodes = array(
 						'field_name',
 						'xml_node',
+						'table_name',
 						'column_header',
 						'default_value',
 						'enabled',
@@ -1225,9 +1198,12 @@ class Com_CsviMaintenance
 
 						foreach ($nodes as $node)
 						{
-							$fieldelement = $xml->createElement($node);
-							$fieldelement->appendChild($xml->createCDATASection($field->$node));
-							$template_field->appendChild($fieldelement);
+							if (isset($field->$node))
+							{
+								$fieldElement = $xml->createElement($node);
+								$fieldElement->appendChild($xml->createCDATASection($field->$node));
+								$template_field->appendChild($fieldElement);
+							}
 						}
 
 						// Add the template field rules
@@ -1255,7 +1231,7 @@ class Com_CsviMaintenance
 
 						if (count($rules) > 0)
 						{
-							$rulenodes = array(
+							$ruleNodes = array(
 								'name',
 								'action',
 								'ordering',
@@ -1263,42 +1239,61 @@ class Com_CsviMaintenance
 								'plugin_params',
 							);
 
-							$fieldrules = $xml->createElement('fieldrules');
+							$fieldRules = $xml->createElement('fieldrules');
 
 							foreach ($rules as $rule)
 							{
-								$fieldrule = $xml->createElement('rule');
+								$fieldRule = $xml->createElement('rule');
 
-								foreach ($rulenodes as $rulenode)
+								foreach ($ruleNodes as $ruleNode)
 								{
-									$ruleelement = $xml->createElement($rulenode);
+									$ruleElement = $xml->createElement($ruleNode);
 
-									if ($rulenode == 'plugin_params')
+									if ($ruleNode === 'plugin_params')
 									{
-										$params = json_decode($rule->$rulenode);
+										$params = json_decode($rule->$ruleNode);
 
 										if (is_object($params))
 										{
 											foreach ($params as $name => $value)
 											{
-												$element_param = $xml->createElement($name);
-												$element_param->appendChild($xml->createCDATASection($value));
-												$ruleelement->appendChild($element_param);
+												// Check if it is a multi replace plugin params
+												if (is_object($value))
+												{
+													foreach ($value as $replaceLevelKey => $replaceLevelName)
+													{
+														if (is_object($replaceLevelName))
+														{
+															foreach ($replaceLevelName as $replaceKey => $replaceName)
+															{
+																$element_param = $xml->createElement($replaceKey);
+																$element_param->appendChild($xml->createCDATASection($replaceName));
+																$ruleElement->appendChild($element_param);
+															}
+														}
+													}
+												}
+												else
+												{
+													$element_param = $xml->createElement($name);
+													$element_param->appendChild($xml->createCDATASection($value));
+													$ruleElement->appendChild($element_param);
+												}
 											}
 										}
 									}
 									else
 									{
-										$ruleelement->nodeValue = $rule->$rulenode;
+										$ruleElement->appendChild($xml->createCDATASection($rule->$ruleNode));
 									}
 
-									$fieldrule->appendChild($ruleelement);
+									$fieldRule->appendChild($ruleElement);
 								}
 
-								$fieldrules->appendChild($fieldrule);
+								$fieldRules->appendChild($fieldRule);
 							}
 
-							$template_field->appendChild($fieldrules);
+							$template_field->appendChild($fieldRules);
 						}
 
 						$template_fields->appendChild($template_field);
@@ -1309,51 +1304,72 @@ class Com_CsviMaintenance
 				}
 
 				// Add the template to the XML
-				$this->log->setLinenumber($linenumber++);
+				$this->log->setLinenumber($lineNumber++);
 				$csvi_element->appendChild($xml_template);
 			}
 		}
 
 		$xml->appendChild($csvi_element);
+
+		$location = $input->get('exportto', 'todownload', 'string');
+
+		// Create the backup file
+		$filePath = $input->get('backup_location', CSVIPATH_TMP, 'string');
+		$domain   = JUri::getInstance()->toString(array('host'));
+		$filename = 'csvi_templates_' . $domain . '_' . date('Ymd', time()) . '.xml';
+		$file = JPath::clean($filePath . '/' . $filename, '/');
 		$xml->save($file);
+		$this->downloadfile = JUri::root()
+			. 'administrator/index.php?option=com_csvi&task=exports.downloadfile&tmpl=component&file='
+			. base64_encode($file);
 
-		$this->log->addStats('information', JText::sprintf('COM_CSVI_BACKUP_TEMPLATE_PATH', $file), 'maintenance');
-
+		// If user needs to download the file
+		if ($location !== 'todownload')
+		{
+			$this->downloadfile = '';
+			$this->log->addStats('information', JText::sprintf('COM_CSVI_BACKUP_TEMPLATE_PATH', $file), 'maintenance');
+		}
 
 		// Store the log count
-		$linenumber--;
-		$input->set('logcount', $linenumber);
+		$lineNumber--;
+		$input->set('logcount', $lineNumber);
 
 		return true;
 	}
 
+
+
 	/**
 	 * Restore templates.
 	 *
-	 * @param   FOFInput  $input     FOFInput object
-	 * @param   mixed     $key       A reference used by the method.
-	 * @param   string    $filename  A local filename to use for import
+	 * @param   JInput  $input     JInput object
+	 * @param   mixed   $key       A reference used by the method.
+	 * @param   string  $filename  A local filename to use for import
 	 *
 	 * @return  bool  True on success | False on failure.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  CsviException
 	 */
-	public function restoreTemplates(FOFInput $input, $key, $filename = '')
+	public function restoreTemplates(JInput $input, $key, $filename = '')
 	{
-		$linenumber = 1;
+		$linenumber = 0;
 		jimport('joomla.filesystem.folder');
 		jimport('joomla.filesystem.file');
+		$userExistingRules = $input->get('useexistingrules', 1);
+		$enableDebugLog = $input->get('enablelog', 0);
 
 		if (empty($filename))
 		{
-			$upload = $input->get('restore_file', false);
+			$upload = $input->get('restore_file', null, 'array');
 
 			// Check if the file upload has an error
-			if (empty($upload))
+			if (null === $upload)
 			{
 				$this->log->addStats('incorrect', JText::_('COM_CSVI_NO_UPLOADED_FILE_PROVIDED'), 'maintenance');
 
-				return false;
+				throw new CsviException(JText::_('COM_CSVI_NO_UPLOADED_FILE_PROVIDED'));
 			}
 
 			$filename = $upload['tmp_name'];
@@ -1375,10 +1391,12 @@ class Com_CsviMaintenance
 		}
 
 		// Load the necessary tables
-		$templateTable = FOFTable::getAnInstance('templates');
-		$fieldTable = FOFTable::getAnInstance('templatefields');
-		$ruleTable = FOFTable::getAnInstance('rules');
-		$templatefieldrulesTable = FOFTable::getAnInstance('templatefields_rules');
+		/** @var TableTemplate $templateTable */
+		$templateTable           = JTable::getInstance('Template', 'Table');
+		/** @var TableTemplatefield $fieldTable */
+		$fieldTable              = JTable::getInstance('Templatefield', 'Table');
+		$ruleTable               = JTable::getInstance('Rule', 'Table');
+		$templatefieldrulesTable = JTable::getInstance('Templatefields_rules', 'Table');
 
 		foreach ($data as $templates)
 		{
@@ -1392,7 +1410,7 @@ class Com_CsviMaintenance
 				$templateTable->set('action', $template['action']);
 				$templateTable->set('frontend', $template['frontend']);
 				$templateTable->set('secret', $template['secret']);
-				$templateTable->set('log', $template['log']);
+				$templateTable->set('log', ($enableDebugLog) ? $enableDebugLog : $template['log']);
 				$templateTable->set('lastrun', $template['lastrun']);
 				$templateTable->set('enabled', $template['enabled']);
 				$templateTable->set('ordering', $template['ordering']);
@@ -1400,6 +1418,13 @@ class Com_CsviMaintenance
 				// Reformat the settings
 				foreach ($template['settings'] as $name => $setting)
 				{
+					$component = $template['settings']['component'];
+
+					if (!$this->checkComponentInstall($component))
+					{
+						throw new RuntimeException(JText::sprintf('COM_CSVI_COMPONENT_NOT_INSTALLED', $component));
+					}
+
 					// Convert back yes/no to template readable form 1/0
 					switch ($template['settings'][$name])
 					{
@@ -1414,85 +1439,225 @@ class Com_CsviMaintenance
 							break;
 					}
 
-					$template['settings'][$name] = $val;
-
-					if (is_array($setting))
+					switch (strtolower($name))
 					{
-						$template['settings'][$name][] = $setting['option'];
+						case 'language':
+							$className = ucfirst(strtolower($component)) . 'Maintenance';
+							$classFile = JPATH_PLUGINS . '/csviaddon/' . substr($component, 4) . '/' . $component . '/model/maintenance.php';
+
+							if (file_exists($classFile))
+							{
+								if (!class_exists($className))
+								{
+									require_once $classFile;
+								}
+
+								$addon = new $className($this->db, $this->log, $this->csvihelper);
+
+								if (method_exists($addon, 'checkTemplatesLanguage'))
+								{
+									$template = $addon->checkTemplatesLanguage($template);
+								}
+							}
+							break;
+						default:
+							$template['settings'][$name] = $val;
+							break;
+					}
+
+					// Check if it is a custom table to update available fields
+					if ($name === 'custom_table' && $template['settings'][$name])
+					{
+						if (isset($template['settings'][$name]['table']))
+						{
+							$customTableValues = $template['settings'][$name];
+							unset($template['settings'][$name]['table']);
+							unset($template['settings'][$name]['field']);
+							unset($template['settings'][$name]['joinfield']);
+							unset($template['settings'][$name]['jointable']);
+							unset($template['settings'][$name]['jointype']);
+							unset($template['settings'][$name]['csvi_template_id']);
+
+							foreach ($customTableValues as $key => $customTable)
+							{
+								foreach ($customTable as $count => $tableValue)
+								{
+									$template['settings'][$name]['custom_table' . $count][$key] = $tableValue;
+								}
+							}
+						}
+
+						$template['settings']['custom_table'] = $template['settings'][$name];
+						$this->saveCustomTableAvailableFields($customTableValues['table'], $template['action']);
+					}
+
+					if (is_array($setting) && isset($setting['option']))
+					{
+						// Make sure the option is an array
+						$setting['option'] = (array) $setting['option'];
+
+						$template['settings'][$name] = $setting['option'];
 					}
 				}
 
 				$templateTable->set('settings', json_encode($template['settings']));
 				$templateTable->store();
 
-				// Store the fields
-				$fields = array();
-
-				if (isset($template['fields']['field']))
+				if (array_key_exists('fields', $template))
 				{
+					// Store the fields
 					$fields = $template['fields']['field'];
-				}
 
-				foreach ($fields as $field)
-				{
-					$fieldTable->set('csvi_template_id', $templateTable->get('csvi_template_id'));
-					$fieldTable->save($field);
-
-					// Store any field related rules
-					if (isset($field['fieldrules']))
+					if (!array_key_exists(0, $template['fields']['field']))
 					{
-						foreach ($field['fieldrules'] as $rules)
-						{
-							if (isset($rules['name']))
-							{
-								$rules = array($rules);
-							}
-
-							foreach ($rules as $rule)
-							{
-								$ruledata = array(
-									'name' => $rule['name'],
-									'action' => $rule['action'],
-									'ordering' => $rule['ordering'],
-									'plugin' => $rule['plugin'],
-									'plugin_params' => json_encode($rule['plugin_params']),
-									'csvi_templatefield_id' => $fieldTable->get('csvi_templatefield_id')
-								);
-
-								// Save the rule
-								$ruleTable->save($ruledata);
-
-								// Save the relation
-								$templatefieldrulesTable->set('csvi_templatefield_id', $fieldTable->get('csvi_templatefield_id'));
-								$templatefieldrulesTable->set('csvi_rule_id', $ruleTable->get('csvi_rule_id'));
-								$templatefieldrulesTable->store();
-
-								// Reset the relation table
-								$templatefieldrulesTable->reset();
-								$templatefieldrulesTable->csvi_templatefields_rule_id = null;
-
-								// Reset the rule table
-								$ruleTable->reset();
-								$ruleTable->csvi_rule_id = null;
-							}
-						}
+						$fields = array(0 => $template['fields']['field']);
 					}
 
-					$fieldTable->reset();
-					$fieldTable->csvi_templatefield_id = null;
+					// Get the template ID
+					$templateId = $templateTable->get('csvi_template_id');
+
+					foreach ($fields as $field)
+					{
+						$fieldTable->set('csvi_template_id', $templateId);
+						$fieldTable->save($field);
+
+						// Store any field related rules
+						if (isset($field['fieldrules']))
+						{
+							foreach ($field['fieldrules'] as $rules)
+							{
+								if (isset($rules['name']))
+								{
+									$rules = array($rules);
+								}
+
+								foreach ($rules as $rule)
+								{
+									$newArray = array();
+
+									if (isset($rule['plugin_params']['operation']))
+									{
+										$finalReplaceArray = array();
+										$replaceArray = array();
+
+										if (is_array($rule['plugin_params']['operation']))
+										{
+											for ($i = 0; $i < count($rule['plugin_params']['operation']); $i++)
+											{
+												foreach ($rule['plugin_params'] as $paramKey => $paramValue)
+												{
+													$replaceArray[$paramKey] = $paramValue[$i];
+												}
+
+												$finalReplaceArray['replacements' . $i] = $replaceArray;
+											}
+										}
+										else
+										{
+											foreach ($rule['plugin_params'] as $paramKey => $paramValue)
+											{
+												$replaceArray[$paramKey] = $paramValue;
+											}
+
+											$finalReplaceArray['replacements0'] = $replaceArray;
+										}
+
+										$newArray['replacements'] = $finalReplaceArray;
+										$rule['plugin_params']    = $newArray;
+									}
+
+									$ruleId = 0;
+
+									// Check if existing rules has to be used
+									if ($userExistingRules)
+									{
+										$query = $this->db->getQuery(true)
+											->select($this->db->quoteName('csvi_rule_id'))
+											->from($this->db->quoteName('#__csvi_rules'))
+											->where($this->db->quoteName('name') . '=' . $this->db->quote($rule['name']));
+										$this->db->setQuery($query);
+										$ruleId = $this->db->loadResult();
+									}
+
+									if (!$ruleId)
+									{
+										$ruledata = array(
+											'name'                  => $rule['name'],
+											'action'                => $rule['action'],
+											'ordering'              => $rule['ordering'],
+											'plugin'                => $rule['plugin'],
+											'plugin_params'         => json_encode($rule['plugin_params']),
+											'csvi_templatefield_id' => $fieldTable->get('csvi_templatefield_id')
+										);
+
+										// Save the rule
+										$ruleTable->save($ruledata);
+										$ruleId = $ruleTable->get('csvi_rule_id');
+									}
+
+									// Save the relation
+									$templatefieldrulesTable->set('csvi_templatefield_id', $fieldTable->get('csvi_templatefield_id'));
+									$templatefieldrulesTable->set('csvi_rule_id', $ruleId);
+									$templatefieldrulesTable->store();
+
+									// Reset the relation table
+									$templatefieldrulesTable->reset();
+									$templatefieldrulesTable->csvi_templatefields_rule_id = null;
+
+									// Reset the rule table
+									$ruleTable->reset();
+									$ruleTable->csvi_rule_id = null;
+								}
+							}
+						}
+
+						$fieldTable->reset();
+						$fieldTable->csvi_templatefield_id = null;
+					}
 				}
 
 				// Increment the number of templates processed
-				$this->log->setLinenumber($linenumber++);
+				$this->log->setLinenumber(++$linenumber);
 			}
 		}
+
+		$totalTemplates = $this->totalRestoredTemplates + $linenumber;
+		$this->totalRestoredTemplates = $totalTemplates;
 
 		// Set the name of the file restore to logs display
 		$this->log->setFilename($file);
 
 		// Store the log count
-		$linenumber--;
-		$input->set('logcount', $linenumber);
+		$totalTemplates--;
+		$input->set('logcount', $totalTemplates);
+
+		return true;
+	}
+
+	/**
+	 * Check if the component is installed.
+	 *
+	 * @param   string  $component  Component name to check if installed
+	 *
+	 * @return  bool  True on success | False on failure.
+	 *
+	 * @since   7.4.0
+	 *
+	 */
+	private function checkComponentInstall($component)
+	{
+		$query = $this->db->getQuery(true);
+		$query->select($this->db->quoteName('extension_id'))
+			->from($this->db->quoteName('#__extensions'))
+			->where($this->db->quoteName('element') . ' = ' . $this->db->quote($component))
+			->where($this->db->quoteName('type') . ' = ' . $this->db->quote('component'));
+		$this->db->setQuery($query);
+		$extensionId = $this->db->loadResult();
+
+		if (!$extensionId)
+		{
+			return false;
+		}
 
 		return true;
 	}
@@ -1578,54 +1743,48 @@ class Com_CsviMaintenance
 	/**
 	 * Prepare the ICEcat index files for loading.
 	 *
-	 * @param   FOFInput  $input  The input model
+	 * @param   JInput  $input  The input model
 	 *
-	 * @return  bool  True on success | False on failure.
+	 * @return  void
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  RuntimeException
+	 * @throws  InvalidArgumentException
 	 */
-	public function onBeforeIcecatIndex(FOFInput $input)
+	public function onBeforeIcecatIndex(JInput $input)
 	{
-		$session = JFactory::getSession();
-		$settings = new CsviHelperSettings($this->db);
-		$username = $settings->get('ice_username', false);
-		$password = $settings->get('ice_password', false);
-		$icecat_options = $input->get('icecat', array(), null);
-		$icecat_gzip = $input->get('icecat_gzip', true, 'bool');
-		$loadremote_index = false;
-		$loadremote_supplier = false;
-
-		// Check which indexes to load
-		if (in_array('icecat_index', $icecat_options))
-		{
-			$load_index = true;
-		}
-		else
-		{
-			$load_index = false;
-		}
-
-		if (in_array('icecat_supplier', $icecat_options))
-		{
-			$load_supplier = true;
-		}
-		else
-		{
-			$load_supplier = false;
-		}
+		$session              = JFactory::getSession();
+		$settings             = new CsviHelperSettings($this->db);
+		$username             = $settings->get('ice_username', false);
+		$password             = $settings->get('ice_password', false);
+		$icecat_gzip          = $input->get('icecat_gzip', true, 'bool');
+		$loadIndex            = $input->get('icecat_index', false, 'bool');
+		$loadSupplier         = $input->get('icecat_supplier', false, 'bool');
+		$key                  = $input->get('key', 0);
+		$loadRemoteIndex      = false;
+		$loadRemoteSupplier   = false;
+		$icecat_index_file    = '';
+		$icecat_supplier_file = '';
 
 		// Check if we have a username and password
 		if ($username && $password)
 		{
+			// Only download the files at the start of indexing
+			if ((int) $key !== 0)
+			{
+				return;
+			}
+
 			// Joomla includes
 			jimport('joomla.filesystem.folder');
 			jimport('joomla.filesystem.file');
 			jimport('joomla.filesystem.archive');
 
 			// Check if the files are stored on the server
-			$location = $input->get('icecatlocation', '', 'string');
+			$location = $input->get('icecatlocation', CSVIPATH_TMP, 'string');
 
-			if ($load_index)
+			if ($loadIndex)
 			{
 				if (JFile::exists($location . '/icecat_index'))
 				{
@@ -1633,73 +1792,73 @@ class Com_CsviMaintenance
 				}
 				elseif (JFile::exists($location . '/icecat_index.gzip'))
 				{
-					$icecat_index_file = $location.'/icecat_index.gzip';
+					$icecat_index_file = $location . '/icecat_index.gzip';
 				}
 				elseif (JFile::exists($location . '/icecat_index.zip'))
 				{
-					$icecat_index_file = $location.'/icecat_index.zip';
+					$icecat_index_file = $location . '/icecat_index.zip';
 				}
 				else
 				{
-					$loadremote_index = true;
+					$icecat_index_file = $location . '/icecat_index';
+					$loadRemoteIndex   = true;
 				}
 			}
 
-			if ($load_supplier)
+			if ($loadSupplier)
 			{
 				if (JFile::exists($location . '/icecat_supplier'))
 				{
-					$icecat_supplier_file = $location.'/icecat_supplier';
+					$icecat_supplier_file = $location . '/icecat_supplier';
 				}
 				elseif (JFile::exists($location . '/icecat_supplier.gzip'))
 				{
-					$icecat_supplier_file = $location.'/icecat_supplier.gzip';
+					$icecat_supplier_file = $location . '/icecat_supplier.gzip';
 				}
 				elseif (JFile::exists($location . '/icecat_supplier.zip'))
 				{
-					$icecat_supplier_file = $location.'/icecat_supplier.zip';
+					$icecat_supplier_file = $location . '/icecat_supplier.zip';
 				}
 				else
 				{
-					$loadremote_supplier = true;
+					$icecat_supplier_file = $location . '/icecat_supplier';
+					$loadRemoteSupplier   = true;
 				}
 			}
 
 			// Load the remote files if needed
-			if ($loadremote_index || $loadremote_supplier)
+			if ($loadRemoteIndex || $loadRemoteSupplier)
 			{
+				$gzip = '';
+
 				// Context for retrieving files
 				if ($icecat_gzip)
 				{
 					$gzip = "Accept-Encoding: gzip\r\n";
 				}
-				else
-				{
-					$gzip = '';
-				}
-				$context = stream_context_create(array(
-						'http' => array(
-								'header'  => "Authorization: Basic " . base64_encode($username . ':' . $password) . "\r\n" . $gzip
-						)
-				));
 
-				if ($load_index && $loadremote_index)
+				$context = stream_context_create(
+					array(
+						'http' => array(
+							'header'  => "Authorization: Basic " . base64_encode($username . ':' . $password) . "\r\n" . $gzip
+						)
+					)
+				);
+
+				if ($loadIndex && $loadRemoteIndex)
 				{
 					// ICEcat index file
-					$icecat_url = $settings->get('icecat.ice_index', 'http://data.icecat.biz/export/freexml.int/INT/files.index.csv');
-
-					// Load the index file from the ICEcat server to a local file
-					$icecat_index_file = CSVIPATH_TMP . '/icecat_index';
+					$icecat_url = $settings->get('ice_index', 'https://data.icecat.biz/export/freexml.int/INT/files.index.csv');
 
 					if ($icecat_gzip)
 					{
 						$icecat_index_file .= '.gzip';
 					}
 
-					$fp_url = fopen($icecat_url, 'r', false, $context);
+					$fp_url   = fopen($icecat_url, 'r', false, $context);
 					$fp_local = fopen($icecat_index_file, 'w+');
 
-					while($content = fread($fp_url, 1024536))
+					while ($content = fread($fp_url, 1024536))
 					{
 						fwrite($fp_local, $content);
 					}
@@ -1708,13 +1867,10 @@ class Com_CsviMaintenance
 					fclose($fp_local);
 				}
 
-				if ($load_supplier && $loadremote_supplier)
+				if ($loadSupplier && $loadRemoteSupplier)
 				{
 					// Load the manufacturer data
-					$icecat_mf = $settings->get('icecat.ice_supplier', 'http://data.icecat.biz/export/freexml.int/INT/supplier_mapping.xml');
-
-					// Load the index file from the ICEcat server to a local file
-					$icecat_supplier_file = CSVIPATH_TMP . '/icecat_supplier';
+					$icecat_mf = $settings->get('ice_supplier', 'https://data.icecat.biz/export/freexml.int/INT/supplier_mapping.xml');
 
 					if ($icecat_gzip)
 					{
@@ -1724,7 +1880,7 @@ class Com_CsviMaintenance
 					$fp_url = fopen($icecat_mf, 'r', false, $context);
 					$fp_local = fopen($icecat_supplier_file, 'w+');
 
-					while($content = fread($fp_url, 1024536))
+					while ($content = fread($fp_url, 1024536))
 					{
 						fwrite($fp_local, $content);
 					}
@@ -1735,7 +1891,7 @@ class Com_CsviMaintenance
 			}
 
 			// Check if we need to unpack the files
-			if ($load_index)
+			if ($loadIndex)
 			{
 				if (substr($icecat_index_file, -3) == 'zip')
 				{
@@ -1743,17 +1899,14 @@ class Com_CsviMaintenance
 					{
 						$this->log->addStats('incorrect', 'COM_CSVI_ICECAT_INDEX_NOT_UNPACKED', 'maintenance');
 
-						return false;
-					}
-					else
-					{
-						$icecat_index_file = CSVIPATH_TMP . '/icecat_index';
+						throw new RuntimeException(JText::_('COM_CSVI_ICECAT_INDEX_NOT_UNPACKED'));
 					}
 				}
 
 				$session->set('icecat_index_file', serialize($icecat_index_file), 'com_csvi');
 			}
-			if ($load_supplier)
+
+			if ($loadSupplier)
 			{
 				if (substr($icecat_supplier_file, -3) == 'zip')
 				{
@@ -1761,7 +1914,7 @@ class Com_CsviMaintenance
 					{
 						$this->log->addStats('incorrect', 'COM_CSVI_ICECAT_SUPPLIER_NOT_UNPACKED', 'maintenance');
 
-						return false;
+						throw new RuntimeException(JText::_('COM_CSVI_ICECAT_SUPPLIER_NOT_UNPACKED'));
 					}
 					else
 					{
@@ -1776,60 +1929,47 @@ class Com_CsviMaintenance
 		{
 			$this->log->addStats('incorrect', 'COM_CSVI_ICECAT_NO_USER_PASS', 'maintenance');
 
-			return false;
+			throw new InvalidArgumentException(JText::_('COM_CSVI_ICECAT_NO_USER_PASS'));
 		}
-
-		return true;
 	}
 
 	/**
 	 * Load the ICEcat indexes.
 	 *
-	 * @param   FOFInput  $input  The input model
-	 * @param   mixed     $key    A reference used by the method.
+	 * @param   JInput  $input  The input model
+	 * @param   mixed   $key    A reference used by the method.
 	 *
 	 * @return  bool  True on success | False on failure.
 	 *
 	 * @since   6.0
 	 */
-	public function icecatIndex(FOFInput $input, $key)
+	public function icecatIndex(JInput $input, $key)
 	{
+		$result = false;
+
 		if ($key > 0)
 		{
 			$result = $this->indexIcecat($input, $key);
 		}
 		else
 		{
-			$linenumber = $this->log->getLineNumber();
+			$linenumber = $this->log->getLinenumber();
 
 			// Load the index files
-			$session = JFactory::getSession();
-			$icecat_index_file = unserialize($session->get('icecat_index_file', '', 'com_csvi'));
+			$session              = JFactory::getSession();
+			$icecat_index_file    = unserialize($session->get('icecat_index_file', '', 'com_csvi'));
 			$icecat_supplier_file = unserialize($session->get('icecat_supplier_file', '', 'com_csvi'));
 
 			// Should we load the index file in 1 go
 			$loadtype = $input->get('loadtype', true, 'bool');
 
 			// Check which files to load
-			$icecat_options = $input->get('icecat', array(), null);
-
-			if (in_array('icecat_index', $icecat_options))
-			{
-				$load_index = true;
-			}
-			else
-			{
-				$load_index = false;
-			}
-
-			if (in_array('icecat_supplier', $icecat_options))
-			{
-				$load_supplier = true;
-			}
-			else
-			{
-				$load_supplier = false;
-			}
+			$load_index     = $input->get('icecat_index', false, 'boolean');
+			$load_supplier  = $input->get('icecat_supplier', false, 'boolean');
+			$icecat_records = $input->get('icecat_records', 1000, 'int');
+			$session->set('icecat_records', serialize($icecat_records), 'com_csvi');
+			$icecat_wait = $input->get('icecat_wait', 5, 'int');
+			$session->set('icecat_wait', serialize($icecat_wait), 'com_csvi');
 
 			// First load the supplier file, it is small and easy to do
 			if ($linenumber == 0 && $load_supplier && $icecat_supplier_file)
@@ -1841,21 +1981,22 @@ class Com_CsviMaintenance
 				$this->db->truncateTable('#__csvi_icecat_suppliers');
 
 				// Reset the supplier file
-				$xmlstr = file_get_contents($icecat_supplier_file);
-				$xml = new SimpleXMLElement($xmlstr);
+				$xmlstr        = file_get_contents($icecat_supplier_file);
+				$xml           = new SimpleXMLElement($xmlstr);
 				$supplier_data = array();
 
 				foreach ($xml->SupplierMappings->children() as $mapping)
 				{
 					foreach ($mapping->attributes() as $attr_name => $attr_value)
 					{
-						switch($attr_name)
+						switch ($attr_name)
 						{
 							case 'supplier_id':
 								$supplier_id = $attr_value;
 								break;
 							case 'name':
 								$supplier_data[] = '(' . $this->db->quote($supplier_id) . ',' . $this->db->quote($attr_value) . ')';
+								break;
 						}
 					}
 
@@ -1865,17 +2006,18 @@ class Com_CsviMaintenance
 					}
 				}
 
-				$q = "INSERT IGNORE INTO ".$this->db->quoteName('#__csvi_icecat_suppliers') . " VALUES " . implode(',', $supplier_data);
+				$q = 'INSERT IGNORE INTO ' . $this->db->quoteName('#__csvi_icecat_suppliers') . ' VALUES ' . implode(',', $supplier_data);
 				$this->db->setQuery($q);
 
-				if ($this->db->execute())
+				try
 				{
+					$this->db->execute();
 					$input->set('linesprocessed', $this->db->getAffectedRows());
 					$this->log->addStats('added', 'COM_CSVI_ICECAT_SUPPLIERS_LOADED');
 				}
-				else
+				catch (Exception $e)
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ICECAT_SUPPLIERS_NOT_LOADED', $this->db->getErrorMsg()));
+					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ICECAT_SUPPLIERS_NOT_LOADED', $e->getMessage()));
 				}
 			}
 
@@ -1896,14 +2038,15 @@ class Com_CsviMaintenance
 					// Add the line number
 					$this->log->setLinenumber(++$linenumber);
 
-					if ($result = $this->db->execute())
+					try
 					{
+						$result = $this->db->execute();
 						$input->set('linesprocessed', $input->get('linesprocessed') + $this->db->getAffectedRows());
 						$this->log->addStats('added', 'COM_CSVI_ICECAT_INDEX_LOADED');
 					}
-					else
+					catch (Exception $e)
 					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ICECAT_INDEX_NOT_LOADED', $this->db->getErrorMsg()));
+						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ICECAT_INDEX_NOT_LOADED', $e->getMessage()));
 					}
 				}
 				else
@@ -1913,11 +2056,8 @@ class Com_CsviMaintenance
 			}
 			else
 			{
-				// Check if we are running a cron job
-				list($isCli, $isAdmin) = FOFDispatcher::isCliAdmin();
-
 				// Load the files in 1 go using cron
-				if ($isCli)
+				if (CSVI_CLI)
 				{
 					$continue = true;
 
@@ -1953,16 +2093,14 @@ class Com_CsviMaintenance
 	 */
 	public function onAftericecatIndex()
 	{
+		$results['continue'] = false;
+
 		if ($this->key)
 		{
 			// Return data
 			$results = array();
 			$results['continue'] = true;
 			$results['key'] = $this->key;
-		}
-		else
-		{
-			$results['continue'] = false;
 		}
 
 		$results['info'] = $this->message;
@@ -1984,13 +2122,16 @@ class Com_CsviMaintenance
 	{
 		$adapter = JArchive::getAdapter('gzip');
 
-		if ($adapter)
+		if (file_exists($archivename) && $adapter)
 		{
-			$config = JFactory::getConfig();
+			$config   = JFactory::getConfig();
 			$tmpfname = $config->get('tmp_path') . '/' . uniqid('gzip');
-			$gzresult = $adapter->extract($archivename, $tmpfname);
 
-			if (JError::isError($gzresult))
+			try
+			{
+				$adapter->extract($archivename, $tmpfname);
+			}
+			catch (Exception $e)
 			{
 				@unlink($tmpfname);
 
@@ -2009,28 +2150,34 @@ class Com_CsviMaintenance
 	/**
 	 * Load the ICEcat index in batches.
 	 *
-	 * @param   FOFInput  $input  The input model
-	 * @param   mixed     $key    A reference used by the method.
+	 * @param   JInput  $input  The input model
+	 * @param   mixed   $key    A reference used by the method.
 	 *
-	 * @return  bool  True on success | False on failure.
+	 * @return  array  Status list.
 	 *
 	 * @since   3.3
 	 */
-	private function indexIcecat(FOFInput $input, $key)
+	private function indexIcecat(JInput $input, $key)
 	{
-		$linenumber = $this->log->getLineNumber();
+		$linenumber = $this->log->getLinenumber();
 
 		// Session init
-		$session = JFactory::getSession();
+		$session           = JFactory::getSession();
 		$icecat_index_file = unserialize($session->get('icecat_index_file', '', 'com_csvi'));
-		$records = $input->get('icecat_records', 1000, 'int');
-		$finished = false;
-		$continue = true;
+		$records           = unserialize($session->get('icecat_records', '', 'com_csvi'));
+		$wait              = unserialize($session->get('icecat_wait', 5, 'com_csvi'));
+		$finished          = false;
+		$continue          = true;
+		$result            = array(
+			'cancel' => false,
+			'process' => true,
+			'continue' => false,
+		);
 
 		if ($icecat_index_file)
 		{
 			// Sleep to please the server
-			sleep($input->get('icecat_wait', 5));
+			sleep($wait);
 
 			// Load the records line by line
 			$query = $this->db->getQuery(true)
@@ -2054,7 +2201,10 @@ class Com_CsviMaintenance
 					. $this->db->quoteName('high_pic_width') . ','
 					. $this->db->quoteName('high_pic_height') . ','
 					. $this->db->quoteName('m_supplier_id') . ','
-					. $this->db->quoteName('m_supplier_name')
+					. $this->db->quoteName('m_supplier_name') . ','
+					. $this->db->quoteName('ean_upc_is_approved') . ','
+					. $this->db->quoteName('Limited') . ','
+					. $this->db->quoteName('Date_Added')
 				);
 
 			if (($handle = fopen($icecat_index_file, "r")) !== false)
@@ -2070,10 +2220,16 @@ class Com_CsviMaintenance
 				{
 					if ($row < $records)
 					{
-						$data = fgetcsv($handle, 2048, "\t");
+						$data = fgetcsv($handle, 4096, "\t");
 
 						if ($data)
 						{
+							// Make sure the read line matches the number of expected columns
+							if (count($data) !== 22)
+							{
+								continue;
+							}
+
 							$row++;
 							$lines = array();
 
@@ -2108,7 +2264,7 @@ class Com_CsviMaintenance
 
 				if ($this->db->execute())
 				{
-					$this->log->setLineNumber(++$linenumber);
+					$this->log->setLinenumber(++$linenumber);
 					$this->log->addStats('added', 'COM_CSVI_ICECAT_INDEX_LOADED');
 
 					// Store for future use
@@ -2124,29 +2280,23 @@ class Com_CsviMaintenance
 						// Clear the session
 						$session->clear('icecat_index_file', 'com_csvi');
 						$session->clear('icecat_supplier_file', 'com_csvi');
+						$session->clear('icecat_records', 'com_csvi');
+						$session->clear('icecat_wait', 'com_csvi');
 						$session->clear('form', 'com_csvi');
 					}
 
-					$result = true;
+					$result['continue'] = true;
 				}
 				else
 				{
-					$result = false;
+					$result['continue'] = false;
 				}
 
 				fclose($handle);
+			}
+		}
 
-				return $result;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else
-		{
-			return false;
-		}
+		return $result;
 	}
 
 	/**
@@ -2190,12 +2340,14 @@ class Com_CsviMaintenance
 			'csvi_related_categories',
 			'csvi_related_products',
 			'csvi_rules',
+			'csvi_sefurls',
 			'csvi_processes',
 			'csvi_settings',
 			'csvi_tasks',
 			'csvi_templatefields',
 			'csvi_templatefields_rules',
 			'csvi_templates',
+			'csvi_templates_rules',
 			'csvi_template_fields_combine',
 			'csvi_template_fields_replacement'
 		);
@@ -2211,7 +2363,7 @@ class Com_CsviMaintenance
 	/**
 	 * Post process table deletion.
 	 *
-	 * @return  bool  Returns true.
+	 * @return  array  Option to cancel any further execution.
 	 *
 	 * @since   6.0
 	 */
@@ -2221,7 +2373,7 @@ class Com_CsviMaintenance
 		$this->csvihelper->enqueueMessage(JText::_('COM_CSVI_ALL_TABLES_DELETED'));
 
 		// Since we have no tables left and user plans to uninstall, we need to redirect to the extension manager
-		$cancel = array('url' => 'index.php?option=com_installer&view=manage');
+		$cancel = array('url' => 'index.php?option=com_installer&view=manage&filter[search]=csvi&filter[type]=package');
 		JFactory::getApplication()->input->set('canceloptions', $cancel);
 
 		return array('cancel' => true);
@@ -2230,74 +2382,87 @@ class Com_CsviMaintenance
 	/**
 	 * Install any available example template.
 	 *
-	 * @param   FOFInput  $input  The input model
+	 * @param   JInput  $input  The input model
 	 *
-	 * @return  bool  True on success | false on failure.
+	 * @return  void.
 	 *
 	 * @since   6.4.0
 	 */
-	public function exampleTemplates(FOFInput $input)
+	public function exampleTemplates(JInput $input)
 	{
 		// Get a list of example templates to install
 		$components = $this->csvihelper->getComponents();
 		jimport('joomla.filesystem.file');
+		$selectedComponents = $input->get('addons', '', 'array');
 
 		foreach ($components as $component)
 		{
-			// Process all extra available fields
-			$filename = JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component->value . '/install/templates.xml';
-
-			if (JFile::exists($filename))
+			if (in_array($component->value, $selectedComponents))
 			{
-				// Check if the component is installed
-				if (substr($component->value, 0, 4) == 'com_')
-				{
-					$query = $this->db->getQuery(true)
-						->select($this->db->quoteName('extension_id'))
-						->from($this->db->quoteName('#__extensions'))
-						->where($this->db->quoteName('element') . ' = ' . $this->db->quote($component->value));
-					$this->db->setQuery($query);
-					$ext_id = $this->db->loadResult();
-				}
-				else
-				{
-					$ext_id = true;
-				}
+				// Process all extra available fields
+				$extension = substr($component->value, 4);
+				$filename  = JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $component->value . '/install/templates.xml';
 
-				if ($ext_id)
+				if (JFile::exists($filename))
 				{
-					$this->log->add('Processing template file ' . $filename);
-
-					// Install the templates
-					if ($this->restoreTemplates($input, 0, $filename))
+					// Check if the component is installed
+					if (substr($component->value, 0, 4) == 'com_')
 					{
-						$this->log->addStats('added', JText::sprintf('COM_CSVI_ADDED_EXAMPLE_TEMPLATEFILE', JText::_('COM_CSVI_' . $component->value)));
+						$query = $this->db->getQuery(true)
+							->select($this->db->quoteName('extension_id'))
+							->from($this->db->quoteName('#__extensions'))
+							->where($this->db->quoteName('element') . ' = ' . $this->db->quote($component->value));
+						$this->db->setQuery($query);
+						$ext_id = $this->db->loadResult();
+					}
+					else
+					{
+						$ext_id = true;
+					}
+
+					if ($ext_id)
+					{
+						$this->log->add('Processing template file ' . $filename);
+
+						// Install the templates
+						if ($this->restoreTemplates($input, 0, $filename))
+						{
+							$this->log->addStats('added', JText::sprintf('COM_CSVI_ADDED_EXAMPLE_TEMPLATEFILE', JText::_('COM_CSVI_' . $component->value)));
+						}
 					}
 				}
 			}
 		}
+
+		$this->log->setLinenumber($this->totalRestoredTemplates);
 	}
 
 	/**
 	 * Create available fields table.
 	 *
-	 * @return  bool  Returns true.
+	 * @return  bool  True if table has been created.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  CsviException
 	 */
 	private function createAvailableFieldsTable()
 	{
-		$query = "CREATE TABLE IF NOT EXISTS `#__csvi_availablefields` (
-					`csvi_availablefield_id` INT(11) NOT NULL AUTO_INCREMENT,
-					`csvi_name` VARCHAR(255) NOT NULL,
-					`component_name` VARCHAR(55) NOT NULL,
-					`component_table` VARCHAR(55) NOT NULL,
-					`component` VARCHAR(55) NOT NULL,
-					`action` VARCHAR(6) NOT NULL,
-					`isprimary` TINYINT(1) NOT NULL DEFAULT '0',
-					PRIMARY KEY (`csvi_availablefield_id`),
-					UNIQUE INDEX `component_name_table` (`component_name`, `component_table`, `component`, `action`)
-				  ) CHARSET=utf8 COMMENT='Available fields for CSVI'";
+		$query = 'CREATE TABLE IF NOT EXISTS ' . $this->db->quoteName('#__csvi_availablefields') . ' ('
+			. $this->db->quoteName('csvi_availablefield_id') . ' INT(11) NOT NULL AUTO_INCREMENT,'
+			. $this->db->quoteName('csvi_name') . ' VARCHAR(255) NOT NULL,'
+			. $this->db->quoteName('component_name') . ' VARCHAR(55) NOT NULL,'
+			. $this->db->quoteName('component_table') . ' VARCHAR(55) NOT NULL,'
+			. $this->db->quoteName('component') . ' VARCHAR(55) NOT NULL,'
+			. $this->db->quoteName('action') . ' VARCHAR(6) NOT NULL,'
+			. $this->db->quoteName('isprimary') . ' TINYINT(1) NOT NULL DEFAULT \'0\',
+					PRIMARY KEY (' . $this->db->quoteName('csvi_availablefield_id') . '),
+					UNIQUE INDEX ' . $this->db->quoteName('component_name_table') . ' ('
+			. $this->db->quoteName('component_name') . ', '
+			. $this->db->quoteName('component_table') . ', '
+			. $this->db->quoteName('component') . ', '
+			. $this->db->quoteName('action') . ')
+				  ) CHARSET=utf8 COMMENT=\'Available fields for CSVI\'';
 		$this->db->setQuery($query);
 
 		try
@@ -2307,11 +2472,94 @@ class Com_CsviMaintenance
 		}
 		catch (Exception $e)
 		{
-			$this->log->addStats('error', $e->getMessage(), 'availablefields');
-
-			return false;
+			throw new CsviException($e->getMessage(), $e->getCode());
 		}
 
 		return true;
+	}
+
+	/**
+	 * Post processing of backup templates.
+	 *
+	 * @return  array  Settings for continuing.
+	 *
+	 * @since   6.6.0
+	 */
+	public function onAfterBackupTemplates()
+	{
+		return array('downloadfile' => $this->downloadfile);
+	}
+
+	/**
+	 * Threshold available fields for extension
+	 *
+	 * @return  int Hardcoded available fields
+	 *
+	 * @since   7.0
+	 */
+	public function availableFieldsThresholdLimit()
+	{
+		return 0;
+	}
+
+	/**
+	 * Update the available fields of custom table
+	 *
+	 * @param   String  $tables  The custom table name
+	 * @param   String  $action  Action
+	 *
+	 * @return  void
+	 *
+	 * @since   7.1.0
+	 */
+
+	public function saveCustomTableAvailableFields($tables, $action)
+	{
+		if (!is_array($tables))
+		{
+			$tables = (array) $tables;
+		}
+
+		foreach ($tables as $table)
+		{
+			// Check if the table is already listed
+			$query = $this->db->getQuery(true)
+				->select($this->db->quoteName('csvi_availabletable_id'))
+				->from($this->db->quoteName('#__csvi_availabletables'))
+				->where($this->db->quoteName('template_table') . ' = ' . $this->db->quote($table))
+				->where($this->db->quoteName('component') . ' = ' . $this->db->quote('com_csvi'))
+				->where($this->db->quoteName('action') . ' = ' . $this->db->quote($action));
+
+			$this->db->setQuery($query);
+			$csviAvailableTableId = $this->db->loadResult();
+
+			// Add the table to the available fields table if needed
+			if (!$csviAvailableTableId)
+			{
+				$query->clear()
+					->insert($this->db->quoteName('#__csvi_availabletables'))
+					->columns(
+						$this->db->quoteName('task_name') . ',' .
+						$this->db->quoteName('template_table') . ',' .
+						$this->db->quoteName('component') . ',' .
+						$this->db->quoteName('action') . ',' .
+						$this->db->quoteName('enabled')
+					)
+					->values(
+						$this->db->quote('custom') . ',' .
+						$this->db->quote($table) . ',' .
+						$this->db->quote('com_csvi') . ',' .
+						$this->db->quote($action) . ',' .
+						$this->db->quote('1')
+					);
+				$this->db->setQuery($query)->execute();
+			}
+
+			$customTable                 = new stdClass;
+			$customTable->template_table = $table;
+			$customTable->component      = 'com_csvi';
+			$customTable->action         = $action;
+			$this->indexTable($customTable, false);
+		}
 	}
 }

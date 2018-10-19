@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportRelatedproduct extends RantaiImportEngine
+class Relatedproduct extends \RantaiImportEngine
 {
 	/**
 	 * The product custom fields table
 	 *
-	 * @var    VirtueMartTableProductCustomfield
+	 * @var    \VirtueMartTableProductCustomfield
 	 * @since  6.0
 	 */
 	private $productCustomfieldTable = null;
@@ -65,7 +67,7 @@ class Com_VirtuemartModelImportRelatedproduct extends RantaiImportEngine
 		// Reset loaded state
 		$this->loaded = true;
 
-		// Required fields are calc_kind, calc_value_mathop, calc_value
+		// Required fields are product_sku, related_products
 		if ($this->getState('product_sku', false) && $this->getState('related_products', false))
 		{
 			$this->setState('virtuemart_product_id', $this->helper->getProductId());
@@ -78,7 +80,7 @@ class Com_VirtuemartModelImportRelatedproduct extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -113,16 +115,16 @@ class Com_VirtuemartModelImportRelatedproduct extends RantaiImportEngine
 				if ($productId > 0)
 				{
 					// Build the object to store
-					$related = new stdClass;
+					$related                        = new \stdClass;
 					$related->virtuemart_product_id = $this->getState('virtuemart_product_id');
-					$related->virtuemart_custom_id = $this->helper->getRelatedId('R');
-					$related->published = 0;
-					$related->created_on = $this->date->toSql();
-					$related->created_by = $this->userId;
-					$related->modified_on = $this->date->toSql();
-					$related->modified_by = $this->userId;
-					$related->customfield_params = '';
-					$related->customfield_value = $productId;
+					$related->virtuemart_custom_id  = $this->helper->getRelatedId('R');
+					$related->published             = 0;
+					$related->created_on            = $this->date->toSql();
+					$related->created_by            = $this->userId;
+					$related->modified_on           = $this->date->toSql();
+					$related->modified_by           = $this->userId;
+					$related->customfield_params    = '';
+					$related->customfield_value     = $productId;
 
 					// Bind the data
 					$this->productCustomfieldTable->bind($related);

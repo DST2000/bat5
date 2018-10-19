@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
+class Orderitem extends \RantaiImportEngine
 {
 	/**
 	 * Order item table.
 	 *
-	 * @var    VirtueMartTableOrderItem
+	 * @var    \VirtueMartTableOrderItem
 	 * @since  6.0
 	 */
 	private $orderItemTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 	/**
 	 * The Com_VirtuemartHelperCom_Virtuemart helper
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart
 	 * @since  6.0
 	 */
 	protected $helper = null;
@@ -92,6 +94,9 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 					case 'order_status_name':
 						$this->setState('order_status', $this->helper->getOrderStatus($value));
 						break;
+					case 'order_number':
+						$this->setState('virtuemart_order_id', $this->helper->getOrderId($value));
+						break;
 					default:
 						$this->setState($name, $value);
 						break;
@@ -110,7 +115,7 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 
 			if (!$this->getState('virtuemart_product_id', false))
 			{
-				$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NO_PRODUCT_ID_FOUND', $this->getState('order_item_sku')));
+				$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_NO_PRODUCT_ID_FOUND', $this->getState('order_item_sku')));
 
 				$this->loaded = false;
 			}
@@ -124,15 +129,15 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 			$this->db->setQuery($query);
 			$this->setState('order_item_sku', $this->db->loadResult());
 		}
-		else
+		elseif (!$this->getState('virtuemart_product_id', false) && !$this->getState('order_item_sku', false))
 		{
 			$this->log->addStats('incorrect', 'COM_CSVI_NO_PRODUCT_ID_OR_SKU');
 
 			$this->loaded = false;
 		}
 
-		// Required fields are virtuemart_order_id, order_item_sku or virtuemart_product_id
-		if ($this->getState('virtuemart_order_id', false)
+		// Required fields are virtuemart_order_id or order_number, order_item_sku or virtuemart_product_id
+		if ($this->getState('virtuemart_order_id', false) || $this->getState('order_number', false)
 			&& ($this->getState('order_item_sku', false) || $this->getState('virtuemart_product_id', false)))
 		{
 			// Bind the values
@@ -145,8 +150,8 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_order_item_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_ORDERITEM', $this->getState('order_item_sku'), $this->getState('virtuemart_order_id')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_ORDERITEM', $this->getState('order_item_sku'), $this->getState('virtuemart_order_id')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_ORDERITEM', $this->getState('order_item_sku'), $this->getState('virtuemart_order_id')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_ORDERITEM', $this->getState('order_item_sku'), $this->getState('virtuemart_order_id')));
 					$this->loaded = false;
 				}
 				else
@@ -161,7 +166,7 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -181,7 +186,7 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 			if (!$this->getState('virtuemart_order_item_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new rules when user chooses to ignore new rules
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('order_item_sku')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('order_item_sku')));
 			}
 			else
 			{
@@ -234,7 +239,7 @@ class Com_VirtuemartModelImportOrderitem extends RantaiImportEngine
 				// Store the data
 				if (!$this->orderItemTable->store())
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ORDER_ITEM_NOT_ADDED', $this->orderItemTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_ORDER_ITEM_NOT_ADDED', $this->orderItemTable->getError()));
 				}
 			}
 

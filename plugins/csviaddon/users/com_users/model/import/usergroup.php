@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  JoomlaUser
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace users\com_users\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  JoomlaUser
  * @since       6.5.0
  */
-class Com_UsersModelImportUsergroup extends RantaiImportEngine
+class Usergroup extends \RantaiImportEngine
 {
 	/**
 	 * User table
 	 *
-	 * @var    UsersTableUsergroup
+	 * @var    \UsersTableUsergroup
 	 * @since  6.0
 	 */
 	private $usergroupTable = null;
@@ -31,7 +33,7 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 	/**
 	 * The addon helper
 	 *
-	 * @var    Com_UsersHelperCom_Users
+	 * @var    \Com_UsersHelperCom_Users
 	 * @since  6.5.0
 	 */
 	protected $helper = null;
@@ -65,13 +67,23 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 		}
 
 		// There must be a title
-		if ($this->getState('title', false))
+		if ($this->getState('title', false)
+			|| $this->getState('title_path', false))
 		{
 			$this->loaded = true;
 
 			if (!$this->getState('id', false))
 			{
-				$this->setState('id', $this->helper->getUserGroupId());
+				if (strpos($this->getState('title_path', false), $this->template->get('group_separator', '/')) !== false)
+				{
+					$userGroupId = $this->helper->getUserGroupIdFromPath($this->getState('title_path', false));
+					$this->setState('id', $userGroupId);
+				}
+
+				if ($this->getState('title'))
+				{
+					$this->setState('id', $this->helper->getUserGroupId($this->getState('title')));
+				}
 			}
 
 			// Load the current content data
@@ -79,7 +91,7 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 			{
 				if (!$this->template->get('overwrite_existing_data'))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $this->getState('title', '')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $this->getState('title', '')));
 					$this->loaded = false;
 				}
 			}
@@ -88,7 +100,7 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_MISSING_REQUIRED_FIELDS', 'title'));
 		}
 
 		return true;
@@ -116,17 +128,71 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 			elseif (!$this->getState('id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new users when user chooses to ignore new users
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('title', '')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('title', '')));
 			}
 			else
 			{
-				// Bind the data
-				$this->usergroupTable->bind($this->state);
-
-				// Store the product
-				if (!$this->usergroupTable->storeUsergroup())
+				if (strpos($this->getState('title_path', false), $this->template->get('group_separator', '/')) !== false)
 				{
-					return false;
+					$groupSeparator = $this->template->get('group_separator', '/');
+					$groupList      = explode($groupSeparator, $this->getState('title_path', false));
+					$rootName       = $this->getRootName();
+
+					// Enforce Public to be the root
+					if ($groupList[0] !== $rootName)
+					{
+						array_unshift($groupList, $rootName);
+					}
+
+					$groupCount     = count($groupList);
+					$groupParentId  = ($this->getState('parent_id', false)) ? $this->getState('parent_id', false) : 0;
+
+					for ($i = 0; $i < $groupCount; $i++)
+					{
+						if ($i > 0)
+						{
+							$groupParentId = $this->helper->getTitleId($groupList[$i - 1]);
+						}
+
+						$this->setState('title', $groupList[$i]);
+						$this->setState('parent_id', $groupParentId);
+						$id = $this->helper->getUserGroupId($groupList[$i]);
+
+						if ($id)
+						{
+							$this->usergroupTable->load($id);
+						}
+
+						$this->usergroupTable->bind($this->state);
+
+						try
+						{
+							$this->usergroupTable->storeUsergroup();
+							$this->usergroupTable->reset();
+							$this->log->addStats('Information', 'COM_CSVI_JOOMLA_USERGROUP_PROCCESSED');
+						}
+						catch (\Exception $exception)
+						{
+							$this->log->addStats('Error', $exception->getMessage());
+						}
+					}
+				}
+				else
+				{
+					// Set default parent id if not set by user
+					if (!$this->getState('parent_id', false))
+					{
+						$this->setState('parent_id', 1);
+					}
+
+					// Bind the data
+					$this->usergroupTable->bind($this->state);
+
+					// Store the product
+					if (!$this->usergroupTable->storeUsergroup())
+					{
+						return false;
+					}
 				}
 			}
 
@@ -163,6 +229,18 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 	}
 
 	/**
+	 * Do some post processing on the groups.
+	 *
+	 * @return  void
+	 *
+	 * @since   7.9.0
+	 */
+	public function getPostProcessing()
+	{
+		$this->usergroupTable->rebuildUsergroup();
+	}
+
+	/**
 	 * Load the ID of the parent group.
 	 *
 	 * @param   string  $name  The name of the parent group.
@@ -187,5 +265,24 @@ class Com_UsersModelImportUsergroup extends RantaiImportEngine
 		}
 
 		return $id;
+	}
+
+	/**
+	 * Get the name of the root entry.
+	 *
+	 * @return  string  .
+	 *
+	 * @since   7.9.0
+	 */
+	private function getRootName()
+	{
+		$db    = $this->db;
+		$query = $db->getQuery(true)
+			->select($db->quoteName('title'))
+			->from($db->quoteName('#__usergroups'))
+			->where($db->quoteName('lft') . ' = 1');
+		$db->setQuery($query);
+
+		return $db->loadResult();
 	}
 }

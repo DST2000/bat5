@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  About
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,55 +18,79 @@ defined('_JEXEC') or die;
  * @subpackage  About
  * @since       6.0
  */
-class CsviControllerAbout extends CsviControllerDefault
+class CsviControllerAbout extends JControllerLegacy
 {
 	/**
-	 * Execute a given task.
+	 * Proxy for getModel.
 	 *
-	 * @param   string  $task  The task to execute
+	 * @param   string  $name    The model name. Optional.
+	 * @param   string  $prefix  The class prefix. Optional.
+	 * @param   array   $config  Configuration array for model. Optional.
 	 *
-	 * @return  void.
+	 * @return  JModelLegacy  Object of a database model.
 	 *
-	 * @since   6.0
+	 * @since   1.0
 	 */
-	public function execute($task)
+	public function getModel($name = 'About', $prefix = 'CsviModel', $config = array())
 	{
-		if (!in_array(strtolower($task), array('fix', 'createfolder')))
-		{
-			$task = 'detail';
-		}
+		$model = parent::getModel($name, $prefix, array('ignore_request' => true));
 
-		parent::execute($task);
+		return $model;
 	}
 
 	/**
 	 * Tries to fix missing database updates.
 	 *
-	 * @return  void.
+	 * @return  void
 	 *
 	 * @since   5.7
 	 */
 	public function fix()
 	{
-		$model = $this->getThisModel();
-		$model->fix();
-		$this->setRedirect(JRoute::_('index.php?option=com_csvi&view=about', false));
+		/** @var CsviModelAbout $model */
+		$model = $this->getModel();
+
+		try
+		{
+			$model->fix();
+
+			$message = JText::_('COM_CSVI_DATABASE_RESET');
+			$type = 'message';
+		}
+		catch (Exception $e)
+		{
+			$message = $e->getMessage();
+			$type = 'error';
+		}
+
+		$this->setRedirect(JRoute::_('index.php?option=com_csvi&view=about', false), $message, $type);
 	}
 
 	/**
-	 * Version check.
+	 * Tries to fix missing database updates.
 	 *
-	 * @return  void.
+	 * @return  void
 	 *
-	 * @since   4.0
+	 * @since   5.7
 	 */
-	public function createFolder()
+	public function fixMenu()
 	{
-		/** @var CsviModelAbouts $model */
-		$model = $this->getThisModel();
-		$result = $model->fixFolder();
-		echo json_encode($result);
+		/** @var CsviModelAbout $model */
+		$model = $this->getModel();
 
-		JFactory::getApplication()->close();
+		try
+		{
+			$model->fixMenu();
+
+			$message = JText::_('COM_CSVI_MENU_RESET');
+			$type = 'message';
+		}
+		catch (Exception $e)
+		{
+			$message = $e->getMessage();
+			$type = 'error';
+		}
+
+		$this->setRedirect(JRoute::_('index.php?option=com_csvi&view=about', false), $message, $type);
 	}
 }

@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
+class Customfield extends \RantaiImportEngine
 {
 	/**
 	 * Custom table
 	 *
-	 * @var    VirtueMartTableCustomfield
+	 * @var    \VirtueMartTableCustomfield
 	 * @since  6.0
 	 */
 	private $customTable = null;
@@ -53,6 +55,9 @@ class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
 					case 'locked_on':
 						$this->setState($name, $this->convertDate($value));
 						break;
+					case 'group_name':
+						$this->setState('custom_parent_id', $this->helper->getCustomFieldGroup($value));
+						break;
 					default:
 						$this->setState($name, $value);
 						break;
@@ -75,10 +80,10 @@ class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_custom_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CUSTOMFIELD', $this->getState('custom_element') . ' - ' . $this->getState('custom_title')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CUSTOMFIELD', $this->getState('custom_element') . ' - ' . $this->getState('custom_title')));
 					$this->log->addStats(
 						'skipped',
-						JText::sprintf('COM_CSVI_DATA_EXISTS_CUSTOMFIELD', $this->getState('custom_element') . ' - ' . $this->getState('custom_title'))
+						\JText::sprintf('COM_CSVI_DATA_EXISTS_CUSTOMFIELD', $this->getState('custom_element') . ' - ' . $this->getState('custom_title'))
 					);
 					$this->loaded = false;
 				}
@@ -94,7 +99,7 @@ class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -116,7 +121,7 @@ class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
 				// Do nothing for new custom fields when user chooses to ignore new custom fields
 				$this->log->addStats(
 					'skipped',
-					JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('custom_element') . ' - ' . $this->getState('custom_title'))
+					\JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('custom_element') . ' - ' . $this->getState('custom_title'))
 				);
 			}
 			else
@@ -133,8 +138,8 @@ class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
 
 						if (empty($custom_jplugin_id))
 						{
-							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NO_PLUGIN_FOUND', $this->getState('plugin_name')));
-							$this->log->add(JText::sprintf('COM_CSVI_NO_PLUGIN_FOUND', $this->getState('plugin_name')));
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_NO_PLUGIN_FOUND', $this->getState('plugin_name')));
+							$this->log->add(\JText::sprintf('COM_CSVI_NO_PLUGIN_FOUND', $this->getState('plugin_name')));
 
 							return false;
 						}
@@ -170,7 +175,7 @@ class Com_VirtuemartModelImportCustomfield extends RantaiImportEngine
 				// Store the data
 				if (!$this->customTable->store())
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_CUSTOMFIELD_NOT_ADDED', $this->customTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CUSTOMFIELD_NOT_ADDED', $this->customTable->getError()));
 				}
 			}
 

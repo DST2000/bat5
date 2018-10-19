@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Fieldmapper
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,7 +18,7 @@ defined('_JEXEC') or die;
  * @subpackage  Fieldmapper
  * @since       6.0
  */
-class CsviModelMaps extends FOFModel
+class CsviModelMaps extends JModelList
 {
 	/**
 	 * Holds the database driver
@@ -26,291 +26,151 @@ class CsviModelMaps extends FOFModel
 	 * @var    JDatabase
 	 * @since  6.0
 	 */
-	protected $db = null;
+	private $db;
 
 	/**
 	 * Construct the class.
 	 *
 	 * @since   6.0
 	 */
-	public function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		if (empty($config['filter_fields']))
+		{
+			$config['filter_fields'] = array(
+				'component', 'm.component',
+				'csvi_map_id', 'm.csvi_map_id',
+				'action', 'm.action',
+				'operation', 'm.operation',
+				'title', 'm.title',
+				'csvi_map_id', 'm.csvi_map_id',
+			);
+		}
 
-		// Load the basics
-		$this->db = $this->getDbo();
+		// Initialise some values
+		$this->db = JFactory::getDbo();
+
+		parent::__construct($config);
 	}
 
 	/**
-	 * Builds the SELECT query
+	 * Build an SQL query to load the list data.
 	 *
-	 * @param   boolean  $overrideLimits  Are we requested to override the set limits?
+	 * @return  JDatabaseQuery  The query to execute.
 	 *
-	 * @return  JDatabaseQuery
+	 * @since   4.0
+	 *
+	 * @throws  RuntimeException
 	 */
-	public function buildQuery($overrideLimits = false)
+	protected function getListQuery()
 	{
-		// Get the parent query
-		$query = parent::buildQuery($overrideLimits);
+		$query = $this->db->getQuery(true);
+		$query->select(
+			array(
+			'csvi_map_id',
+			'title',
+			'mapfile',
+			'component',
+			'action',
+			'operation',
+			'auto_detect_delimiters',
+			'im_mac',
+			'field_delimiter',
+			'text_enclosure',
+			'locked_by',
+			'locked_on'
+		)
+		);
+		$query->from($this->db->quoteName('#__csvi_maps', 'm'));
+		$query->select($this->db->quoteName('u.name', 'editor'));
 
 		// Join the user table to get the editor
-		$query->select($this->db->quoteName('u.name', 'editor'));
 		$query->leftJoin(
 			$this->db->quoteName('#__users', 'u')
-			. ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('#__csvi_maps.locked_by')
+			. ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('m.locked_by')
+		);
+
+		// Filter by search field
+		$search = $this->getState('filter.search');
+
+		if ($search)
+		{
+			$query->where(
+				$this->db->quoteName('m.title') . ' LIKE ' . $this->db->quote('%' . $search . '%')
+			);
+		}
+
+		// Filter by action field
+		$action = $this->getState('filter.action');
+
+		if ($action)
+		{
+			$query->where($this->db->quoteName('m.action') . ' = ' . $this->db->quote($action));
+		}
+
+		// Filter by component field
+		$component = $this->getState('filter.component');
+
+		if ($component)
+		{
+			$query->where($this->db->quoteName('m.component') . ' = ' . $this->db->quote($component));
+		}
+
+		// Add the list ordering clause.
+		$query->order(
+			$this->db->quoteName(
+				$this->db->escape(
+					$this->getState('list.ordering', 'm.title')
+				)
+			)
+			. ' ' . $this->db->escape($this->getState('list.direction', 'ASC'))
 		);
 
 		return $query;
 	}
 
 	/**
-	 * This method runs after an item has been gotten from the database in a read
-	 * operation. You can modify it before it's returned to the MVC triad for
-	 * further processing.
+	 * Method to auto-populate the model state.
 	 *
-	 * @param   FOFTable  &$record  The table instance we fetched
+	 * Note. Calling getState in this method will result in recursion.
+	 *
+	 * @param   string  $ordering   An optional ordering field.
+	 * @param   string  $direction  An optional direction (asc|desc).
 	 *
 	 * @return  void
+	 *
+	 * @since   6.6.0
 	 */
-	protected function onAfterGetItem(&$record)
+	protected function populateState($ordering = 'm.title', $direction = 'ASC')
 	{
-		if ($record->csvi_map_id)
-		{
-			// Load the options
-			$query = $this->db->getQuery(true)
-				->select($this->db->quoteName('action') . ',' . $this->db->quoteName('component') . ',' . $this->db->quoteName('operation'))
-				->from($this->db->quoteName('#__csvi_maps'))
-				->where($this->db->quoteName('csvi_map_id') . '=' . (int) $record->csvi_map_id);
-			$this->db->setQuery($query);
-			$record->options = $this->db->loadObject();
-
-			// Load the header fields to match
-			$query = $this->db->getQuery(true)
-			->select($this->db->quoteName('csvheader') . ',' . $this->db->quoteName('templateheader'))
-			->from($this->db->quoteName('#__csvi_mapheaders'))
-			->where($this->db->quoteName('map_id') . '=' . (int) $record->csvi_map_id);
-			$this->db->setQuery($query);
-			$record->headers = $this->db->loadObjectList();
-		}
+		// List state information.
+		parent::populateState($ordering, $direction);
 	}
 
 	/**
-	 * This method runs before the $data is saved to the $table. Return false to
-	 * stop saving.
+	 * Method to get a store id based on the model configuration state.
 	 *
-	 * @param   array     &$data   The data to save
-	 * @param   FOFTable  &$table  The table to save the data to
+	 * This is necessary because the model is used by the component and
+	 * different modules that might need different sets of data or different
+	 * ordering requirements.
 	 *
-	 * @return  boolean  Return false to prevent saving, true to allow it
+	 * @param   string  $id  An identifier string to generate the store id.
+	 *
+	 * @return  string  A store id.
+	 *
+	 * @since   12.2
 	 */
-	protected function onBeforeSave(&$data, &$table)
+	protected function getStoreId($id = '')
 	{
-		$data['title'] = (string) $data['jform']['title'];
-		$data['action'] = (string) $data['jform']['action'];
-		$data['component'] = (string) $data['jform']['component'];
-		$data['operation'] = (string) $data['jform']['operation'];
-		$data['auto_detect_delimiters'] = (string) $data['jform']['auto_detect_delimiters'];
-		$data['field_delimiter'] = (string) $data['jform']['field_delimiter'];
-		$data['text_enclosure'] = (string) $data['jform']['text_enclosure'];
+		// Add the list state to the store id.
+		$id .= ':' . $this->getState('list.start');
+		$id .= ':' . $this->getState('list.limit');
+		$id .= ':' . $this->getState('list.ordering');
+		$id .= ':' . $this->getState('list.direction');
+		$id .= ':' . $this->getState('filter.search');
+		$id .= ':' . $this->getState('filter.action');
 
-		return parent::onBeforeSave($data, $table);
-	}
-
-	/**
-	 * This method runs after the data is saved to the $table.
-	 *
-	 * @param   FOFTable  &$table  The table which was saved
-	 *
-	 * @return  boolean
-	 */
-	protected function onAfterSave(&$table)
-	{
-		// Get the uploaded file
-		$file = JFactory::getApplication()->input->files->get('jform', array(), 'array');
-
-		// Let's see if the user uploaded a file to get new columns
-		if (!empty($file['mapfile']['name']))
-		{
-			// Save the file
-			$this->processFile($table, $file);
-		}
-		// Store any mapped fields
-		else
-		{
-			$this->processHeader($table);
-		}
-
-		return parent::onAfterSave($table);
-	}
-
-	/**
-	 * Process an uploaded file with headers.
-	 *
-	 * @param   object  $table  The map table.
-	 * @param   array   $file   The posted file.
-	 *
-	 * @return  bool  True if file is processed | False if file is not processed.
-	 *
-	 * @since   5.8
-	 */
-	private function processFile($table, $file)
-	{
-		$jinput = JFactory::getApplication()->input;
-		$data = $table->getData();
-
-		// Get the file details
-		$upload = array();
-		$upload['name'] = $file['mapfile']['name'];
-		$upload['type'] = $file['mapfile']['type'];
-		$upload['tmp_name'] = $file['mapfile']['tmp_name'];
-		$upload['error'] = $file['mapfile']['error'];
-
-		if (!$upload['error'])
-		{
-			// Move the temporary file
-			if (is_uploaded_file($upload['tmp_name']))
-			{
-				// Get some basic info
-				jimport('joomla.filesystem.file');
-				jimport('joomla.filesystem.folder');
-				$folder = CSVIPATH_TMP . '/' . time();
-				$upload_parts = pathinfo($upload['name']);
-
-				// Create the temp folder
-				if (JFolder::create($folder))
-				{
-					// Move the uploaded file to its temp location
-					if (JFile::upload($upload['tmp_name'], $folder . '/' . $upload['name']))
-					{
-						if (array_key_exists('extension', $upload_parts))
-						{
-							// Set the file class name to import because that can read the file.
-							$fileclass = 'CsviHelperFileImport';
-
-							// Load the extension specific class
-							switch (strtolower($upload_parts['extension']))
-							{
-								case 'xml':
-									$fileclass .= 'Xml';
-									break;
-								case 'xls':
-									$fileclass .= 'Xls';
-									break;
-								case 'ods':
-									$fileclass .= 'Ods';
-									break;
-								default:
-									// Treat any unknown type as CSV
-									$fileclass .= 'Csv';
-									break;
-							}
-
-							$csvihelper = new CsviHelperCsvi;
-							$settings = new CsviHelperSettings($this->db);
-							$log = new CsviHelperLog($settings, $this->db);
-							$template = new CsviHelperTemplate(0, $csvihelper);
-							$template->set('source', 'fromserver');
-							$template->set('local_csv_file', $folder . '/' . $upload['name']);
-							$template->set('auto_detect_delimiters', $data['auto_detect_delimiters']);
-							$template->set('field_delimiter', $data['field_delimiter']);
-							$template->set('text_enclosure', $data['text_enclosure']);
-
-							// Get the file handler
-							$file = new $fileclass($template, $log, $csvihelper, $jinput);
-
-							// Set the fields
-							$fields = new CsviHelperImportfields($template, $log, $this->db);
-							$file->setFields($fields);
-
-							// Validate and process the file
-							$file->setFilename($folder . '/' . $upload['name']);
-							$file->processFile(true);
-
-							// Get the header
-							if ($header = $file->loadColumnHeaders())
-							{
-								if (is_array($header))
-								{
-									// Load the table
-									$headertable = $this->getTable('Mapheaders', 'CsviTable');
-
-									// Remove existing entries
-									$query = $this->db->getQuery(true)
-										->delete($this->db->quoteName('#__csvi_mapheaders'))
-										->where($this->db->quoteName('map_id') . ' = ' . (int) $table->csvi_map_id);
-									$this->db->setQuery($query);
-									$this->db->execute();
-
-									// Store the headers
-									$map = array();
-									$map['map_id'] = $table->csvi_map_id;
-
-									foreach ($header as $name)
-									{
-										$map['csvheader'] = $name;
-
-										// Store the data
-										$headertable->save($map);
-										$headertable->reset();
-									}
-								}
-								else
-								{
-									return false;
-								}
-							}
-							else
-							{
-								return false;
-							}
-						}
-						else
-						{
-							return false;
-						}
-					}
-					else
-					{
-						return false;
-					}
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Process the header mappings.
-	 *
-	 * @param   object  $table  The map table.
-	 *
-	 * @return  void.
-	 *
-	 * @since   5.8
-	 */
-	private function processHeader($table)
-	{
-		$jinput = JFactory::getApplication()->input;
-
-		foreach ($jinput->get('templateheader', array(), 'array') as $csvheader => $templateheader)
-		{
-			$query = $this->db->getQuery(true)
-			->update($this->db->quoteName('#__csvi_mapheaders'))
-			->set($this->db->quoteName('templateheader') . ' = ' . $this->db->quote($templateheader))
-			->where($this->db->quoteName('map_id') . ' = ' . (int) $table->csvi_map_id)
-			->where($this->db->quoteName('csvheader') . ' = ' . $this->db->quote($csvheader));
-			$this->db->setQuery($query);
-			$this->db->execute();
-		}
+		return md5($this->context . ':' . $id);
 	}
 
 	/**
@@ -322,18 +182,24 @@ class CsviModelMaps extends FOFModel
 	 * @return  bool  True if table has been created | False if template has not been created.
 	 *
 	 * @since   5.8
+	 *          
+	 * @throws  RuntimeException
 	 */
 	public function createTemplate($mapId, $title)
 	{
 		// Get the models
-		$template = parent::getAnInstance('Templates', 'CsviModel');
-		$templatefields = parent::getAnInstance('Templatefields', 'CsviModel');
+		$template = JTable::getInstance('Template', 'Table', array('dbo' => $this->db));
+		$templateFields = JTable::getInstance('Templatefield', 'Table', array('dbo' => $this->db));
 
 		// Collect the data
-		$data = $this->getTemplateData($mapId);
+		$templateData = $this->getTemplateData($mapId);
 
-		// Add the title
-		$data['template_name'] = $title;
+		$data = array(
+			'settings'      => json_encode($templateData),
+			'action'        => $templateData['action'],
+			'template_name' => $title,
+			'enabled'       => 1,
+		);
 
 		if ($data)
 		{
@@ -343,14 +209,15 @@ class CsviModelMaps extends FOFModel
 
 				foreach ($fields as $order => $field)
 				{
-					$saveField = new stdClass;
-					$saveField->csvi_template_id = $template->getId();
-					$saveField->field_name = $field;
-					$saveField->enabled = 1;
-					$saveField->ordering = $order + 1;
+					$saveField                        = new stdClass;
+					$saveField->csvi_templatefield_id = 0;
+					$saveField->csvi_template_id      = $template->get('csvi_template_id');
+					$saveField->field_name            = $field;
+					$saveField->enabled               = 1;
+					$saveField->ordering              = $order + 1;
 
-					$templatefields->save($saveField);
-					$templatefields->reset();
+					$templateFields->save($saveField);
+					$templateFields->reset();
 				}
 
 				return true;
@@ -374,6 +241,8 @@ class CsviModelMaps extends FOFModel
 	 * @return  array  The template data.
 	 *
 	 * @since   5.8
+	 *
+	 * @throws  RuntimeException
 	 */
 	private function getTemplateData($mapId)
 	{
@@ -388,7 +257,8 @@ class CsviModelMaps extends FOFModel
 					$this->db->quoteName('m.operation'),
 					$this->db->quoteName('m.auto_detect_delimiters'),
 					$this->db->quoteName('m.field_delimiter'),
-					$this->db->quoteName('m.text_enclosure')
+					$this->db->quoteName('m.text_enclosure'),
+					$this->db->quoteName('m.im_mac')
 				)
 			)
 			->from($this->db->quoteName('#__csvi_maps', 'm'))
@@ -399,13 +269,15 @@ class CsviModelMaps extends FOFModel
 		// Get the options if we have a result
 		if ($map)
 		{
-			$data['jform']['action'] = $map->action;
-			$data['jform']['component'] = $map->component;
-			$data['jform']['operation'] = $map->operation;
-			$data['jform']['auto_detect_delimiters'] = $map->auto_detect_delimiters;
-			$data['jform']['field_delimiter'] = $map->field_delimiter;
-			$data['jform']['text_enclosure'] = $map->text_enclosure;
-			$data['jform']['use_column_headers'] = 0;
+			$data['action'] = $map->action;
+			$data['component'] = $map->component;
+			$data['operation'] = $map->operation;
+			$data['auto_detect_delimiters'] = $map->auto_detect_delimiters;
+			$data['field_delimiter'] = $map->field_delimiter;
+			$data['text_enclosure'] = $map->text_enclosure;
+			$data['use_column_headers'] = 0;
+			$data['source'] = 'fromupload';
+			$data['im_mac'] = $map->im_mac;
 		}
 
 		// Return the data
@@ -420,6 +292,8 @@ class CsviModelMaps extends FOFModel
 	 * @return  array  The template fields.
 	 *
 	 * @since   5.8
+	 *
+	 * @throws  RuntimeException
 	 */
 	private function getTemplateFields($mapId)
 	{

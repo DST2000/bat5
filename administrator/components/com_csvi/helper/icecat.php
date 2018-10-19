@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  ICEcat
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -26,7 +26,7 @@ class CsviHelperIcecat
 	 * @var    CsviHelperTemplate
 	 * @since  6.2.1
 	 */
-	protected $template = null;
+	protected $template;
 
 	/**
 	 * Holds the logger
@@ -34,7 +34,7 @@ class CsviHelperIcecat
 	 * @var    CsviHelperLog
 	 * @since  6.2.1
 	 */
-	protected $log = null;
+	protected $log;
 
 	/**
 	 * Holds the database connector
@@ -42,7 +42,7 @@ class CsviHelperIcecat
 	 * @var    JDatabaseDriver
 	 * @since  6.2.1
 	 */
-	protected $db = null;
+	protected $db;
 
 	/**
 	 * The XML parser
@@ -50,7 +50,7 @@ class CsviHelperIcecat
 	 * @var    resource
 	 * @since  6.0
 	 */
-	private $xmlParser = null;
+	private $xmlParser;
 
 	/**
 	 * The XML data read from ICEcat
@@ -82,7 +82,7 @@ class CsviHelperIcecat
 	 * @var    int
 	 * @since  6.0
 	 */
-	private $featureId = null;
+	private $featureId;
 
 	/**
 	 * Array that holds all the feature IDs
@@ -101,11 +101,19 @@ class CsviHelperIcecat
 	private $featurenames = array();
 
 	/**
+	 * Keep track of the number of images
+	 *
+	 * @var    int
+	 * @since  6.6.0
+	 */
+	private $imageCount = 0;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param   CsviHelperTemplate $template An instance of CsviHelperTemplate
-	 * @param   CsviHelperLog $log An instance of CsviHelperLog
-	 * @param   JDatabaseDriver $db An instance of JDatabaseDriver
+	 * @param   CsviHelperTemplate  $template  An instance of CsviHelperTemplate
+	 * @param   CsviHelperLog       $log       An instance of CsviHelperLog
+	 * @param   JDatabaseDriver     $db        An instance of JDatabaseDriver
 	 *
 	 * @since   4.6
 	 */
@@ -152,9 +160,12 @@ class CsviHelperIcecat
 					// Parse the XML data
 					if (!xml_parse($this->xmlParser, $this->data, true))
 					{
-						die(sprintf("XML error: %s at line %d\n",
-							xml_error_string(xml_get_error_code($this->xmlParser)),
-							xml_get_current_line_number($this->xmlParser)));
+						die(
+							sprintf("XML error: %s at line %d\n",
+								xml_error_string(xml_get_error_code($this->xmlParser)),
+								xml_get_current_line_number($this->xmlParser)
+							)
+						);
 					}
 
 					xml_parser_free($this->xmlParser);
@@ -163,15 +174,11 @@ class CsviHelperIcecat
 					return $this->csviData;
 				}
 			}
-			else
-			{
-				return false;
-			}
-		}
-		else
-		{
+
 			return false;
 		}
+
+		return false;
 	}
 
 	/**
@@ -183,6 +190,8 @@ class CsviHelperIcecat
 	 * @return  int  The ICEcat ID.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	private function _getIcecatUrl($mpn, $mf_name)
 	{
@@ -203,8 +212,8 @@ class CsviHelperIcecat
 		// See if we have a match, otherwise try to search more liberal
 		if (!$icecat_id && $this->template->get('similar_sku', false))
 		{
-			$query = $this->db->getQuery(true);
-			$query->select('product_id')
+			$query->clear()
+				->select('product_id')
 				->from($this->db->quoteName('#__csvi_icecat_index', 'i'))
 				->leftJoin(
 					$this->db->quoteName('#__csvi_icecat_suppliers', 's') .
@@ -219,8 +228,8 @@ class CsviHelperIcecat
 			// Look for an alternative ID
 			if (!$icecat_id)
 			{
-				$query = $this->db->getQuery(true);
-				$query->select('product_id')
+				$query->clear()
+					->select('product_id')
 					->from($this->db->quoteName('#__csvi_icecat_index', 'i'))
 					->leftJoin(
 						$this->db->quoteName('#__csvi_icecat_suppliers', 's') .
@@ -239,6 +248,10 @@ class CsviHelperIcecat
 
 	/**
 	 * Process start elements of the XML record.
+	 *
+	 * @param   object  $parser   The XML parser.
+	 * @param   string  $tagname  The node being worked on.
+	 * @param   string  $attribs  Attribute values of the node
 	 *
 	 * @return  void.
 	 *
@@ -283,8 +296,11 @@ class CsviHelperIcecat
 							// Name
 							$this->csviData['PROD_NAME'] = $attribs['NAME'];
 
-							$this->csviData['PROD_HIGHPIC'] = $attribs['HIGHPIC'];
-							$this->csviData['PROD_THUMBPIC'] = $attribs['THUMBPIC'];
+							if ($this->template->get('maximumImages', 0) > 0)
+							{
+								$this->csviData['PROD_HIGHPIC'] = $attribs['HIGHPIC'];
+								$this->csviData['PROD_THUMBPIC'] = $attribs['THUMBPIC'];
+							}
 
 
 							// Release date comes int he form YYYY-MM-DD
@@ -321,7 +337,7 @@ class CsviHelperIcecat
 						$this->featurenames[$this->featureId] = $attribs['VALUE'];
 						break;
 					case 'feature':
-						$this->log->add('Found ICEcat feature: ' . $attribs['VALUE']);
+						$this->log->add('Found ICEcat feature: ' . $attribs['VALUE'], false);
 
 						if (isset($this->featurenames[$this->_categoryfeaturegroup_id]))
 						{
@@ -337,24 +353,34 @@ class CsviHelperIcecat
 			case 'productpicture':
 				if (!empty($attribs))
 				{
-					// Process the attribs
-					// <ProductPicture Pic="http://images.icecat.biz/img/gallery/525017_2053.jpg" PicHeight="480" PicWidth="600" ProductPicture_ID="702732" Size="15185" ThumbPic="http://images.icecat.biz/img/gallery_thumbs/525017_643.jpg" ThumbSize="2228"/>
-					if (isset($this->csviData['PROD_THUMBPIC']))
-					{
-						$this->csviData['PROD_THUMBPIC'] .= '|' . $attribs['THUMBPIC'];
-					}
-					else
-					{
-						$this->csviData['PROD_THUMBPIC'] = $attribs['THUMBPIC'];
-					}
+					// Check if we need to import images
+					$maximumImages = $this->template->get('maximumImages', false);
 
-					if (isset($this->csviData['PROD_HIGHPIC']))
+					// Check if we have reached the maximum number of images
+					if (!$maximumImages || ($maximumImages > 0 && $this->imageCount < $maximumImages))
 					{
-						$this->csviData['PROD_HIGHPIC'] .= '|' . $attribs['PIC'];
-					}
-					else
-					{
-						$this->csviData['PROD_HIGHPIC'] = $attribs['PIC'];
+						// Adding an image
+						$this->imageCount++;
+
+						// Process the attribs
+						// <ProductPicture Pic="http://images.icecat.biz/img/gallery/525017_2053.jpg" PicHeight="480" PicWidth="600" ProductPicture_ID="702732" Size="15185" ThumbPic="http://images.icecat.biz/img/gallery_thumbs/525017_643.jpg" ThumbSize="2228"/>
+						if (array_key_exists('PROD_THUMBPIC', $this->csviData) && !strstr($this->csviData['PROD_THUMBPIC'], $attribs['THUMBPIC']))
+						{
+							$this->csviData['PROD_THUMBPIC'] .= '|' . $attribs['THUMBPIC'];
+						}
+						else
+						{
+							$this->csviData['PROD_THUMBPIC'] = $attribs['THUMBPIC'];
+						}
+
+						if (array_key_exists('PROD_HIGHPIC', $this->csviData) && !strstr($this->csviData['PROD_HIGHPIC'], $attribs['PIC']))
+						{
+							$this->csviData['PROD_HIGHPIC'] .= '|' . $attribs['PIC'];
+						}
+						else
+						{
+							$this->csviData['PROD_HIGHPIC'] = $attribs['PIC'];
+						}
 					}
 				}
 				break;
@@ -376,6 +402,52 @@ class CsviHelperIcecat
 				{
 					$this->csviData['PROD_SHORTDESC'] = '';
 				}
+
+				// Download pdfs only if user wants to
+				if ($this->template->get('download_pdf', false))
+				{
+					if (!empty($attribs['MANUALPDFURL']))
+					{
+						if (isset($this->csviData['PROD_HIGHPIC']))
+						{
+							$this->csviData['PROD_HIGHPIC'] .= '|' . $attribs['MANUALPDFURL'];
+						}
+						else
+						{
+							$this->csviData['PROD_HIGHPIC'] = $attribs['MANUALPDFURL'];
+						}
+
+						if (isset($this->csviData['PROD_THUMBPIC']))
+						{
+							$this->csviData['PROD_HIGHPIC'] .= '|';
+						}
+						else
+						{
+							$this->csviData['PROD_THUMBPIC'] = '';
+						}
+					}
+
+					if (!empty($attribs['PDFURL']))
+					{
+						if (isset($this->csviData['PROD_HIGHPIC']))
+						{
+							$this->csviData['PROD_HIGHPIC'] .= '|' . $attribs['PDFURL'];
+						}
+						else
+						{
+							$this->csviData['PROD_HIGHPIC'] = $attribs['PDFURL'];
+						}
+
+						if (isset($this->csviData['PROD_THUMBPIC']))
+						{
+							$this->csviData['PROD_HIGHPIC'] .= '|';
+						}
+						else
+						{
+							$this->csviData['PROD_THUMBPIC'] = '';
+						}
+					}
+				}
 				break;
 			case 'shortsummarydescription':
 				// $this->_csvi_data['product_s_desc'] = '';
@@ -385,51 +457,6 @@ class CsviHelperIcecat
 				break;
 			case 'supplier':
 				$this->csviData['PROD_MANUFACTURER_NAME'] = $attribs['NAME'];
-				break;
-			case 'productdescription':
-				// <ProductDescription ID="650155" LongDesc="Add a parallel port to your desktop computer through a PCI expansion slot\n\n    * Up to 3 times faster than legacy ISA or on-board parallel ports providing fast and reliable parallel communication\n    * Supports SPP, EPP, ECP and BPP communication modes for maximum compatibility with your parallel peripherals\n    * Guaranteed compatibility with any PC running Windows®, Linux® or DOS® for simple integration into your application\n\nThe PCI1P value priced EPP/ECP parallel card adds one IEEE 1284 port to your PC, with data transfer speeds of up to 2.7 Mbps – up to 3 times faster than on-board parallel ports.\n\nInstallation is a breeze with plug and play support and drivers for Windows® 7, Vista, XP, ME, 2000, 98, 95, NT4, DOS® and Linux®. IRQ sharing and hot swapping capabilities guarantee convenient, hassle-free connections to any parallel peripheral.\n\nBacked by a StarTech.com lifetime warranty and free lifetime technical support." ManualPDFSize="0" ManualPDFURL="http://pdfs.icecat.biz/pdf/650155-20-manual.pdf" PDFSize="0" PDFURL="http://pdfs.icecat.biz/pdf/650155-4896.pdf" ShortDesc="Value 1 Port PCI Parallel Adapter Card" URL="http://eu.startech.com/product/PCI1P-Value-1-Port-EPPECP-Parallel-PCI-Card" WarrantyInfo="lifetime" langid="1"/>
-				if (!empty($attribs['MANUALPDFURL']))
-				{
-					// For Virtuemart import
-					if (isset($this->csviData['PROD_HIGHPIC']))
-					{
-						$this->csviData['PROD_HIGHPIC'] .= '|' . $attribs['MANUALPDFURL'];
-					}
-					else
-					{
-						$this->csviData['PROD_HIGHPIC'] = $attribs['MANUALPDFURL'];
-					}
-
-					if (isset($this->csviData['PROD_THUMBPIC']))
-					{
-						$this->csviData['PROD_HIGHPIC'] .= '|';
-					}
-					else
-					{
-						$this->csviData['PROD_THUMBPIC'] = '';
-					}
-				}
-
-				if (!empty($attribs['PDFURL']))
-				{
-					if (isset($this->csviData['PROD_HIGHPIC']))
-					{
-						$this->csviData['PROD_HIGHPIC'] .= '|' . $attribs['PDFURL'];
-					}
-					else
-					{
-						$this->csviData['PROD_HIGHPIC'] = $attribs['PDFURL'];
-					}
-
-					if (isset($this->csviData['PROD_THUMBPIC']))
-					{
-						$this->csviData['PROD_HIGHPIC'] .= '|';
-					}
-					else
-					{
-						$this->csviData['PROD_THUMBPIC'] = '';
-					}
-				}
 				break;
 			default:
 				break;
@@ -462,6 +489,7 @@ class CsviHelperIcecat
 	private function characterData($parser, $data)
 	{
 		$current_tag = end($this->openTags);
+
 		switch ($current_tag)
 		{
 			case 'shortsummarydescription':
@@ -525,6 +553,7 @@ class CsviHelperIcecat
 	 * nobody.index.csv|xml or nobody.index.csv.gz|xml.gz.
 	 *
 	 * @todo Check for gzip functionality to reduce filesize
+	 * @todo Use JHttpTransport
 	 *
 	 * @param   string  $icecat_id  the ICEcat ID to retrieve.
 	 *
@@ -537,9 +566,11 @@ class CsviHelperIcecat
 		$csvisettings = new CsviHelperSettings($this->db);
 
 		// Construct the URL
-		$url = ($csvisettings->get('ice_advanced')) ? 'http://data.icecat.biz/export/level4/' : 'http://data.icecat.biz/export/freexml.int/';
+		$url = ($csvisettings->get('ice_advanced')) ? 'https://data.icecat.biz/export/level4/' : 'https://data.icecat.biz/export/freexml.int/';
+
 		// The language to use
 		$url .= $csvisettings->get('ice_lang') . '/';
+
 		// The ID to retrieve
 		$url .= $icecat_id . '.xml';
 		$this->log->add('Calling ICEcat URL: ' . $url, false);
@@ -547,16 +578,16 @@ class CsviHelperIcecat
 		// Initialise the curl call
 		$curl = curl_init();
 
-		// set URL and other appropriate options
+		// Set URL and other appropriate options
 		curl_setopt($curl, CURLOPT_URL, $url);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 		curl_setopt($curl, CURLOPT_USERPWD, $csvisettings->get('ice_username') . ":" . $csvisettings->get('ice_password'));
 
-		// grab URL and pass it to the browser
+		// Grab URL and pass it to the browser
 		$this->data = curl_exec($curl);
 
-		// close cURL resource, and free up system resources
+		// Close cURL resource, and free up system resources
 		curl_close($curl);
 	}
 

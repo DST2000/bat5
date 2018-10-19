@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Template
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,7 +18,7 @@ defined('_JEXEC') or die;
  * @subpackage  Template
  * @since       6.0
  */
-class CsviModelTemplates extends FOFModel
+class CsviModelTemplates extends JModelList
 {
 	/**
 	 * Holds the database driver
@@ -26,7 +26,7 @@ class CsviModelTemplates extends FOFModel
 	 * @var    JDatabase
 	 * @since  6.0
 	 */
-	protected $db = null;
+	protected $db;
 
 	/**
 	 * Holds the template settings
@@ -34,92 +34,161 @@ class CsviModelTemplates extends FOFModel
 	 * @var    array
 	 * @since  6.0
 	 */
-	protected $options = null;
+	protected $options;
 
 	/**
 	 * Construct the class.
 	 *
+	 * @param   array  $config  An optional associative array of configuration settings.
+	 *
 	 * @since   6.0
 	 */
-	public function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		if (empty($config['filter_fields']))
+		{
+			$config['filter_fields'] = array(
+				'ordering', 'a.ordering',
+				'csvi_template_id', 'a.csvi_template_id',
+				'template_name', 'a.template_name',
+				'action', 'a.action',
+				'lastrun', 'a.lastrun',
+				'frontend', 'a.frontend',
+				'enabled', 'a.enabled',
+			);
+		}
 
 		// Load the basics
-		$this->db = $this->getDbo();
+		$this->db = JFactory::getDbo();
+
+		parent::__construct($config);
 	}
 
 	/**
-	 * Get the filter values.
+	 * Method to auto-populate the model state.
 	 *
-	 * @return  object  The list of filters.
+	 * Note. Calling getState in this method will result in recursion.
 	 *
-	 * @since   6.0
+	 * @param   string  $ordering   An optional ordering field.
+	 * @param   string  $direction  An optional direction (asc|desc).
+	 *
+	 * @return  void
+	 *
+	 * @since   6.6.0
 	 */
-	private function getFilterValues()
+	protected function populateState($ordering = 'a.ordering', $direction = 'DESC')
 	{
-		return (object) array(
-				'name'			=> $this->getState('name', '', 'string'),
-				'action'		=> $this->getState('action', '', 'string')
-		);
+		// List state information.
+		parent::populateState($ordering, $direction);
+	}
+
+	/**
+	 * Method to get a store id based on the model configuration state.
+	 *
+	 * This is necessary because the model is used by the component and
+	 * different modules that might need different sets of data or different
+	 * ordering requirements.
+	 *
+	 * @param   string  $id  An identifier string to generate the store id.
+	 *
+	 * @return  string  A store id.
+	 *
+	 * @since   12.2
+	 */
+	protected function getStoreId($id = '')
+	{
+		// Add the list state to the store id.
+		$id .= ':' . $this->getState('list.start');
+		$id .= ':' . $this->getState('list.limit');
+		$id .= ':' . $this->getState('list.ordering');
+		$id .= ':' . $this->getState('list.direction');
+		$id .= ':' . $this->getState('filter.search');
+		$id .= ':' . $this->getState('filter.enabled');
+
+		return md5($this->context . ':' . $id);
 	}
 
 	/**
 	 * Build an SQL query to load the list data.
 	 *
-	 * @param   bool  $overrideLimits  Set to override the page limits.
-	 *
-	 * @return  object  The query to execute.
+	 * @return  JDatabaseQuery  The query to execute.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  RuntimeException
 	 */
-	public function buildQuery($overrideLimits = false)
+	protected function getListQuery()
 	{
 		// Get the parent query
-		$query = parent::buildQuery($overrideLimits);
-		$query->clear('select');
-		$query->clear('from');
-		$query->from($this->db->quoteName('#__csvi_templates', 'tbl'));
-		$query->leftJoin(
+		$query = $this->db->getQuery(true)
+			->from($this->db->quoteName('#__csvi_templates', 'a'))
+			->leftJoin(
 				$this->db->quoteName('#__users', 'u')
-				. ' ON ' . $this->db->quoteName('tbl.locked_by') . ' = ' . $this->db->quoteName('u.id')
-			);
+				. ' ON ' . $this->db->quoteName('a.locked_by') . ' = ' . $this->db->quoteName('u.id')
+			)
+			->select(
+				$this->db->quoteName(
+					array(
+						'csvi_template_id',
+						'template_name',
+						'settings',
+						'advanced',
+						'action',
+						'frontend',
+						'secret',
+						'log',
+						'lastrun',
+						'enabled',
+						'ordering',
+					)
+				)
+			)
+			->select($this->db->quoteName('enabled', 'published'))
+			->select($this->db->quoteName('u.name', 'editor'));
 
-		$query->select($this->db->quoteName('tbl') . '.*');
-		$query->select($this->db->quoteName('enabled', 'published'));
-		$query->select($this->db->quoteName('u.name', 'editor'));
+		// Filter by search field
+		$search = $this->getState('filter.search');
 
-		$state = $this->getFilterValues();
-
-		if ($state->name)
+		if ($search)
 		{
-			$query->where($this->db->quoteName('tbl.template_name') . ' LIKE ' . $this->db->quote('%' . $state->name . '%'));
+			$query->where($this->db->quoteName('a.template_name') . ' LIKE ' . $this->db->quote('%' . $search . '%'));
 		}
 
-		if ($state->action)
+		// Filter by action
+		$action = $this->getState('filter.action');
+
+		if ($action)
 		{
-			$query->where($this->db->quoteName('tbl.action') . ' = ' . $this->db->quote($state->action));
+			$query->where($this->db->quoteName('a.action') . ' = ' . $this->db->quote($action));
 		}
+
+		// Filter by enabled
+		$enabled = $this->getState('filter.enabled');
+
+		if ('' !== $enabled && null !== $enabled)
+		{
+			$query->where($this->db->quoteName('a.enabled') . ' = ' . (int) $enabled);
+		}
+
+		// Filter by frontend
+		$enabled = $this->getState('filter.frontend');
+
+		if ('' !== $enabled && null !== $enabled)
+		{
+			$query->where($this->db->quoteName('a.frontend') . ' = ' . (int) $enabled);
+		}
+
+		// Add the list ordering clause.
+		$query->order(
+			$this->db->quoteName(
+				$this->db->escape(
+					$this->getState('list.ordering', 'a.ordering')
+				)
+			)
+			. ' ' . $this->db->escape($this->getState('list.direction', 'DESC'))
+		);
 
 		return $query;
-	}
-
-	/**
-	 * This method runs after an item has been gotten from the database in a read
-	 * operation. You can modify it before it's returned to the MVC triad for
-	 * further processing.
-	 *
-	 * @param   FOFTable  &$record  The table instance we fetched
-	 *
-	 * @return  void
-	 *
-	 * @since   6.0
-	 */
-	protected function onAfterGetItem(&$record)
-	{
-		$options = new JRegistry;
-		$options->loadArray(json_decode($record->settings, true));
-		$record->options = $options;
 	}
 
 	/**
@@ -128,6 +197,9 @@ class CsviModelTemplates extends FOFModel
 	 * @return  array  List of template objects.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  RuntimeException
+	 * @throws  InvalidArgumentException
 	 */
 	public function getTemplates()
 	{
@@ -159,11 +231,11 @@ class CsviModelTemplates extends FOFModel
 		{
 			foreach ($loadtemplates as $tmpl)
 			{
-				if ($tmpl->action == 'import')
+				if ($tmpl->action === 'import')
 				{
 					$import[] = $tmpl;
 				}
-				elseif ($tmpl->action == 'export')
+				elseif ($tmpl->action === 'export')
 				{
 					$export[] = $tmpl;
 				}
@@ -178,383 +250,5 @@ class CsviModelTemplates extends FOFModel
 		$templates = array_merge($templates, $export);
 
 		return $templates;
-	}
-
-	/**
-	 * Save the template settings.
-	 *
-	 * @param   array     &$data   The data to save
-	 * @param   FOFTable  &$table  The table to save the data to
-	 *
-	 * @return  boolean  Return false to prevent saving, true to allow it
-	 *
-	 * @since   3.0
-	 */
-	protected function onBeforeSave(&$data, &$table)
-	{
-		$query = $this->db->getQuery(true);
-
-		// Prepare the settings
-		if (isset($data['jform']))
-		{
-			// Check if we are in the wizard, if so, we must preload the already stored settings
-			if ($this->input->getInt('step', 0))
-			{
-				$query->clear()
-					->select(
-						$this->db->quoteName(
-							array(
-								'settings',
-								'action',
-							)
-						)
-					)
-					->from($this->db->quoteName('#__csvi_templates'))
-					->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $table->csvi_template_id);
-				$this->db->setQuery($query);
-				$templateSettings = $this->db->loadObject();
-
-				$data['jform'] = array_merge((array) json_decode($templateSettings->settings), $data['jform']);
-				$data['action'] = $templateSettings->action;
-			}
-
-			$data['settings'] = json_encode($data['jform']);
-			$data['action'] = $data['jform']['action'];
-		}
-
-		// Store the table to the custom available fields if needed
-		if (isset($data['jform']['custom_table']))
-		{
-			// Check if the table is already listed
-			$query->clear()
-				->select($this->db->quoteName('csvi_availabletable_id'))
-				->from($this->db->quoteName('#__csvi_availabletables'))
-				->where($this->db->quoteName('template_table') . ' = ' . $this->db->quote($data['jform']['custom_table']))
-				->where($this->db->quoteName('component') . ' = ' . $this->db->quote('com_csvi'))
-				->where($this->db->quoteName('action') . ' = ' . $this->db->quote($data['action']));
-			$this->db->setQuery($query);
-			$csvi_availabletable_id = $this->db->loadResult();
-
-			// Add the table to the available fields table if needed
-			if (!$csvi_availabletable_id)
-			{
-				$query->clear()
-					->insert($this->db->quoteName('#__csvi_availabletables'))
-					->columns(
-						$this->db->quoteName('task_name') . ',' .
-						$this->db->quoteName('template_table') . ',' .
-						$this->db->quoteName('component') . ',' .
-						$this->db->quoteName('action') . ',' .
-						$this->db->quoteName('enabled')
-					)
-					->values(
-						$this->db->quote('custom') . ',' .
-						$this->db->quote($data['jform']['custom_table']) . ',' .
-						$this->db->quote('com_csvi') . ',' .
-						$this->db->quote($data['action']) . ',' .
-						$this->db->quote('1')
-					);
-				$this->db->setQuery($query);
-				$this->db->execute();
-
-				// Load the helpers
-				$csvihelper = new CsviHelperCsvi;
-				$settings = new CsviHelperSettings($this->db);
-				$log = new CsviHelperLog($settings, $this->db);
-
-				// Index the table
-				require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_csvi/model/maintenance.php';
-				$maintenanceModel = new Com_CsviMaintenance($this->db, $log, $csvihelper);
-				$customtable = new stdClass;
-				$customtable->template_table = $data['jform']['custom_table'];
-				$customtable->component = 'com_csvi';
-				$customtable->action = $data['action'];
-				$maintenanceModel->indexTable($customtable);
-			}
-		}
-
-		// Check if the chosen table is the same as the one already stored, if not, we need to remove the template fields
-		$settings = json_decode($table->settings);
-
-		if (isset($settings->custom_table) && isset($data['jform']['custom_table']))
-		{
-			if ($settings->custom_table != $data['jform']['custom_table'])
-			{
-				// Remove all associated fields
-				$query = $this->db->getQuery(true)
-					->delete($this->db->quoteName('#__csvi_templatefields'))
-					->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $table->csvi_template_id);
-				$this->db->setQuery($query)->execute();
-			}
-		}
-
-		return parent::onBeforeSave($data, $table);
-	}
-
-	/**
-	 * This method runs after a record with key value $id is deleted
-	 *
-	 * @param   integer  $id  The id of the record which was deleted
-	 *
-	 * @return  boolean  Return false to raise an error, true otherwise
-	 */
-	protected function onAfterDelete($id)
-	{
-		// Delete the template field rules
-		$query = $this->db->getQuery(true)
-			->select($this->db->quoteName('csvi_templatefield_id'))
-			->from($this->db->quoteName('#__csvi_templatefields'))
-			->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $id);
-		$this->db->setQuery($query);
-		$fieldIds = $this->db->loadColumn();
-
-		if (!empty($fieldIds))
-		{
-			$query->clear()
-				->delete($this->db->quoteName('#__csvi_templatefields_rules'))
-				->where($this->db->quoteName('csvi_templatefield_id') . ' IN (' . implode(',', $fieldIds) . ')');
-			$this->db->setQuery($query)->execute();
-		}
-
-		// Delete the template fields
-		$query->clear()
-			->delete($this->db->quoteName('#__csvi_templatefields'))
-			->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $id);
-		$this->db->setQuery($query)->execute();
-
-		return true;
-	}
-
-	/**
-	 * Process JSON data request.
-	 *
-	 * @param   string  $addon   The addon to call for the data.
-	 * @param   string  $method  The method to execute.
-	 * @param   string  $args    The arguments to pass.
-	 *
-	 * @return  array  The requested data.
-	 *
-	 * @since   6.0
-	 */
-	public function loadJsonData($addon, $method, $args)
-	{
-		// Setup the addon autoloader
-		JLoader::registerPrefix(ucfirst($addon), JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $addon);
-		$classname = ucfirst($addon) . 'HelperAjax';
-
-		$helper = new $classname;
-
-		if (method_exists($helper, $method))
-		{
-			$result = $helper->$method($args);
-		}
-		else
-		{
-			$result = array();
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Copy one ore more templates to a new one.
-	 *
-	 * @param   array  $templateIds  The IDs of the template(s) to copy.
-	 *
-	 * @return  bool  True on success | False on failure.
-	 *
-	 * @throws  Exception
-	 *
-	 * @since   6.0
-	 */
-	public function createCopy($templateIds)
-	{
-		if (!is_array($templateIds))
-		{
-			$templateIds = (array) $templateIds;
-		}
-
-		$table = $this->getTable('Templates');
-
-		foreach ($templateIds as $templateId)
-		{
-			$table->load($templateId);
-			$table->set('csvi_template_id', 0);
-			$table->set('lastrun', $this->db->getNullDate());
-			$table->set('template_name', $table->get('template_name') . ' copy');
-
-			if ($table->store())
-			{
-				// Copy also the template fields
-				$query = $this->db->getQuery(true)
-					->select($this->db->quoteName('csvi_templatefield_id'))
-					->from($this->db->quoteName('#__csvi_templatefields'))
-					->where($this->db->quoteName('csvi_template_id') . ' = ' . (int) $templateId);
-				$this->db->setQuery($query);
-				$fieldIds = $this->db->loadColumn();
-
-				$ftable = $this->getTable('Templatefields');
-
-				foreach ($fieldIds as $fieldId)
-				{
-					$ftable->load($fieldId);
-					$ftable->set('csvi_templatefield_id', 0);
-					$ftable->set('csvi_template_id', $table->get('csvi_template_id'));
-					$ftable->store();
-
-					// Copy the template field rules
-					$query->clear()
-						->select($ftable->get('csvi_templatefield_id'))
-						->select($this->db->quoteName('csvi_rule_id'))
-						->from($this->db->quoteName('#__csvi_templatefields_rules'))
-						->where($this->db->quoteName('csvi_templatefield_id') . ' = ' . (int) $fieldId);
-					$this->db->setQuery($query);
-					$templatefieldruleIds = $this->db->loadAssocList();
-
-					if (count($templatefieldruleIds) > 0)
-					{
-						$query->clear()
-							->insert($this->db->quoteName('#__csvi_templatefields_rules'))
-							->columns(
-								$this->db->quoteName(
-									array(
-										'csvi_templatefield_id',
-										'csvi_rule_id'
-									)
-								)
-							);
-
-						foreach ($templatefieldruleIds as $rule)
-						{
-							$query->values(implode(',', $rule));
-						}
-
-						$this->db->setQuery($query)->execute();
-					}
-				}
-			}
-			else
-			{
-				throw new Exception(JText::sprintf('COM_CSVI_CANNOT_COPY_TEMPLATE', $table->getError()));
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Test the FTP details.
-	 *
-	 * @return  bool  True if connection works | Fails if connection fails.
-	 *
-	 * @since   4.3.2
-	 */
-	public function testFtp()
-	{
-		$ftphost = $this->input->get('ftphost', '', 'string');
-		$ftpport = $this->input->get('ftpport');
-		$ftpusername = $this->input->get('ftpusername', '', 'string');
-		$ftppass = $this->input->get('ftppass', '', 'string');
-		$ftproot = $this->input->get('ftproot', '', 'string');
-		$ftpfile = $this->input->get('ftpfile', '', 'string');
-		$action = $this->input->get('action');
-
-		// Set up the ftp connection
-		jimport('joomla.client.ftp');
-		$ftp = JFTP::getInstance($ftphost, $ftpport, array(), $ftpusername, $ftppass);
-
-		if ($ftp->isConnected())
-		{
-			// See if we can change folder
-			if ($ftp->chdir($ftproot))
-			{
-				if ($action == 'import')
-				{
-					// Check if the file exists
-					$files = $ftp->listNames(null, false);
-
-					if (is_array($files))
-					{
-						if (!in_array($ftpfile, $files))
-						{
-							$this->setError(JText::sprintf('COM_CSVI_FTP_FILE_NOT_FOUND', $ftpfile, $ftp->pwd()));
-							$result = false;
-						}
-						else
-						{
-							$result = true;
-						}
-					}
-					else
-					{
-						$this->setError(JText::sprintf('COM_CSVI_FTP_NO_FILES_FOUND', $ftp->pwd()));
-						$result = false;
-					}
-				}
-				else
-				{
-					$result = true;
-				}
-			}
-			else
-			{
-				$this->setError(JText::sprintf('COM_CSVI_FTP_FOLDER_NOT_FOUND', $ftproot));
-				$result = false;
-			}
-		}
-		else
-		{
-			// Get the latest error
-			$app = JFactory::getApplication();
-			$queue = $app->getMessageQueue();
-			$this->setError($queue[0]['message']);
-			$result = false;
-		}
-
-		// Close up
-		$ftp->quit();
-
-		return $result;
-	}
-
-	/**
-	 * Test if the URL exists.
-	 *
-	 * @return  bool  True if URL exists | Fails otherwise.
-	 *
-	 * @since   6.5.0
-	 */
-	public function testURL()
-	{
-		$testurl = $this->input->get('testurl', '', 'string');
-		$csvihelper = new CsviHelperCsvi;
-
-		if ($csvihelper->fileExistsRemote($testurl))
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Test if the server path is valid.
-	 *
-	 * @return  bool  True if URL exists | Fails otherwise.
-	 *
-	 * @since   6.5.0
-	 */
-	public function testPath()
-	{
-		$testpath = $this->input->get('testpath', '', 'string');
-
-		$csv_file = JPath::clean($testpath, '/');
-
-		if (JFile::exists($csv_file))
-		{
-			return true;
-		}
-		
-		return false;
 	}
 }
