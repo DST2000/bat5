@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportOrder extends RantaiImportEngine
+class Order extends \RantaiImportEngine
 {
 	/**
 	 * Order table.
 	 *
-	 * @var    VirtueMartTableOrder
+	 * @var    \VirtueMartTableOrder
 	 * @since  6.0
 	 */
 	private $orderTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 	/**
 	 * Order user info table.
 	 *
-	 * @var    VirtueMartTableOrderuserinfo
+	 * @var    \VirtueMartTableOrderuserinfo
 	 * @since  6.0
 	 */
 	private $orderUserinfoTable = null;
@@ -39,7 +41,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 	/**
 	 * Order history.
 	 *
-	 * @var    VirtueMartTableOrderhistory
+	 * @var    \VirtueMartTableOrderhistory
 	 * @since  6.0
 	 */
 	private $orderHistoryTable = null;
@@ -72,6 +74,10 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 						$order_status_code = $this->helper->getOrderStatus($value);
 						$this->setState('order_status_code', $order_status_code);
 						$this->setState('order_status', $order_status_code);
+						break;
+					case 'payment_currency':
+						$currencyId = $this->helper->getCurrencyId($value, $this->virtuemart_vendor_id);
+						$this->setState('payment_currency_id', $currencyId);
 						break;
 					case 'order_total':
 					case 'order_subtotal':
@@ -109,7 +115,8 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 	{
 		// Load the order user details
 		$virtuemart_user_id = $this->getState('virtuemart_user_id', false);
-		$email = $this->getState('email', false);
+		$email              = $this->getState('email', false);
+		$userdetails        = array();
 
 		if (!$virtuemart_user_id && $email)
 		{
@@ -132,19 +139,20 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 			$query->where($this->db->quoteName('virtuemart_user_id') . ' = ' . (int) $virtuemart_user_id);
 			$this->db->setQuery($query);
 			$userdetails = $this->db->loadObject();
-			$this->log->add('COM_CSVI_DEBUG_LOAD_USER_DETAILS', true);
-		}
-		else
-		{
-			$this->log->add('COM_CSVI_NOT_PROCESS_USER');
-			$this->log->AddStats('incorrect', 'COM_CSVI_NOT_PROCESS_USER');
+			$this->log->add('Load user details');
 
-			return false;
+			if (!$userdetails)
+			{
+				$this->log->add('Cannot process user, no user ID found');
+				$this->log->AddStats('incorrect', 'COM_CSVI_NOT_PROCESS_USER');
+
+				return false;
+			}
 		}
 
 		// Check if we have an order ID
 		$virtuemart_order_id = $this->getState('virtuemart_order_id', false);
-		$order_number = $this->getState('order_number', false);
+		$order_number        = $this->getState('order_number', false);
 
 		if (!$virtuemart_order_id && $order_number)
 		{
@@ -161,7 +169,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 		// Do not overwrite existing orders
 		if ($virtuemart_order_id && !$this->template->get('overwrite_existing_data'))
 		{
-			$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $virtuemart_order_id));
+			$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $virtuemart_order_id));
 
 			return false;
 		}
@@ -170,11 +178,33 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 		if (!$virtuemart_order_id && $this->template->get('ignore_non_exist'))
 		{
 			// Do nothing for new orders when user chooses to ignore new orders
-			$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $order_number));
+			$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $order_number));
 		}
 
-		// Load the existing order data
-		$this->orderTable->load($virtuemart_order_id);
+		// Bind the imported data to the order table
+		$this->orderTable->bind($this->state);
+
+		// Check if we use a given order id
+		if ($this->template->get('keepid'))
+		{
+			$this->orderTable->check();
+			$virtuemart_order_id = $this->orderTable->get('virtuemart_order_id', false);
+		}
+
+		// Load the existing order data, if we have an order ID
+		if ($virtuemart_order_id)
+		{
+			$this->orderTable->load($virtuemart_order_id);
+		}
+
+		// Check if there is a valid order ID when there is no user ID. No user ID can mean it is a guest user
+		if (!$virtuemart_user_id && (!$virtuemart_order_id && !$order_number))
+		{
+			$this->log->add('Cannot process order. There is no user ID and there is also no valid order found', false);
+			$this->log->AddStats('incorrect', 'COM_CSVI_NOT_PROCESS_ORDER_USER');
+
+			return false;
+		}
 
 		// Load the order if there is an order_id
 		if (!$virtuemart_order_id || $this->template->get('keepid', false))
@@ -186,7 +216,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 			// Create an order number if it is empty
 			if (!$this->getState('order_number', false))
 			{
-				$this->log->add('COM_CSVI_DEBUG_CREATE_ORDER_NUMBER');
+				$this->log->add('Create order number', false);
 				$this->setState('order_number', substr(md5(session_id() . (string) time() . (string) $virtuemart_user_id), 0, 8));
 			}
 			else
@@ -349,12 +379,6 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 		// Bind order data
 		$this->orderTable->bind($this->state);
 
-		// Check if we use a given order id
-		if ($this->template->get('keepid'))
-		{
-			$this->orderTable->check();
-		}
-
 		// Store the order
 		if ($this->orderTable->store())
 		{
@@ -363,7 +387,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 		else
 		{
 			$this->log->add('COM_CSVI_ORDER_QUERY', true);
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ORDER_NOT_ADDED', $this->orderTable->getError()));
+			$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_ORDER_NOT_ADDED', $this->orderTable->getError()));
 
 			return false;
 		}
@@ -379,14 +403,14 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 				->where($this->db->quoteName('virtuemart_order_id') . ' = ' . (int) $this->getState('virtuemart_order_id'));
 			$this->db->setQuery($query);
 			$this->setState('virtuemart_order_userinfo_id', $this->db->loadResult());
-			$this->log->add('COM_CSVI_DEBUG_LOAD_ORDER_INFO_ID', true);
+			$this->log->add('Load the order info');
 		}
 
 		// Load the order info
 		if ($this->getState('virtuemart_order_userinfo_id', false))
 		{
 			$this->orderUserinfoTable->load($this->getState('virtuemart_order_userinfo_id'));
-			$this->log->add('COM_CSVI_DEBUG_LOAD_ORDER_INFO', true);
+			$this->log->add('Load the order info');
 
 			if (!$this->getState('modified_on', false))
 			{
@@ -395,138 +419,142 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 			}
 		}
 
-		if (!$this->getState('virtuemart_order_userinfo_id') || $this->orderUserinfoTable->virtuemart_user_id != $this->getState('virtuemart_user_id'))
+		if ($userdetails && !$this->getState('virtuemart_order_userinfo_id')
+			|| $this->orderUserinfoTable->virtuemart_user_id != $this->getState('virtuemart_user_id'))
 		{
 			$this->log->add('COM_CSVI_DEBUG_LOAD_USER_ORDER_INFO');
 
-			// Address type name
-			if (!$this->getState('address_type_name', false))
+			if ($virtuemart_user_id)
 			{
-				$this->setState('address_type_name', $userdetails->address_type_name);
-			}
-
-			// Company
-			if (!$this->getState('company', false))
-			{
-				$this->setState('company', $userdetails->company);
-			}
-
-			// Title
-			if (!$this->getState('title', false))
-			{
-				$this->setState('title', $userdetails->title);
-			}
-
-			// Last name
-			if (!$this->getState('last_name', false))
-			{
-				$this->setState('last_name', $userdetails->last_name);
-			}
-
-			// First name
-			if (!$this->getState('first_name', false))
-			{
-				$this->setState('first_name', $userdetails->first_name);
-			}
-
-			// Middle name
-			if (!$this->getState('middle_name', false))
-			{
-				$this->setState('middle_name', $userdetails->middle_name);
-			}
-
-			// Phone 1
-			if (!$this->getState('phone_1', false))
-			{
-				$this->setState('phone_1', $userdetails->phone_1);
-			}
-
-			// Phone 2
-			if (!$this->getState('phone_2', false))
-			{
-				$this->setState('phone_2', $userdetails->phone_2);
-			}
-
-			// Fax
-			if (!$this->getState('fax', false))
-			{
-				$this->setState('fax', $userdetails->fax);
-			}
-
-			// Address 1
-			if (!$this->getState('address_1', false))
-			{
-				$this->setState('address_1', $userdetails->address_1);
-			}
-
-			// Address 2
-			if (!$this->getState('address_2', false))
-			{
-				$this->setState('address_2', $userdetails->address_2);
-			}
-
-			// City
-			if (!$this->getState('city', false))
-			{
-				$this->setState('city', $userdetails->city);
-			}
-
-			// State
-			if (!$this->getState('virtuemart_state_id', false))
-			{
-				$state_name = $this->getState('state_name', false);
-				$state_2_code = $this->getState('state_2_code', false);
-				$state_3_code = $this->getState('state_3_code', false);
-
-				if ($state_name || $state_2_code || $state_3_code)
+				// Address type name
+				if (!$this->getState('address_type_name', false))
 				{
-					$query = $this->db->getQuery(true)
-						->select($this->db->quoteName('virtuemart_state_id'))
-						->from($this->db->quoteName('#__virtuemart_states'));
+					$this->setState('address_type_name', $userdetails->address_type_name);
+				}
 
-					if ($state_name)
+				// Company
+				if (!$this->getState('company', false))
+				{
+					$this->setState('company', $userdetails->company);
+				}
+
+				// Title
+				if (!$this->getState('title', false))
+				{
+					$this->setState('title', $userdetails->title);
+				}
+
+				// Last name
+				if (!$this->getState('last_name', false))
+				{
+					$this->setState('last_name', $userdetails->last_name);
+				}
+
+				// First name
+				if (!$this->getState('first_name', false))
+				{
+					$this->setState('first_name', $userdetails->first_name);
+				}
+
+				// Middle name
+				if (!$this->getState('middle_name', false))
+				{
+					$this->setState('middle_name', $userdetails->middle_name);
+				}
+
+				// Phone 1
+				if (!$this->getState('phone_1', false))
+				{
+					$this->setState('phone_1', $userdetails->phone_1);
+				}
+
+				// Phone 2
+				if (!$this->getState('phone_2', false))
+				{
+					$this->setState('phone_2', $userdetails->phone_2);
+				}
+
+				// Fax
+				if (!$this->getState('fax', false))
+				{
+					$this->setState('fax', $userdetails->fax);
+				}
+
+				// Address 1
+				if (!$this->getState('address_1', false))
+				{
+					$this->setState('address_1', $userdetails->address_1);
+				}
+
+				// Address 2
+				if (!$this->getState('address_2', false))
+				{
+					$this->setState('address_2', $userdetails->address_2);
+				}
+
+				// City
+				if (!$this->getState('city', false))
+				{
+					$this->setState('city', $userdetails->city);
+				}
+
+				// State
+				if (!$this->getState('virtuemart_state_id', false))
+				{
+					$state_name   = $this->getState('state_name', false);
+					$state_2_code = $this->getState('state_2_code', false);
+					$state_3_code = $this->getState('state_3_code', false);
+
+					if ($state_name || $state_2_code || $state_3_code)
 					{
-						$query->where($this->db->quoteName('state_name') . ' = ' . $this->db->quote($state_name));
+						$query = $this->db->getQuery(true)
+							->select($this->db->quoteName('virtuemart_state_id'))
+							->from($this->db->quoteName('#__virtuemart_states'));
+
+						if ($state_name)
+						{
+							$query->where($this->db->quoteName('state_name') . ' = ' . $this->db->quote($state_name));
+						}
+						elseif ($state_2_code)
+						{
+							$query->where($this->db->quoteName('state_2_code') . ' = ' . $this->db->quote($state_2_code));
+						}
+						elseif ($state_3_code)
+						{
+							$query->where($this->db->quoteName('state_3_code') . ' = ' . $this->db->quote($state_3_code));
+						}
+
+						$this->db->setQuery($query);
+						$this->setState('virtuemart_state_id', $this->db->loadResult());
 					}
-					elseif ($state_2_code)
+					else
 					{
-						$query->where($this->db->quoteName('state_2_code') . ' = ' . $this->db->quote($state_2_code));
+						$this->setState('virtuemart_state_id', $userdetails->virtuemart_state_id);
 					}
-					elseif ($state_3_code)
+				}
+
+				// Country
+				if (!$this->getState('virtuemart_country_id', false))
+				{
+					$country_name   = $this->getState('country_name', false);
+					$country_2_code = $this->getState('country_2_code', false);
+					$country_3_code = $this->getState('country_3_code', false);
+
+					if ($country_name || $country_2_code || $country_3_code)
 					{
-						$query->where($this->db->quoteName('state_3_code') . ' = ' . $this->db->quote($state_3_code));
+						$this->setState('virtuemart_country_id', $this->helper->getCountryId($country_name, $country_2_code, $country_3_code));
 					}
-
-					$this->db->setQuery($query);
-					$this->setState('virtuemart_state_id', $this->db->loadResult());
+					else
+					{
+						$this->setState('virtuemart_country_id', $userdetails->virtuemart_country_id);
+					}
 				}
-				else
+
+				// Zip
+				if (!$this->getState('zip', false))
 				{
-					$this->setState('virtuemart_state_id', $userdetails->virtuemart_state_id);
+					$this->setState('zip', $userdetails->zip);
 				}
-			}
-
-			// Country
-			if (!$this->getState('virtuemart_country_id', false))
-			{
-				$country_name = $this->getState('country_name', false);
-				$country_2_code = $this->getState('country_2_code', false);
-				$country_3_code = $this->getState('country_3_code', false);
-
-				if ($country_name || $country_2_code || $country_3_code)
-				{
-					$this->setState('virtuemart_country_id', $this->helper->getCountryId($country_name, $country_2_code, $country_3_code));
-				}
-				else
-				{
-					$this->setState('virtuemart_country_id', $userdetails->virtuemart_country_id);
-				}
-			}
-
-			// Zip
-			if (!$this->getState('zip', false))
-			{
-				$this->setState('zip', $userdetails->zip);
 			}
 
 			// Agreed
@@ -556,7 +584,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 		// Store the order user info
 		if (!$this->orderUserinfoTable->store())
 		{
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ORDERUSER_NOT_ADDED', $this->orderUserinfoTable->getError()));
+			$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_ORDERUSER_NOT_ADDED', $this->orderUserinfoTable->getError()));
 		}
 
 		// Check if the order has at least a billing address
@@ -641,7 +669,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 			}
 
 			// Comments
-			$this->orderHistoryTable->comments = '';
+			$this->orderHistoryTable->comments = $this->getState('comments', '');
 		}
 
 		// Bind the payment data
@@ -650,7 +678,7 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 		// Store the order history info
 		if (!$this->orderHistoryTable->store())
 		{
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_ORDER_PAYMNET_NOT_ADDED', $this->orderHistoryTable->getError()));
+			$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_ORDER_PAYMNET_NOT_ADDED', $this->orderHistoryTable->getError()));
 		}
 
 		return true;
@@ -665,9 +693,9 @@ class Com_VirtuemartModelImportOrder extends RantaiImportEngine
 	 */
 	public function loadTables()
 	{
-		$this->orderTable = $this->getTable('Order');
+		$this->orderTable         = $this->getTable('Order');
 		$this->orderUserinfoTable = $this->getTable('OrderUserinfo');
-		$this->orderHistoryTable = $this->getTable('OrderHistory');
+		$this->orderHistoryTable  = $this->getTable('OrderHistory');
 	}
 
 	/**

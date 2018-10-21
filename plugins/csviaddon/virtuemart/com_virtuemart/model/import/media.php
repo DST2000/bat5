@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportMedia extends RantaiImportEngine
+class Media extends \RantaiImportEngine
 {
 	/**
 	 * Media table.
 	 *
-	 * @var    VirtueMartTableMedia
+	 * @var    \VirtueMartTableMedia
 	 * @since  6.0
 	 */
 	private $mediaTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 	/**
 	 * Product media table.
 	 *
-	 * @var    VirtueMartTableProductMedia
+	 * @var    \VirtueMartTableProductMedia
 	 * @since  6.0
 	 */
 	private $productMediaTable = null;
@@ -39,7 +41,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 	/**
 	 * VirtueMart helper
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart
 	 * @since  6.0
 	 */
 	protected $helper = array();
@@ -47,7 +49,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 	/**
 	 * The image helper
 	 *
-	 * @var    CsviHelperImage
+	 * @var    \CsviHelperImage
 	 * @since  6.0
 	 */
 	private $imagehelper = null;
@@ -62,7 +64,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 	public function onBeforeStart()
 	{
 		// Image handling
-		$this->imagehelper = new CsviHelperImage($this->template, $this->log, $this->csvihelper);
+		$this->imagehelper = new \CsviHelperImage($this->template, $this->log, $this->csvihelper);
 	}
 
 	/**
@@ -89,7 +91,9 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 						switch ($value)
 						{
 							case 'n':
+							case 'no':
 							case 'N':
+							case 'NO':
 							case '0':
 								$value = 0;
 								break;
@@ -129,8 +133,8 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_media_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('file_url')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('file_url')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('file_url')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('file_url')));
 					$this->loaded = false;
 				}
 				else
@@ -145,7 +149,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -165,7 +169,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 			if (!$this->getState('virtuemart_media_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new coupons when user chooses to ignore new coupons
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('file_url')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('file_url')));
 			}
 			else
 			{
@@ -202,7 +206,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 						// Watermark image if needed
 						if ($this->template->get('full_watermark', false))
 						{
-							$this->imagehelper = new CsviHelperImage($this->template, $this->log, $this->csvihelper);
+							$this->imagehelper = new \CsviHelperImage($this->template, $this->log, $this->csvihelper);
 							$this->imagehelper->addWatermark(JPATH_SITE . '/' . $this->mediaTable->file_url);
 						}
 
@@ -219,18 +223,18 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 
 								if (!$this->productMediaTable->store())
 								{
-									$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->mediaTable->getError()));
+									$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->mediaTable->getError()));
 								}
 							}
 							else
 							{
-								$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_DEBUG_MEDIA_NO_SKU', $this->getState('product_sku')));
+								$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_DEBUG_MEDIA_NO_SKU', $this->getState('product_sku')));
 							}
 						}
 					}
 					else
 					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIAFILE_NOT_ADDED', $this->mediaTable->getError()));
+						$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_MEDIAFILE_NOT_ADDED', $this->mediaTable->getError()));
 					}
 				}
 			}
@@ -294,7 +298,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 		}
 		else
 		{
-			$this->log->addStats('notice', JText::sprintf('COM_CSVI_DEBUG_NO_MEDIA_ID', $this->getState('file_url')));
+			$this->log->addStats('notice', \JText::sprintf('COM_CSVI_DEBUG_NO_MEDIA_ID', $this->getState('file_url')));
 		}
 
 		return true;
@@ -317,18 +321,16 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 				list($original, $full_path, $remote) = $this->filenameDetails();
 
 				// Generate image names
-				$file_details = $this->imagehelper->ProcessImage($original, $full_path);
+				$file_details = $this->imagehelper->processImage($original, $full_path);
 
 				// Process the file details
 				if ($file_details['exists'])
 				{
-					$media = array();
-
 					if ($this->template->get('autofill'))
 					{
-						$media['file_title'] = $file_details['output_name'];
-						$media['file_description'] = $file_details['output_name'];
-						$media['file_meta'] = $file_details['output_name'];
+						$this->setState('file_title', $file_details['output_name']);
+						$this->setState('file_description', $file_details['output_name']);
+						$this->setState('file_meta', $file_details['output_name']);
 					}
 					else
 					{
@@ -339,7 +341,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 
 					$this->setState('file_mimetype', $file_details['mime_type']);
 
-					if ($file_details['isimage'] && $this->getState('file_type') == 'product')
+					if ($file_details['isimage'] && $this->getState('file_type') === 'product')
 					{
 						$this->setState('file_is_product_image', 1);
 					}
@@ -348,7 +350,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 						$this->setState('file_is_product_image', 0);
 					}
 
-					if (!$this->getState('file_is_downloadable', false) && !$file_details['isimage'])
+					if (!$file_details['isimage'] && !$this->getState('file_is_downloadable', false))
 					{
 						$this->setState('file_is_downloadable', 1);
 					}
@@ -384,12 +386,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 								$this->setState('file_url_thumb', 'resized/' . $thumb_path . basename($this->getState('file_url')));
 							}
 
-							if (!$remote)
-							{
-								$original = $this->getState('file_url');
-							}
-
-							$this->setState('file_url_thumb', $this->imagehelper->createThumbnail($original, $base, $this->getState('file_url_thumb')));
+							$this->setState('file_url_thumb', $this->imagehelper->createThumbnail($this->getState('file_url'), $base, $this->getState('file_url_thumb')));
 						}
 						elseif (!$this->getState('file_url_thumb', false))
 						{
@@ -419,22 +416,19 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 		{
 			$original = $this->getState('file_url');
 			$remote = true;
+			$base = '';
 
 			if ($this->template->get('save_images_on_server'))
 			{
 				switch ($this->getState('file_type'))
 				{
 					case 'category':
-						$base = $this->template->get('file_location_category_images');
+						$base = $this->template->get('file_location_category_images', 'images/stories/virtuemart/category/');
 						break;
 					default:
-						$base = $this->template->get('file_location_product_images');
+						$base = $this->template->get('file_location_product_files', 'images/stories/virtuemart/product/');
 						break;
 				}
-			}
-			else
-			{
-				$base = '';
 			}
 
 			$full_path = $base;
@@ -446,9 +440,22 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 			$image = $this->getState('file_url');
 			$base = $this->getBasePath();
 
+			// Make sure the final slash is present
+			if (substr($base, -1) !== '/')
+			{
+				$base .= '/';
+			}
+
 			if (strpos($base, $dirname) !== false)
 			{
-				$image = basename($this->getState('file_url'));
+				// Collect rest of folder path if it is more than image default path
+				$imageleftpath = str_replace($base, '', $dirname . '/');
+				$image = basename($image);
+
+				if ($imageleftpath)
+				{
+					$image = $imageleftpath . $image;
+				}
 			}
 
 			$original = $base . $image;
@@ -458,7 +465,7 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 			$path_parts = pathinfo($original);
 			$full_path = $path_parts['dirname'] . '/';
 
-			$this->log->add(JText::sprintf('COM_CSVI_CREATED_FILE_URL', $original));
+			$this->log->add('Created file URL: ' . $original, false);
 		}
 
 		return array($original, $full_path, $remote);
@@ -477,10 +484,10 @@ class Com_VirtuemartModelImportMedia extends RantaiImportEngine
 		switch ($this->getState('file_type'))
 		{
 			case 'category':
-				$base = $this->template->get('file_location_category_images');
+				$base = $this->template->get('file_location_category_images', 'images/stories/virtuemart/category/');
 				break;
 			default:
-				$base = $this->template->get('file_location_product_files');
+				$base = $this->template->get('file_location_product_files', 'images/stories/virtuemart/product/');
 				break;
 		}
 

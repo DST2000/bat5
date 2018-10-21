@@ -46,6 +46,7 @@ INSERT IGNORE INTO `#__csvi_availablefields` (`csvi_name`, `component_name`, `co
 ('urlc','urlc', 'content', 'com_content', 'import'),
 ('urlctext','urlctext', 'content', 'com_content', 'import'),
 ('targetc', 'targetc', 'content', 'com_content', 'import'),
+('tags', 'tags', 'content', 'com_content', 'import'),
 
 /* Joomla content export */
 ('custom', 'custom', 'content', 'com_content', 'export'),
@@ -93,4 +94,5 @@ INSERT IGNORE INTO `#__csvi_availablefields` (`csvi_name`, `component_name`, `co
 ('targetb', 'targetb', 'content', 'com_content', 'export'),
 ('urlc','urlc', 'content', 'com_content', 'export'),
 ('urlctext','urlctext', 'content', 'com_content', 'export'),
-('targetc', 'targetc', 'content', 'com_content', 'export');
+('targetc', 'targetc', 'content', 'com_content', 'export'),
+('tags', 'tags', 'content', 'com_content', 'export');

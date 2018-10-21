@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Export
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -51,9 +51,18 @@ class CsviHelperFileExportHtmlCsvimproved
 	 */
 	public function headerText($exportFields)
 	{
-		$contents = '<html><head>' . chr(10);
-		$contents .= '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head>' . chr(10);
-		$contents .= '<body><table>' . chr(10);
+		$contents = '<html>' . chr(10);
+		$contents .= '<head>' . chr(10);
+		$contents .= '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' . chr(10);
+
+		if (file_exists(JPATH_SITE . '/media/com_csvi/css/exporttable.css'))
+		{
+			$cssFile = JHtml::_('stylesheet', 'com_csvi/exporttable.css', array(), true, true);
+			$contents .= '<link href="' . $cssFile . '" rel="stylesheet" />' . chr(10);
+		}
+
+		$contents .= '</head>' . chr(10);
+		$contents .= '<body><table id="' . str_replace(' ', '-', strtolower($this->template->getName())) . '">' . chr(10);
 
 		// See if the user wants column headers
 		if ($this->template->get('include_column_headers', true))

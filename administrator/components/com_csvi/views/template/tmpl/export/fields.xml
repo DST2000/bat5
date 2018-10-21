@@ -5,12 +5,14 @@
 			<field name="groupbyfields"
 				   type="repeatable"
 				   icon="list">
-					<fieldset hidden="true" repeat="true">
-						<field name="name"
-							   label="COM_CSVI_TEMPLATE_GROUPBY_FIELDNAME_LABEL"
-							   size="30"
-							   type="csviavailablefields"/>
-					</fieldset>
+				<fieldset hidden="true" repeat="true">
+					<field name="name"
+						   label="COM_CSVI_TEMPLATE_GROUPBY_FIELDNAME_LABEL"
+						   size="1"
+						   class="advancedSelect"
+						   type="csviavailablefields"
+						   idfield="csvi_template_id"/>
+				</fieldset>
 			</field>
 			<field name="sortfields"
 				   type="repeatable"
@@ -18,8 +20,10 @@
 				<fieldset hidden="true" repeat="true">
 					<field name="name"
 						   label="COM_CSVI_TEMPLATE_SORT_FIELDNAME_LABEL"
-						   size="30"
-						   type="csviavailablefields"/>
+						   size="1"
+						   class="advancedSelect"
+						   type="csviavailablefields"
+						   idfield="csvi_template_id"/>
 				</fieldset>
 			</field>
 		</fieldset>

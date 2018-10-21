@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  File
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,6 +37,14 @@ class CsviHelperFileImportOds extends CsviHelperFile
 	private $unpacked = false;
 
 	/**
+	 * The path where the ODS should be unpacked to
+	 *
+	 * @var    bool
+	 * @since  6.0
+	 */
+	private $unpackpath = '';
+
+	/**
 	 * The fields handler
 	 *
 	 * @var    CsviHelperImportFields
@@ -60,12 +68,12 @@ class CsviHelperFileImportOds extends CsviHelperFile
 		$this->linepointer = 1;
 		$parser = new ODSParser;
 
-		if (!$this->unpacked)
+		// Make sure the ODS is a zip file
+		if (!$this->unpacked && file_get_contents($this->filename, false, null, 0, 2) === 'PK')
 		{
 			jimport('joomla.filesystem.file');
 			jimport('joomla.filesystem.archive');
-			$jinput = JFactory::getApplication()->input;
-			$csvilog = $jinput->get('csvilog', null, null);
+			$this->unpackpath = CSVIPATH_TMP;
 
 			// First we need to unpack the zipfile
 			$unpackfile = $this->unpackpath . '/ods/' . basename($this->filename) . '.zip';
@@ -91,20 +99,21 @@ class CsviHelperFileImportOds extends CsviHelperFile
 			// Extract the files in the folder
 			if (!JArchive::extract($unpackfile, $this->unpackpath . '/ods'))
 			{
-				$csvilog->addStats('incorrect', JText::_('COM_CSVI_CANNOT_UNPACK_ODS_FILE'));
+				$this->log->addStats('incorrect', JText::_('COM_CSVI_CANNOT_UNPACK_ODS_FILE'));
 
 				return false;
 			}
 
+			// Delete all files except the content.xml
+			JFile::copy($this->unpackpath . '/ods/content.xml', dirname($this->filename) . '/content.ods');
+			JFile::delete($this->filename);
+			JFolder::delete($this->unpackpath . '/ods');
+
 			// File is always called content.xml
-			$this->filename = $importfile;
+			$this->filename = dirname($this->filename) . '/content.ods';
 
 			// Set the unpacked to true as we have unpacked the file
 			$this->unpacked = true;
-		}
-		else
-		{
-			$this->filename = $this->unpackpath . '/ods/content.xml';
 		}
 
 		// Read the data to process
@@ -172,9 +181,7 @@ class CsviHelperFileImportOds extends CsviHelperFile
 	{
 		if ($this->lineCount() >= $this->linepointer)
 		{
-			$jinput = JFactory::getApplication()->input;
-			$csvifields = $jinput->get('csvifields', null, null);
-			$columnheaders = $csvifields->getAllFieldnames();
+			$columnheaders = $this->fields->getAllFieldnames();
 
 			$newdata = $this->data[$this->linepointer];
 			$this->linepointer++;
@@ -199,10 +206,8 @@ class CsviHelperFileImportOds extends CsviHelperFile
 
 			return true;
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 
 	/**

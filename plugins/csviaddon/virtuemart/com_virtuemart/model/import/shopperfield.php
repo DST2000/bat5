@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
+class Shopperfield extends \RantaiImportEngine
 {
 	/**
 	 * User field table
 	 *
-	 * @var    VirtueMartTableUserfield
+	 * @var    \VirtueMartTableUserfield
 	 * @since  6.0
 	 */
 	private $userfieldTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 	/**
 	 * User info table
 	 *
-	 * @var    VirtueMartTableUserinfo
+	 * @var    \VirtueMartTableUserinfo
 	 * @since  6.0
 	 */
 	private $userinfoTable = null;
@@ -57,7 +59,7 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 				switch ($name)
 				{
 					case 'name':
-						$jfilter = new JFilterInput;
+						$jfilter = new \JFilterInput;
 						$this->setState($name, strtolower($jfilter->clean($value, 'alnum')));
 						break;
 					case 'published':
@@ -106,8 +108,8 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_userfield_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('name')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('name')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('name')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('name')));
 					$this->loaded = false;
 				}
 				else
@@ -122,7 +124,7 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -150,12 +152,12 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 			}
 			elseif (!$virtuemart_userfield_id && $shopperfield_delete == 'Y')
 			{
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_NO_SHOPPERFIELD_ID_NO_DELETE', $this->getState('name')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_NO_SHOPPERFIELD_ID_NO_DELETE', $this->getState('name')));
 			}
 			elseif (!$virtuemart_userfield_id && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new products when user chooses to ignore new products
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('name')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('name')));
 			}
 			else
 			{
@@ -212,7 +214,7 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 				}
 				else
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHOPPERFIELD_NOT_ADDED', $this->userfieldTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_SHOPPERFIELD_NOT_ADDED', $this->userfieldTable->getError()));
 				}
 			}
 
@@ -285,7 +287,7 @@ class Com_VirtuemartModelImportShopperfield extends RantaiImportEngine
 			// Delete the userinfos field
 			$this->userinfoTable->deleteField($this->getState('name'));
 
-			$this->log->addStats('deleted', JText::sprintf('COM_CSVIVIRTUEMART_SHOPPERFIELD_DELETED', $this->getState('name')));
+			$this->log->addStats('deleted', \JText::sprintf('COM_CSVIVIRTUEMART_SHOPPERFIELD_DELETED', $this->getState('name')));
 		}
 	}
 }

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Helper.Fields
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -265,6 +265,7 @@ final class CsviHelperImportfields extends CsviHelperFields
 						$this->log->add('Setup field: ' . $name, false);
 						$data->field_name = $name;
 						$data->xml_node = $name;
+						$data->source_field = null;
 						$data->default_value = null;
 						$data->supported = 1;
 						$data->order = $order;
@@ -324,34 +325,31 @@ final class CsviHelperImportfields extends CsviHelperFields
 
 				if (!empty($fields))
 				{
-					$name = '';
-
 					foreach ($fields as $fid => $field)
 					{
+						// Get the name of the field
+						$name = $field->field_name;
+
 						// Check if we are handling a combine field
 						if ($field->field_name == 'combine')
 						{
 							$name .= $fid;
 						}
-						else
-						{
-							$name = $field->field_name;
-						}
+
+						// Set the XML node
+						$xml_node = $field->xml_node;
 
 						// Check if there is a XML node set
 						if (empty($field->xml_node))
 						{
 							$xml_node = $name;
 						}
-						else
-						{
-							$xml_node = $field->xml_node;
-						}
 
 						// Collect the data
 						$data = new JObject;
 						$data->field_name = $name;
 						$data->xml_node = $xml_node;
+						$data->source_field = $field->source_field;
 						$data->default_value = $field->default_value;
 						$data->supported = true;
 						$data->order = $field->ordering;
@@ -378,7 +376,7 @@ final class CsviHelperImportfields extends CsviHelperFields
 					// Setup the XML fields, we mimic them for none XML files
 					if (empty($field->xml_node))
 					{
-						$field->xml_node = $field->field_name;
+						$field->xml_node = empty($field->source_field) ? $field->field_name : $field->source_field;
 					}
 
 					// Convert combine fields to be able to have multiple per import
@@ -434,6 +432,7 @@ final class CsviHelperImportfields extends CsviHelperFields
 			array(
 				$this->db->quoteName('f.csvi_templatefield_id'),
 				$this->db->quoteName('f.field_name'),
+				$this->db->quoteName('f.source_field'),
 				$this->db->quoteName('f.xml_node'),
 				$this->db->quoteName('f.default_value'),
 				$this->db->quoteName('f.sort'),
@@ -509,7 +508,7 @@ final class CsviHelperImportfields extends CsviHelperFields
 					{
 						if (!in_array($field->field_name, array('skip','combine')))
 						{
-							$fields[] = $field->field_name;
+							$fields[] = empty($field->source_field) ? $field->field_name : $field->source_field;
 						}
 					}
 					else
@@ -613,6 +612,14 @@ final class CsviHelperImportfields extends CsviHelperFields
 		// Remove the skip and combine fields
 		$data = array();
 
+		if (!$this->getProcessRecord())
+		{
+			$this->log->add(JText::_('COM_CSVI_SKIPPED_RECORD_RULE_SETTINGS'), false);
+			$this->log->addStats('skipped', JText::_('COM_CSVI_SKIPPED_RECORD_RULE_SETTINGS'));
+
+			return $data;
+		}
+
 		foreach ($this->fields as $name => $field)
 		{
 			$new = array();
@@ -623,7 +630,7 @@ final class CsviHelperImportfields extends CsviHelperFields
 				{
 					if (!in_array($fielddata->field_name, array('skip', 'combine')))
 					{
-						$new[$name] = clone $fielddata;
+						$new[$name]  = clone $fielddata;
 						$data[$name] = $new;
 					}
 				}
@@ -698,6 +705,18 @@ final class CsviHelperImportfields extends CsviHelperFields
 	}
 
 	/**
+	 * unset the ICEcat data.
+	 *
+	 * @return  void.
+	 *
+	 * @since   6.5.6
+	 */
+	public function clearIcecatData()
+	{
+		$this->icecatData = array();
+	}
+
+	/**
 	 * Update a given field with the given value.
 	 *
 	 * @param   object $field The field to update.
@@ -746,5 +765,61 @@ final class CsviHelperImportfields extends CsviHelperFields
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check the missing required fields
+	 *
+	 * @param   array  $requiredFields  An array of required fields
+	 *
+	 * @return  string Message is fields are missing.
+	 *
+	 * @since   7.1.0
+	 */
+	public function checkRequiredFields($requiredFields)
+	{
+		$importFields = $this->getFieldnames();
+		$missingFields = array();
+		$message = '';
+
+		foreach ($requiredFields as $field)
+		{
+			if (strpos($field, '~') !== false)
+			{
+				$orFields = explode('~', $field);
+
+				if (count(array_intersect($orFields, $importFields)) === 0)
+				{
+					$missingFields[] = $field;
+				}
+			}
+			else
+			{
+				if (!in_array($field, $importFields))
+				{
+					$missingFields[] = $field;
+				}
+			}
+		}
+
+		// Check the collected missing required fields and put it all in message
+		if (!empty($missingFields))
+		{
+			$fieldsAppend = '';
+
+			foreach ($missingFields as $missingField)
+			{
+				if (strpos($missingField, '~') !== false)
+				{
+					$missingField = str_replace('~', ' or ', $missingField);
+				}
+
+				$fieldsAppend .= ' - ' . $missingField . '<br>';
+			}
+
+			$message = JText::sprintf('COM_CSVI_REQUIRED_FIELDS_MISSING', $fieldsAppend);
+		}
+
+		return $message;
 	}
 }

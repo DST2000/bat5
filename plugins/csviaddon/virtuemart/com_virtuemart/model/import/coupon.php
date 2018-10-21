@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportCoupon extends RantaiImportEngine
+class Coupon extends \RantaiImportEngine
 {
 	/**
 	 * Coupon table
 	 *
-	 * @var    VirtueMartTableCoupon
+	 * @var    \VirtueMartTableCoupon
 	 * @since  6.0
 	 */
 	private $couponTable = null;
@@ -50,7 +52,9 @@ class Com_VirtuemartModelImportCoupon extends RantaiImportEngine
 						switch ($value)
 						{
 							case 'n':
+							case 'no':
 							case 'N':
+							case 'NO':
 							case '0':
 								$value = 0;
 								break;
@@ -91,8 +95,8 @@ class Com_VirtuemartModelImportCoupon extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_coupon_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('coupon_code')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('coupon_code')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('coupon_code')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('coupon_code')));
 					$this->loaded = false;
 				}
 				else
@@ -107,7 +111,7 @@ class Com_VirtuemartModelImportCoupon extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -127,7 +131,7 @@ class Com_VirtuemartModelImportCoupon extends RantaiImportEngine
 			if (!$this->getState('virtuemart_coupon_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new coupons when user chooses to ignore new coupons
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('coupon_code')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('coupon_code')));
 			}
 			else
 			{
@@ -151,7 +155,7 @@ class Com_VirtuemartModelImportCoupon extends RantaiImportEngine
 				// Store the data
 				if (!$this->couponTable->store())
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_COUPON_NOT_ADDED', $this->couponTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_COUPON_NOT_ADDED', $this->couponTable->getError()));
 				}
 			}
 

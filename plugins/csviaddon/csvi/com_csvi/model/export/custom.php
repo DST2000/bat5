@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  CSVI
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace csvi\com_csvi\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export custom tables.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  CSVI
  * @since       6.0
  */
-class Com_CsviModelExportCustom extends CsviModelExports
+class Custom extends \CsviModelExports
 {
 	/**
 	 * Export the data.
@@ -28,6 +28,8 @@ class Com_CsviModelExportCustom extends CsviModelExports
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \CsviException
 	 */
 	protected function exportBody()
 	{
@@ -36,31 +38,42 @@ class Com_CsviModelExportCustom extends CsviModelExports
 			// Build something fancy to only get the fieldnames the user wants
 			$userfields = array();
 			$exportfields = $this->fields->getFields();
+			$customTables = $this->template->get('custom_table');
+
+			if (!isset($customTables->custom_table0->table))
+			{
+				// There is no from table, we can't continue
+				throw new \CsviException(\JText::_('COM_CSVI_CUSTOM_EXPORT_NO_TABLENAME_SET'));
+			}
+
+			// Get the primary table
+			$primaryTable = $customTables->custom_table0->table;
 
 			// Group by fields
-			$groupbyfields = json_decode($this->template->get('groupbyfields', '', 'string'));
+			$groupbyfields   = json_decode($this->template->get('groupbyfields', '[]', 'string'));
+			$groupFieldNames = array();
+
+			for ($i = 0; $i <= count($groupbyfields); $i++)
+			{
+				if (isset($groupbyfields->groupby_table_name[$i]))
+				{
+					$groupFieldNames[] = '#__' . $groupbyfields->groupby_table_name[$i] . '.' . $groupbyfields->groupby_field_name[$i];
+				}
+			}
+
 			$groupby = array();
 
-			if (isset($groupbyfields->name))
-			{
-				$groupbyfields = array_flip($groupbyfields->name);
-			}
-			else
-			{
-				$groupbyfields = array();
-			}
-
 			// Sort selected fields
-			$sortfields = json_decode($this->template->get('sortfields', '', 'string'));
-			$sortby = array();
+			$sortfields     = json_decode($this->template->get('sortfields', '[]', 'string'));
+			$sortby         = array();
+			$sortFieldNames = array();
 
-			if (isset($sortfields->name))
+			for ($j = 0; $j <= count($sortfields); $j++)
 			{
-				$sortbyfields = array_flip($sortfields->name);
-			}
-			else
-			{
-				$sortbyfields = array();
+				if (isset($sortfields->sortby_table_name[$j]))
+				{
+					$sortFieldNames[] = '#__' . $sortfields->sortby_table_name[$j] . '.' . $sortfields->sortby_field_name[$j];
+				}
 			}
 
 			foreach ($exportfields as $field)
@@ -71,26 +84,62 @@ class Com_CsviModelExportCustom extends CsviModelExports
 					case 'custom':
 						break;
 					default:
-						$userfields[] = $this->db->quoteName($field->field_name);
+						$tableName    = $field->table_name;
+						$columnHeader = $field->column_header ?: $field->field_name;
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if ($tableName)
 						{
-							$groupby[] = $this->db->quoteName($field->field_name);
+							$userfields[] = $this->db->quoteName('#__' . $tableName . '.' . $field->field_name, $columnHeader);
+
+							if ($groupFieldNames)
+							{
+								$groupby = $groupFieldNames;
+							}
+
+							if ($sortFieldNames)
+							{
+								$sortby = $sortFieldNames;
+							}
 						}
-
-						if (array_key_exists($field->field_name, $sortbyfields))
+						else
 						{
-							$sortby[] = $this->db->quoteName($field->field_name);
+							$userfields[] = $this->db->quoteName($field->field_name, $columnHeader);
+
+							if (array_key_exists($field->field_name, $groupFieldNames))
+							{
+								$groupby[] = $this->db->quoteName($field->field_name);
+							}
+
+							if (array_key_exists($field->field_name, $sortFieldNames))
+							{
+								$sortby[] = $this->db->quoteName($field->field_name);
+							}
 						}
 						break;
 				}
 			}
 
-			// Build the query
 			$userfields = array_unique($userfields);
 			$query = $this->db->getQuery(true);
 			$query->select(implode(",\n", $userfields));
-			$query->from($this->db->quoteName("#__" . $this->template->get('custom_table')));
+
+			$query->from($this->db->quoteName("#__" . $primaryTable));
+
+			for ($i = 1; $i <= count((array) $customTables); $i++)
+			{
+				$keyName = 'custom_table' . $i;
+
+				if (isset($customTables->$keyName->table))
+				{
+					$joinType = $customTables->$keyName->jointype;
+					$query->join(
+						$joinType,
+						$this->db->quoteName('#__' . $customTables->$keyName->table)
+						. ' ON ' . $this->db->quoteName('#__' . $customTables->$keyName->table . '.' . $customTables->$keyName->field) .
+						' = ' . $this->db->quoteName('#__' . $customTables->$keyName->jointable . '.' . $customTables->$keyName->joinfield)
+					);
+				}
+			}
 
 			// Group the fields
 			$groupby = array_unique($groupby);
@@ -111,50 +160,64 @@ class Com_CsviModelExportCustom extends CsviModelExports
 			// Add export limits
 			$limits = $this->getExportLimit();
 
-			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
-			$this->log->add('Export query' . $query->__toString(), false);
-
-			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
-
-			if ($logcount > 0)
+			try
 			{
-				while ($record = $this->csvidb->getRow())
+				// Execute the query
+				$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+				$records = $this->db->getIterator();
+				$this->log->add('Export query' . $query->__toString(), false);
+
+				// Check if there are any records
+				$logcount = $this->db->getNumRows();
+
+				if ($logcount > 0)
 				{
-					$this->log->incrementLinenumber();
-
-					foreach ($exportfields as $field)
+					foreach ($records as $record)
 					{
-						$fieldname = $field->field_name;
+						$this->log->incrementLinenumber();
 
-						// Set the field value
-						if (isset($record->$fieldname))
+						foreach ($exportfields as $field)
 						{
-							$fieldvalue = $record->$fieldname;
-						}
-						else
-						{
-							$fieldvalue = '';
+							$fieldname    = $field->field_name;
+							$columnHeader = $field->column_header;
+							$fieldvalue   = '';
+
+							// Set the field value
+							if (isset($record->$fieldname))
+							{
+								$fieldvalue = $record->$fieldname;
+							}
+
+							// Column header is the field alias, use that for retrieve field value if set
+							// This is useful in case of exporting multiple tables with same field name
+							if ($field->column_header)
+							{
+								$fieldvalue = $record->$columnHeader;
+							}
+
+							// Store the field value
+							$this->fields->set($field->csvi_templatefield_id, $fieldvalue);
 						}
 
-						// Store the field value
-						$this->fields->set($field->csvi_templatefield_id, $fieldvalue);
+						// Output the data
+						$this->addExportFields();
+
+						// Output the contents
+						$this->writeOutput();
 					}
-
-					// Output the data
-					$this->addExportFields();
+				}
+				else
+				{
+					$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 					// Output the contents
 					$this->writeOutput();
 				}
 			}
-			else
+			catch (\Exception $e)
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
-
-				// Output the contents
-				$this->writeOutput();
+				$this->log->add('Error: ' . $e->getMessage(), false);
+				$this->log->addStats('incorrect', $e->getMessage());
 			}
 		}
 	}

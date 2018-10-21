@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  JoomlaMenu
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - [year] RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace menus\com_menus\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,31 +20,31 @@ defined('_JEXEC') or die;
  * @subpackage  JoomlaMenu
  * @since       6.3.0
  */
-class Com_MenusModelImportMenu extends RantaiImportEngine
+class Menu extends \RantaiImportEngine
 {
 	/**
 	 * Menu table
 	 *
-	 * @var    MenusTableMenu
+	 * @var    \MenusTableMenu
 	 * @since  6.3.0
 	 */
-	private $menu = null;
+	private $menu;
 
 	/**
 	 * CSVI fields
 	 *
-	 * @var    CsviHelperImportFields
+	 * @var    \CsviHelperImportFields
 	 * @since  6.0
 	 */
-	protected $fields = null;
+	protected $fields;
 
 	/**
 	 * The addon helper
 	 *
-	 * @var    Com_MenusHelperCom_Menus
+	 * @var    \Com_MenusHelperCom_Menus
 	 * @since  6.3.0
 	 */
-	protected $helper = null;
+	protected $helper;
 
 	/**
 	 * List of core fields
@@ -66,6 +68,10 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 * @return  bool  True on success | false on failure.
 	 *
 	 * @since   6.3.0
+	 *
+	 * @throws  \RuntimeException
+	 * @throws  \InvalidArgumentException
+	 * @throws  \UnexpectedValueException
 	 */
 	public function getStart()
 	{
@@ -80,9 +86,6 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 				{
 					case 'access':
 						$this->setState('access', $this->getAccessLevel($value));
-						break;
-					case 'menutype':
-						$this->setState('menutype', $this->getMenuType($value));
 						break;
 					case 'template_style':
 						$this->setState('template_style_id', $this->getTemplateStyleId($value));
@@ -124,19 +127,15 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 						$this->setState($name, $value);
 						break;
 					case 'secure':
-						switch ($value)
+						switch (strtolower($value))
 						{
 							case 'n':
 							case 'no':
-							case 'N':
-							case 'NO':
 							case '0':
 								$value = -1;
 								break;
 							case 'y':
 							case 'yes':
-							case 'Y':
-							case 'YES':
 							case '1':
 								$value = 1;
 								break;
@@ -148,13 +147,28 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 						$this->setState($name, $value);
 						break;
 					case 'published':
+						switch (strtolower($value))
+						{
+							case '-2':
+								$value = -2;
+								break;
+							case 'y':
+							case 'yes':
+							case '1':
+								$value = 1;
+								break;
+							default:
+								$value = 0;
+								break;
+						}
+
+						$this->setState($name, $value);
+						break;
 					case 'menu_text':
-						switch ($value)
+						switch (strtolower($value))
 						{
 							case 'n':
 							case 'no':
-							case 'N':
-							case 'NO':
 							case '0':
 								$value = 0;
 								break;
@@ -166,7 +180,7 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 						$this->setState($name, $value);
 						break;
 					default:
-						if (!in_array($name, $this->corefields))
+						if (!in_array($name, $this->corefields, true))
 						{
 							$this->customfields[] = $name;
 						}
@@ -177,10 +191,12 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 			}
 		}
 
-		// Required fields
-		// type
-		// path
-		// menutype
+		/**
+		 * Required fields
+		 * type
+		 * path
+		 * menutype
+		 */
 
 		// There must be an id or path
 		if ($this->getState('id', false)
@@ -194,13 +210,10 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 			}
 
 			// Load the current menu data
-			if ($this->menu->load($this->getState('id', 0)))
+			if (!$this->template->get('overwrite_existing_data') && $this->menu->load($this->getState('id', 0)))
 			{
-				if (!$this->template->get('overwrite_existing_data'))
-				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_MENU_TYPE', $this->getState('path', ''), $this->getState('type', '')));
-					$this->loaded = false;
-				}
+				$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_MENU_TYPE', $this->getState('path', ''), $this->getState('type', '')));
+				$this->loaded = false;
 			}
 		}
 		else
@@ -208,7 +221,7 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 			// We must have the required fields otherwise menu cannot be created
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS_MENU_TYPE'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS_MENU_TYPE'));
 		}
 
 		return true;
@@ -220,6 +233,10 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 * @return  bool  Returns true if all is OK | Returns false if no path or menu ID can be found.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \RuntimeException
+	 * @throws  \InvalidArgumentException
+	 * @throws  \UnexpectedValueException
 	 */
 	public function getProcessRecord()
 	{
@@ -228,7 +245,7 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 			if (!$this->getState('id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new menus when user chooses to ignore new menus
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('path', '')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('path', '')));
 			}
 			else
 			{
@@ -239,7 +256,7 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 				switch ($this->getState('type'))
 				{
 					case 'component':
-						$component_id = $this->getComponentId($this->getState('component'));
+						$componentId = $this->getComponentId($this->getState('component'));
 
 						// Clean the link
 						$link = $this->getState('link', '');
@@ -251,29 +268,32 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 						}
 						break;
 					case 'url':
-						$component_id = 0;
+						$componentId = 0;
 
 						// Make sure the links start with http
 						$link = $this->getState('link', '');
 
-						if (substr($link, 0, 4) !== 'http')
+						if (0 !== strpos($link, 'http'))
 						{
 							$this->setState('link', 'http://' . $link);
 						}
 						break;
 					default:
-						$component_id = 0;
+						$componentId = 0;
 						break;
 				}
 
+				// Check and set the menu type
+				$this->setState('menutype', $this->getMenuType($this->getState('menutype')));
+
 				if (!$this->getState('id', false))
 				{
-					$paths = explode('/', $this->getState('path'));
-					$path = '';
-					$type = $this->getState('type');
-					$parent_id = false;
+					$paths    = explode('/', $this->getState('path'));
+					$path     = '';
+					$type     = $this->getState('type');
+					$parentId = false;
 					$pathkeys = array_keys($paths);
-					$lastkey = array_pop($pathkeys);
+					$lastkey  = array_pop($pathkeys);
 
 					foreach ($paths as $key => $menu)
 					{
@@ -287,42 +307,42 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 						}
 
 						// Check if the path exists
-						$path_id = $this->helper->getMenuId($path, $type);
+						$pathId = $this->helper->getMenuId($path, $type);
 
 						// Menu doesn't exist
-						if (!$path_id)
+						if (!$pathId)
 						{
 							// Clean the table
 							$this->menu->reset();
 
 							// Bind the data
-							$data = array();
-							$data['path'] = $path;
-							$data['type'] = $type;
-							$data['alias'] = $this->getState('alias');
-							$data['published'] = (!$this->getState('published', false)) ? 0 : $this->getState('published');
-							$data['access'] = (!$this->getState('access', false)) ? 1 : $this->getState('access');
-							$data['params'] = $this->getState('params', '{}');
-							$data['language'] = (!$this->getState('language', false)) ? '*' : $this->getState('language');
-							$data['link'] = $this->getState('link', '');
-							$data['client_id'] = $this->getState('client_id', 0);
-							$data['component_id'] = $component_id;
-							$data['menutype'] = $this->getState('menutype', 'mainmenu');
-							$data['browserNav'] = (!$this->getState('browserNav', false)) ? 0 : $this->getState('browserNav');
+							$data                      = array();
+							$data['path']              = $path;
+							$data['type']              = $type;
+							$data['alias']             = $this->getState('alias');
+							$data['published']         = (!$this->getState('published', false)) ? 0 : $this->getState('published');
+							$data['access']            = (!$this->getState('access', false)) ? 1 : $this->getState('access');
+							$data['params']            = $this->getState('params', '{}');
+							$data['language']          = (!$this->getState('language', false)) ? '*' : $this->getState('language');
+							$data['link']              = $this->getState('link', '');
+							$data['client_id']         = $this->getState('client_id', 0);
+							$data['component_id']      = $componentId;
+							$data['menutype']          = $this->getState('menutype', 'mainmenu');
+							$data['browserNav']        = (!$this->getState('browserNav', false)) ? 0 : $this->getState('browserNav');
 							$data['template_style_id'] = (!$this->getState('template_style_id', false)) ? 0 : $this->getState('template_style_id');
-							$data['note'] = $this->getState('note', null);
-							$data['menuordering'] = 0;
+							$data['note']              = $this->getState('note', null);
+							$data['menuordering']      = 0;
 
-							if ($parent_id)
+							if ($parentId)
 							{
-								$data['parent_id'] = $parent_id;
+								$data['parent_id'] = $parentId;
 							}
 							else
 							{
 								$data['parent_id'] = 1;
 							}
 
-							if ($lastkey == $key)
+							if ($lastkey === $key)
 							{
 								$data['title'] = (!$this->getState('title', false)) ? $menu : $this->getState('title');
 								$data['note'] = $this->getState('note');
@@ -336,71 +356,71 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 							// Set the menu location
 							$this->menu->setLocation($data['parent_id'], 'last-child');
 
+							$this->setParameters();
+							$data['params'] = $this->getState('params', null);
+
 							// Bind the data
 							$this->menu->bind($data);
 
-							// Check the data
-							if (!$this->menu->checkMenu($this->date))
+							try
 							{
-								$errors = $this->menu->getErrors();
+								$this->menu->checkMenu($this->date);
 
-								foreach ($errors as $error)
-								{
-									$this->log->add($error);
-									$this->log->addStats('incorrect', $error);
-								}
-							}
-							else
-							{
-								// Store the data
 								if ($this->menu->storeMenu($this->date, $this->userId))
 								{
-									$this->menu->rebuildPath($this->menu->id);
-									$this->menu->rebuild($this->menu->id, $this->menu->lft, $this->menu->level, $this->menu->path);
-									$parent_id = $this->menu->id;
-									$this->log->addStats('added', 'COM_CSVI_ADD_MENU');
+									$this->menu->rebuildPath($this->menu->get('id'));
+									$this->menu->rebuild($this->menu->get('id'), $this->menu->lft, $this->menu->level, $this->menu->get('path'));
+									$parentId = $this->menu->get('id');
+									$this->log->add('Joomla menu updated', false);
+									$this->log->addStats('Updated', \JText::_('COM_CSVI_ADD_MENU'));
 								}
-								else
-								{
-									$errors = $this->menu->getErrors();
+							}
+							catch (\Exception $e)
+							{
+								$this->log->add('Cannot add Joomla menu. Error: ' . $e->getMessage(), false);
+								$this->log->addStats('incorrect', $e->getMessage());
 
-									foreach ($errors as $error)
-									{
-										$this->log->add($error, false);
-										$this->log->addStats('incorrect', $error);
-									}
-								}
+								return false;
 							}
 						}
 						else
 						{
-							$parent_id = $path_id;
+							$parentId = $pathId;
 						}
 					}
 				}
 				else
 				{
+					// Check if we use a given menu id
+					if ($this->template->get('keepmenuid', false))
+					{
+						$menuId = $this->menu->checkId($this->getState('id'), $this->date, $this->getState('alias', $this->getState('path')));
+						$this->setState('id', $menuId);
+					}
+
 					// Menu already exist, just update it
+					$this->menu->load($this->getState('id'));
 
 					// Remove the alias, so it can be created again
 					$this->menu->alias = null;
 
 					// Prepare the data
-					$data = array();
-					$data['alias'] = $this->getState('alias', null);
-					$data['published'] = $this->getState('published', $this->menu->published);
-					$data['access'] = $this->getState('access', null);
-					$data['language'] = $this->getState('language', $this->menu->language);
-					$data['link'] = $this->getState('link', null);
-					$data['client_id'] = $this->getState('client_id', null);
-					$data['component_id'] = $component_id;
-					$data['path'] = $this->getState('path', null);
-					$data['title'] = $this->getState('title', null);
-					$data['menutype'] = $this->getState('menutype', null);
-					$data['home'] = $this->getState('home', $this->menu->get('home', 0));
-					$data['browserNav'] = $this->getState('browserNav', null);
+					$data                      = array();
+					$data['alias']             = $this->getState('alias', null);
+					$data['published']         = $this->getState('published', $this->menu->get('published'));
+					$data['access']            = $this->getState('access', null);
+					$data['language']          = $this->getState('language', $this->menu->get('language'));
+					$data['link']              = $this->getState('link', null);
+					$data['client_id']         = $this->getState('client_id', null);
+					$data['component_id']      = $componentId;
+					$data['path']              = $this->getState('path', null);
+					$data['title']             = $this->getState('title', null);
+					$data['menutype']          = $this->getState('menutype', null);
+					$data['home']              = $this->getState('home', $this->menu->get('home', 0));
+					$data['browserNav']        = $this->getState('browserNav', null);
 					$data['template_style_id'] = $this->getState('template_style_id', null);
-					$data['note'] = $this->getState('note', null);
+					$data['note']              = $this->getState('note', null);
+					$data['type']              = $this->getState('type', null);
 
 					// Process the access level
 					$this->getAccessLevel($this->getState('access'));
@@ -409,56 +429,41 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 					$this->setParameters();
 					$data['params'] = $this->getState('params', null);
 
-					$menuordering = $this->getState('menuordering', null);
+					$menuOrdering = $this->getState('menuordering', null, 'int');
 
 					// If first is chosen make the item the first child of the selected parent.
-					if ($menuordering == -1)
+					if ($menuOrdering === -1)
 					{
-						$this->menu->setLocation($menuordering, 'first-child');
+						$this->menu->setLocation($menuOrdering, 'first-child');
 					}
 					// If last is chosen make it the last child of the selected parent.
-					elseif ($menuordering == -2)
+					elseif ($menuOrdering === -2)
 					{
-						$this->menu->setLocation($menuordering, 'last-child');
+						$this->menu->setLocation($menuOrdering, 'last-child');
 					}
 					// Don't try to put an item after itself. All other ones put after the selected item.
 					// $data['id'] is empty means it's a save as copy
-					elseif ($menuordering && $this->menu->id != $menuordering)
+					elseif ($menuOrdering && $this->menu->get('id') !== $menuOrdering)
 					{
-						$this->menu->setLocation($menuordering, 'after');
+						$this->menu->setLocation($menuOrdering, 'after');
 					}
 
 					// Bind the data
 					$this->menu->bind($data);
 
-					// Check the data
-					if (!$this->menu->checkMenu($this->date))
+					try
 					{
-						$errors = $this->menu->getErrors();
-
-						foreach ($errors as $error)
-						{
-							$this->log->add($error);
-							$this->log->addStats('incorrect', $error);
-						}
+						$this->menu->checkMenu($this->date);
+						$this->menu->storeMenu($this->date, $this->userId);
+						$this->log->add('Joomla menu updated', false);
+						$this->log->addStats('Updated', \JText::_('COM_CSVI_UPDATE_MENU'));
 					}
-					else
+					catch (\Exception $e)
 					{
-						// Save the data
-						if ($this->menu->storeMenu($this->date, $this->userId))
-						{
-							$this->log->addStats('updated', 'COM_CSVI_UPDATE_MENU');
-						}
-						else
-						{
-							$this->log->addStats('incorrect', 'COM_CSVI_MENU_NOT_UPDATED');
-							$errors = $this->menu->getErrors();
+						$this->log->add('Cannot add Joomla menu. Error: ' . $e->getMessage(), false);
+						$this->log->addStats('incorrect', $e->getMessage());
 
-							foreach ($errors as $error)
-							{
-								$this->log->addStats('incorrect', $error);
-							}
-						}
+						return false;
 					}
 				}
 			}
@@ -480,8 +485,8 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 */
 	public function loadTables()
 	{
-		JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_menus/table');
-		$this->menu = JTable::getInstance('Menu', 'MenusTable');
+		\JTable::addIncludePath(JPATH_PLUGINS . '/csviaddon/menus/com_menus/table');
+		$this->menu = \JTable::getInstance('Menu', 'MenusTable');
 
 		// Inject the template into the table, needed for transliteration
 		$this->menu->setTemplate($this->template);
@@ -543,6 +548,22 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	}
 
 	/**
+	 * Rebuild the menu left and right values after the import is complete.
+	 *
+	 * @return  void
+	 *
+	 * @since   7.2.0
+	 */
+	public function onAfterStart()
+	{
+		// Rebuild is only needed when we are keeping the menu ID
+		if ($this->template->get('keepmenuid', false))
+		{
+			$this->menu->rebuild(1);
+		}
+	}
+
+	/**
 	 * Get the component ID.
 	 *
 	 * @param   string  $component  The name of the component to get the ID for.
@@ -550,6 +571,8 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 * @return  int  The ID of the component.
 	 *
 	 * @since   6.3.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function getComponentId($component)
 	{
@@ -566,11 +589,13 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	/**
 	 * Get template style ID.
 	 *
-	 * @param string  $templateStyle  The name of the template style.
+	 * @param   string  $templateStyle  The name of the template style.
 	 *
 	 * @return  int  The ID of the template style.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function getTemplateStyleId($templateStyle)
 	{
@@ -591,6 +616,8 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 * @return  int  The ID of the menu item.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function getMenuOrdering($menuordering)
 	{
@@ -645,18 +672,18 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 			$attributeFields = array_merge($attributeFields, $this->customfields);
 
 			// Load the current attributes
-			$parameters = json_decode($this->menu->params);
+			$parameters = json_decode($this->menu->get('params'));
 
 			if (!is_object($parameters))
 			{
-				$parameters = new stdClass;
+				$parameters = new \stdClass;
 			}
 
 			foreach ($attributeFields as $field)
 			{
 				if ($this->getState($field, false))
 				{
-					if ($this->$field == '*')
+					if ($this->$field === '*')
 					{
 						$parameters->$field = '';
 					}
@@ -680,6 +707,8 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 * @return  int  The ID of the access level.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function getAccessLevel($name)
 	{
@@ -707,15 +736,63 @@ class Com_MenusModelImportMenu extends RantaiImportEngine
 	 * @return  string  The menutype of the menu location.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function getMenuType($name)
 	{
+		$menuType = '';
 		$query = $this->db->getQuery(true)
-			->select($this->db->quoteName('menutype'))
+			->select($this->db->quoteName(array('menutype', 'id')))
 			->from($this->db->quoteName('#__menu_types'))
-			->where($this->db->quoteName('title') . ' = ' . $this->db->quote($name));
+			->where(
+				$this->db->quoteName('title') . ' = ' . $this->db->quote($name) . ' OR' .
+				$this->db->quoteName('menutype') . ' = ' . $this->db->quote($name)
+			);
 		$this->db->setQuery($query);
+		$menuTypeRow = $this->db->loadObject();
 
-		return $this->db->loadResult();
+		if ($menuTypeRow)
+		{
+			$menuType = $menuTypeRow->menutype;
+			$menuId   = $menuTypeRow->id;
+		}
+
+		$clientId = $this->getState('client_id', 0);
+
+		// No menu type found, let's create it
+		if (!$menuType)
+		{
+			$quotedName = $this->db->quote($name);
+
+			$query->clear()
+				->insert($this->db->quoteName('#__menu_types'))
+				->columns(
+					$this->db->quoteName(
+						array(
+							'menutype',
+							'title',
+							'description',
+							'client_id'
+						)
+					)
+				)
+				->values($quotedName . ', ' . $quotedName . ', ' . $quotedName . ', ' . $this->db->quote($clientId));
+			$this->db->setQuery($query)->execute();
+			$this->log->add('Adding menu type ' . $name . ' because it was not found');
+
+			$menuType = $name;
+		}
+		else
+		{
+			$query->clear()
+				->update($this->db->quoteName('#__menu_types'))
+				->set($this->db->quoteName('client_id') . ' = ' . (int) $clientId)
+				->where($this->db->quoteName('id') . ' = ' . (int) $menuId);
+			$this->db->setQuery($query)->execute();
+			$this->log->add('Updated menu type ' . $name . ' client_id field');
+		}
+
+		return $menuType;
 	}
 }

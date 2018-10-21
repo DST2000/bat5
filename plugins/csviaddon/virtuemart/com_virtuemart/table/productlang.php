@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -137,8 +137,12 @@ class VirtueMartTableProductLang extends CsviTableDefault
 	 */
 	public function store($updateNulls = false)
 	{
-		// Sanitize the product name
-		$this->set('product_name', filter_var($this->get('product_name'), FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_ENCODE_LOW));
+		// Check if there is an " character in product name and then use sanitise function so we dont encode any html tags
+		if (strpos($this->get('product_name'), '"') !== false)
+		{
+			// Sanitize the product name
+			$this->set('product_name', filter_var($this->get('product_name'), FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_ENCODE_LOW));
+		}
 
 		return parent::store();
 	}
@@ -225,6 +229,7 @@ class VirtueMartTableProductLang extends CsviTableDefault
 			}
 		}
 	}
+
 
 	/**
 	 * Reset the primary key.

@@ -3,17 +3,20 @@
  * @package     CSVI
  * @subpackage  Analyzer
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
 ?>
 
-<form action="index.php?option=com_csvi&view=analyzer" id="adminForm" name="adminForm" method="post" enctype="multipart/form-data" class="form-horizontal">
-	<div class="row-fluid">
+<div id="j-sidebar-container" class="span2">
+	<?php echo $this->sidebar; ?>
+</div>
+<div id="j-main-container" class="span10">
+	<form action="index.php?option=com_csvi&view=analyzer" id="adminForm" name="adminForm" method="post" enctype="multipart/form-data" class="form-horizontal">
 		<div class="span12">
 			<div class="control-group">
 				<label title="" class="control-label" for="file" id="file-lbl">
@@ -48,11 +51,10 @@ defined('_JEXEC') or die;
 				</div>
 			</div>
 		</div>
-	</div>
-	<input type="hidden" name="task" value="save" />
-	<input type="hidden" id="process" name="process" value="1" />
-	<input type="hidden" name="<?php echo JFactory::getSession()->getFormToken();?>" value="1" />
-</form>
+		<input type="hidden" name="task" value="analyzer.add" />
+		<input type="hidden" id="process" name="process" value="1" />
+		<?php echo JHtml::_('form.token'); ?>
+	</form>
 	<?php if ($this->process) : ?>
 	<div class="row-fluid">
 		<div class="span12">
@@ -171,4 +173,4 @@ defined('_JEXEC') or die;
 		</div>
 	</div>
 	<?php endif; ?>
-
+</div>

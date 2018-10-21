@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaMenus
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -47,17 +47,19 @@ class Com_MenusMaintenance
 	/**
 	 * Constructor.
 	 *
-	 * @param   JDatabase       $db          The database class
-	 * @param   CsviHelperLog   $log         The CSVI logger
-	 * @param   CsviHelperCsvi  $csvihelper  The CSVI helper
+	 * @param   JDatabaseDriver  $db          The database class
+	 * @param   CsviHelperLog    $log         The CSVI logger
+	 * @param   CsviHelperCsvi   $csvihelper  The CSVI helper
+	 * @param   bool             $isCli       Set if we are running CLI mode
 	 *
 	 * @since   6.5.0
 	 */
-	public function __construct($db, $log, $csvihelper)
+	public function __construct(JDatabaseDriver $db, CsviHelperLog $log, CsviHelperCsvi $csvihelper, $isCli = false)
 	{
-		$this->db = $db;
-		$this->log = $log;
+		$this->db         = $db;
+		$this->log        = $log;
 		$this->csvihelper = $csvihelper;
+		$this->isCli      = $isCli;
 	}
 
 	/**
@@ -66,48 +68,99 @@ class Com_MenusMaintenance
 	 * @return  void.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function updateAvailableFields()
 	{
-		$fieldnames = array();
+		$fieldNames = array();
+		$components = array();
 
 		// Get the list of XML files, these may contain fieldnames
 		$files = JFolder::files(JPATH_ROOT . '/components', '.xml', true, true);
 
+		// Clean out the list further to only have XML files from the tmpl folders
+		foreach ($files as $key => $file)
+		{
+			if (!preg_match("/\\tmpl(.*)\.xml/", $file))
+			{
+				unset($files[$key]);
+			}
+		}
+
 		// Loop through the files to see if there are any fields to store
 		foreach ($files as $file)
 		{
-			$form = new JForm('availablefield');
+			// Check which extension the XML file belongs to
+			$componentFolder = str_replace(JPATH_ROOT . '/components', '', $file);
+			$folderParts = explode('/', $componentFolder);
 
-			// Check if we have a real XML file
-			$handle = @fopen($file, "r");
-			if (fread($handle, 5) == '<?xml')
+			if (array_key_exists(1, $folderParts))
 			{
-				if ($form->loadFile($file, true, '/metadata'))
+				// Check if the component is installed
+				if (!array_key_exists($folderParts[1], $components))
 				{
-					foreach ($form->getFieldsets() as $fieldset)
-					{
-						$fields = $form->getFieldset($fieldset->name);
+					$components[$folderParts[1]] = JComponentHelper::isInstalled($folderParts[1]);
+				}
 
-						foreach ($fields as $field)
+				// Only continue if component is installed
+				if ($components[$folderParts[1]])
+				{
+					// Use a streaming approach to support large files
+					$form = new XMLReader;
+
+					if ($form->open($file))
+					{
+						while ($form->read())
 						{
-							$fieldnames[] = str_replace($field->group . '_', '', $field->id);
+							switch ($form->nodeType)
+							{
+								case (XMLREADER::ELEMENT):
+									$nodes[] = $form->name;
+
+									// Check if we are in the metadata sphere
+									if ($nodes[0] !== 'metadata')
+									{
+										break 2;
+									}
+
+									if ($form->name === 'field' && $form->hasAttributes)
+									{
+										// Get the attributes
+										while ($form->moveToNextAttribute())
+										{
+											switch ($form->name)
+											{
+												case 'name':
+													$fieldNames[] = $form->value;
+													break;
+												case 'type':
+													if ($form->value === 'hidden')
+													{
+														array_pop($fieldNames);
+													}
+													break;
+											}
+										}
+									}
+									break;
+							}
 						}
 					}
 				}
 			}
 		}
 
-		if (count($fieldnames) > 0)
+		if (count($fieldNames) > 0)
 		{
 			// Start the query
 			$query = $this->db->getQuery(true)
 				->insert($this->db->quoteName('#__csvi_availablefields'))
 				->columns($this->db->quoteName(array('csvi_name', 'component_name', 'component_table', 'component', 'action')));
 
-			$fieldnames = array_unique($fieldnames);
+			$fieldNames = array_unique($fieldNames);
 
-			foreach ($fieldnames as $csvi_name)
+			foreach ($fieldNames as $csvi_name)
 			{
 				$query->values(
 					$this->db->quote($csvi_name) . ',' .
@@ -127,5 +180,17 @@ class Com_MenusMaintenance
 
 			$this->db->setQuery($query)->execute();
 		}
+	}
+
+	/**
+	 * Threshold available fields for extension
+	 *
+	 * @return  int Hardcoded available fields
+	 *
+	 * @since   7.0
+	 */
+	public function availableFieldsThresholdLimit()
+	{
+		return 42;
 	}
 }

@@ -27,6 +27,16 @@
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>
+
+			<field name="unpublish_before_import"
+			       type="list"
+			       size="1"
+			       advancedUser="1"
+			       class="input-small advancedSelect"
+			       default="0">
+				<option value="1">JYES</option>
+				<option value="0">JNO</option>
+			</field>
 		</fieldset>
 	</fields>
 </form>

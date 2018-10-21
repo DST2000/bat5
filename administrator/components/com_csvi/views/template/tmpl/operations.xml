@@ -56,7 +56,7 @@
 				type="list"
 				size="1"
 				default="import"
-				onchange="Csvi.loadTasks();"
+				onchange="Csvi.loadTasks();Csvi.loadOverrides();"
 				class="input-small advancedSelect">
 					<option value="import">COM_CSVI_IMPORT</option>
 					<option value="export">COM_CSVI_EXPORT</option>
@@ -66,7 +66,7 @@
 				   type="CsviComponents"
 				   size="1"
 				   default=""
-				   onchange="Csvi.loadTasks();"
+				   onchange="Csvi.loadTasks();Csvi.loadOverrides();"
 				   class="input-large advancedSelect">
 				<option value="">COM_CSVI_SELECT_COMPONENT</option>
 			</field>
@@ -77,6 +77,15 @@
 				default=""
 				class="input-large advancedSelect">
 					<option value="">COM_CSVI_SELECT_OPERATION</option>
+			</field>
+
+			<field name="override"
+			       type="CsviOverride"
+			       size="1"
+			       default=""
+			       advancedUser="1"
+			       class="input-large advancedSelect">
+				<option value="">COM_CSVI_DONT_USE</option>
 			</field>
 		</fieldset>
 	</fields>

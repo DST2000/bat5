@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  JoomlaContent
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace content\com_content\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export Joomla articles.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  JoomlaContent
  * @since       6.0
  */
-class Com_ContentModelExportContent extends CsviModelExports
+class Content extends \CsviModelExports
 {
 	/**
 	 * The custom fields that from other extensions.
@@ -31,9 +31,27 @@ class Com_ContentModelExportContent extends CsviModelExports
 	private $pluginfieldsExport = array();
 
 	/**
+	 * List of available custom fields
+	 *
+	 * @var    array
+	 * @since  7.2.0
+	 */
+	private $customFields = array();
+
+	/**
+	 * The Joomla content helper
+	 *
+	 * @var    \Com_ContentHelperCom_Content
+	 * @since  6.0
+	 */
+	protected $helper;
+
+	/**
 	 * Export the data.
 	 *
 	 * @return  void.
+	 *
+	 * @throws  \Exception
 	 *
 	 * @since   6.0
 	 */
@@ -43,8 +61,8 @@ class Com_ContentModelExportContent extends CsviModelExports
 		{
 			// Get some basic data
 			require_once JPATH_SITE . '/components/com_content/helpers/route.php';
-			$sef = new CsviHelperSef($this->settings, $this->template, $this->log);
 			$this->loadPluginFields();
+			$this->loadCustomFields();
 
 			// Build something fancy to only get the fieldnames the user wants
 			$userfields = array();
@@ -75,6 +93,8 @@ class Com_ContentModelExportContent extends CsviModelExports
 			{
 				$sortbyfields = array();
 			}
+
+			$userfields[] = $this->db->quoteName('c.id');
 
 			foreach ($exportfields as $field)
 			{
@@ -215,12 +235,26 @@ class Com_ContentModelExportContent extends CsviModelExports
 						{
 							$sortby[] = $this->db->quoteName('c.urls');
 						}
-					break;
+						break;
+					case 'tags':
+						$userfields[] = $this->db->quoteName('c.id');
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName('c.id');
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName('c.id');
+						}
+						break;
 					case 'custom':
 						break;
 					default:
 						// Do not include custom fields into the query
-						if (!in_array($field->field_name, $this->pluginfieldsExport))
+						if (!in_array($field->field_name, $this->pluginfieldsExport)
+							&& !in_array($field->field_name, $this->customFields))
 						{
 							$userfields[] = $this->db->quoteName($field->field_name);
 
@@ -266,7 +300,180 @@ class Com_ContentModelExportContent extends CsviModelExports
 
 			if ($categories && $categories[0] != '*')
 			{
+				if ($this->template->get('incl_subcategory', false))
+				{
+					$subCategories = array();
+
+					foreach ($categories as $categoryId)
+					{
+						$subCategories = $this->helper->getSubCategoryIds($categoryId);
+					}
+
+					if ($subCategories)
+					{
+						$categories = array_merge($subCategories, $categories);
+					}
+				}
+
 				$query->where($this->db->quoteName('catid') . " IN ('" . implode("','", $categories) . "')");
+			}
+
+			$daterange      = $this->template->get('contentdaterange', '');
+			$checkDatefield = $this->template->get('filterdatefield', 'created');
+
+			if ($daterange)
+			{
+				$jdate       = \JFactory::getDate('now', 'UTC');
+				$currentDate = $this->db->quote($jdate->format('Y-m-d'));
+
+				switch ($daterange)
+				{
+					case 'lastrun':
+						if (substr($this->template->getLastrun(), 0, 4) != '0000')
+						{
+							$query->where($this->db->quoteName('c.' . $checkDatefield) . ' > ' . $this->db->quote($this->template->getLastrun()));
+						}
+						break;
+					case 'yesterday':
+						$query->where(
+							'DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') = DATE_SUB(' . $currentDate . ', INTERVAL 1 DAY)');
+						break;
+					case 'thisweek':
+						// Get the current day of the week
+						$dayofweek = $jdate->__get('dayofweek');
+						$offset    = $dayofweek - 1;
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') <= ' . $currentDate);
+						break;
+					case 'lastweek':
+						// Get the current day of the week
+						$dayofweek = $jdate->__get('dayofweek');
+						$offset    = $dayofweek + 6;
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofweek . ' DAY)');
+						break;
+					case 'thismonth':
+						// Get the current day of the week
+						$dayofmonth = $jdate->__get('day');
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') <= ' . $currentDate);
+						break;
+					case 'lastmonth':
+						// Get the current day of the week
+						$dayofmonth = $jdate->__get('day');
+						$month      = date('n');
+						$year       = date('y');
+
+						if ($month > 1)
+						{
+							$month--;
+						}
+						else
+						{
+							$month = 12;
+							$year--;
+						}
+
+						$daysinmonth = date('t', mktime(0, 0, 0, $month, 25, $year));
+						$offset      = ($daysinmonth + $dayofmonth) - 1;
+
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= DATE_SUB(' . $currentDate . ', INTERVAL ' . $offset . ' DAY)');
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') <= DATE_SUB(' . $currentDate . ', INTERVAL ' . $dayofmonth . ' DAY)');
+						break;
+					case 'thisquarter':
+						// Find out which quarter we are in
+						$month   = $jdate->__get('month');
+						$year    = date('Y');
+						$quarter = ceil($month / 3);
+
+						switch ($quarter)
+						{
+							case '1':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-01-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-04-01'));
+								break;
+							case '2':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-04-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-07-01'));
+								break;
+							case '3':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-07-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-10-01'));
+								break;
+							case '4':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-10-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year++ . '-01-01'));
+								break;
+						}
+						break;
+					case 'lastquarter':
+						// Find out which quarter we are in
+						$month   = $jdate->__get('month');
+						$year    = date('Y');
+						$quarter = ceil($month / 3);
+
+						if ($quarter == 1)
+						{
+							$quarter = 4;
+							$year--;
+						}
+						else
+						{
+							$quarter--;
+						}
+
+						switch ($quarter)
+						{
+							case '1':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-01-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-04-01'));
+								break;
+							case '2':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-04-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-07-01'));
+								break;
+							case '3':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-07-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-10-01'));
+								break;
+							case '4':
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-10-01'));
+								$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year++ . '-01-01'));
+								break;
+						}
+						break;
+					case 'thisyear':
+						$year = date('Y');
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-01-01'));
+						$year++;
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-01-01'));
+						break;
+					case 'lastyear':
+						$year = date('Y');
+						$year--;
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') >= ' . $this->db->quote($year . '-01-01'));
+						$year++;
+						$query->where('DATE(' . $this->db->quoteName('c.' . $checkDatefield) . ') < ' . $this->db->quote($year . '-01-01'));
+						break;
+				}
+			}
+			else
+			{
+				$fromDate = $this->template->get('fromdate', false);
+
+				if ($fromDate)
+				{
+					$fdate = \JFactory::getDate($fromDate);
+					$query->where($this->db->quoteName('c.' . $checkDatefield) . ' >= ' . $this->db->quote($fdate->toSql()));
+				}
+
+				$toDate = $this->template->get('todate', false);
+
+				if ($toDate)
+				{
+					$tdate = \JFactory::getDate($toDate);
+					$query->where($this->db->quoteName('c.' . $checkDatefield) . ' <= ' . $this->db->quote($tdate->toSql()));
+				}
 			}
 
 			// Group the fields
@@ -289,15 +496,16 @@ class Com_ContentModelExportContent extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -333,7 +541,7 @@ class Com_ContentModelExportContent extends CsviModelExports
 								break;
 							case 'article_url':
 								// Let's create a SEF URL
-								$fieldvalue = $sef->getSEF(ContentHelperRoute::getArticleRoute($record->id, $record->catid));
+								$fieldvalue = $this->sef->getSefUrl(\ContentHelperRoute::getArticleRoute($record->id, $record->catid));
 								break;
 							case 'show_title':
 							case 'link_titles':
@@ -408,13 +616,40 @@ class Com_ContentModelExportContent extends CsviModelExports
 									$fieldvalue = $urls->$fieldname;
 								}
 								break;
+							case 'tags':
+								$query->clear()
+									->select($this->db->quoteName('tag_id'))
+									->from($this->db->quoteName('#__contentitem_tag_map'))
+									->where($this->db->quoteName('content_item_id') . ' = ' . (int) $record->id)
+									->where($this->db->quoteName('type_alias') . ' = ' . $this->db->quote('com_content.article'));
+								$this->db->setQuery($query);
+								$tagIds = $this->db->loadObjectList();
+
+								$tags = array();
+
+								if ($tagIds)
+								{
+									foreach ($tagIds as $tagId)
+									{
+										$query->clear()
+											->select($this->db->quoteName('path'))
+											->from($this->db->quoteName('#__tags'))
+											->where($this->db->quoteName('id') . ' = ' . (int) $tagId->tag_id);
+										$this->db->setQuery($query);
+										$tags[] = $this->db->loadResult();
+									}
+								}
+
+								$fieldvalue = implode('|', $tags);
+
+								break;
 							default:
 								if (in_array($fieldname, $this->pluginfieldsExport))
 								{
 									$fieldvalue = '';
 
 									// Get value from content plugin
-									$dispatcher = new RantaiPluginDispatcher;
+									$dispatcher = new \RantaiPluginDispatcher;
 									$dispatcher->importPlugins('csviext', $this->db);
 									$result = $dispatcher->trigger(
 										'onExportContent',
@@ -432,6 +667,58 @@ class Com_ContentModelExportContent extends CsviModelExports
 										$fieldvalue = $result[0];
 									}
 								}
+
+								if (in_array($fieldname, $this->customFields))
+								{
+									$query->clear()
+										->select($this->db->quoteName('id'))
+										->from($this->db->quoteName('#__fields'))
+										->where($this->db->quoteName('name') . '  = ' . $this->db->quote($fieldname));
+									$this->db->setQuery($query);
+									$fieldId = $this->db->loadResult();
+									$itemId = $record->id;
+
+									$query->clear()
+										->select($this->db->quoteName('value'))
+										->from($this->db->quoteName('#__fields_values'))
+										->where($this->db->quoteName('field_id') . ' = ' . (int) $fieldId)
+										->where($this->db->quoteName('item_id') . ' = ' . (int) $itemId);
+									$this->db->setQuery($query);
+									$fieldResult = $this->db->loadObjectList();
+
+									// Check if the custom field is a multiple image list
+									if ($this->fields->checkCustomFieldType($fieldname, 'imagelist'))
+									{
+										$fieldArray = array();
+
+										foreach ($fieldResult as $result)
+										{
+											$fieldArray[] = $result->value;
+										}
+
+										$fieldvalue = implode('|', $fieldArray);
+									}
+									else
+									{
+										if (!empty($fieldResult))
+										{
+											$fieldvalues = array();
+
+											foreach ($fieldResult as $item)
+											{
+												$fieldvalues[] = $item->value;
+											}
+
+											$fieldvalue = implode('|', $fieldvalues);
+										}
+									}
+
+									if ($fieldvalue && $this->fields->checkCustomFieldType($fieldname, 'calendar'))
+									{
+										$fieldvalue = $this->fields->getDateFormat($fieldname, $fieldvalue, $field->column_header);
+									}
+								}
+
 								break;
 						}
 
@@ -448,7 +735,7 @@ class Com_ContentModelExportContent extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();
@@ -465,7 +752,7 @@ class Com_ContentModelExportContent extends CsviModelExports
 	 */
 	private function loadPluginFields()
 	{
-		$dispatcher = new RantaiPluginDispatcher;
+		$dispatcher = new \RantaiPluginDispatcher;
 		$dispatcher->importPlugins('csviext', $this->db);
 		$result = $dispatcher->trigger(
 			'getAttributes',
@@ -480,5 +767,32 @@ class Com_ContentModelExportContent extends CsviModelExports
 		{
 			$this->pluginfieldsExport = array_merge($this->pluginfieldsExport, $result[0]);
 		}
+	}
+
+	/**
+	 * Get a list of custom fields that can be used as available field.
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.2.0
+	 *
+	 * @throws  \Exception
+	 */
+	private function loadCustomFields()
+	{
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('name'))
+			->from($this->db->quoteName('#__fields'))
+			->where($this->db->quoteName('state') . ' = 1')
+			->where($this->db->quoteName('context') . ' = ' . $this->db->quote('com_content.article'));
+		$this->db->setQuery($query);
+		$results = $this->db->loadObjectList();
+
+		foreach ($results as $result)
+		{
+			$this->customFields[] = $result->name;
+		}
+
+		$this->log->add('Load the Joomla custom fields for articles');
 	}
 }

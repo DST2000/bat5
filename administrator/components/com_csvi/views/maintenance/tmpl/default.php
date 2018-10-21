@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Maintenance
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -19,8 +19,11 @@ if ($this->extraHelp)
 	$class = 'span11';
 }
 ?>
-<form method="post" action="<?php echo JRoute::_('index.php?option=com_csvi&view=maintenance'); ?>" id="adminForm" name="adminForm" enctype="multipart/form-data" class="form-horizontal">
-	<div class="row-fluid">
+<div id="j-sidebar-container" class="span2">
+	<?php echo $this->sidebar; ?>
+</div>
+<div id="j-main-container" class="span10">
+	<form method="post" action="<?php echo JRoute::_('index.php?option=com_csvi&view=maintenance'); ?>" id="adminForm" name="adminForm" enctype="multipart/form-data" class="form-horizontal">
 		<div class="<?php echo $class; ?>">
 			<legend><?php echo JText::_('COM_CSVI_MAKE_CHOICE_MAINTENANCE'); ?></legend>
 			<div id="maintenance">
@@ -32,7 +35,7 @@ if ($this->extraHelp)
 					'class="advancedSelect" onchange="document.adminForm.task.value=\'\'; CsviMaint.loadOperation();"',
 					'value',
 					'text',
-					null,
+					$this->input->getCmd('component'),
 					false,
 					true
 				);
@@ -42,7 +45,10 @@ if ($this->extraHelp)
 					'select.genericlist',
 					$this->options,
 					'operation',
-					'class="advancedSelect" onchange="document.adminForm.task.value=\'\'; CsviMaint.loadOptions();"'
+					'class="advancedSelect" onchange="document.adminForm.task.value=\'\'; CsviMaint.loadOptions();"',
+					'value',
+					'text',
+					$this->input->getCmd('operation')
 				);
 				?>
 			</div>
@@ -56,12 +62,12 @@ if ($this->extraHelp)
 			echo $layout->render((object) array(new stdClass));
 		}
 		?>
-	</div>
-	<input type="hidden" name="task" value="read" />
-	<input type="hidden" name="<?php echo JFactory::getSession()->getFormToken();?>" value="1" />
-	<!-- Used to generate the correct cron line -->
-	<input type="hidden" name="from" value="maintenance" />
-</form>
+		<input type="hidden" name="task" value="read" />
+		<input type="hidden" name="<?php echo JFactory::getSession()->getFormToken();?>" value="1" />
+		<!-- Used to generate the correct cron line -->
+		<input type="hidden" name="from" value="maintenance" />
+	</form>
+</div>
 
 <!-- Load the modal skeleton -->
 <?php
@@ -77,57 +83,55 @@ echo $layout->render(
 ?>
 
 <script type="text/javascript">
-	Joomla.submitbutton = function(task)
-	{
-		if (task == 'hidetips')
-		{
-			if (document.adminForm.task.value == 'hidetips')
-			{
-				jQuery('.help-block').hide();
-				document.adminForm.task.value = '';
-			}
-			else
-			{
-				jQuery('.help-block').show();
-				document.adminForm.task.value = 'hidetips';
-			}
+  jQuery(function () {
+    var operation = '<?php echo $this->input->getCmd('operation'); ?>'
+    if (operation.length > 0) {
+      CsviMaint.loadOptions()
+    }
+  })
 
-			return false;
-		}
-		else
-		{
-			if (jQuery('#csviModal').length > 0)
-			{
-				jQuery('#csviModal').modal('show');
+  Joomla.submitbutton = function (task) {
+    if (task == 'hidetips') {
+      if (document.adminForm.task.value == 'hidetips') {
+        jQuery('.help-block').hide()
+        document.adminForm.task.value = ''
+      }
+      else {
+        jQuery('.help-block').show()
+        document.adminForm.task.value = 'hidetips'
+      }
 
-				jQuery('.ok-btn').on('click', function(e) {
-					e.preventDefault();
-					jQuery('#csviModal').modal('hide');
-					execute(task);
-				});
+      return false
+    }
+    else {
+      if (jQuery('#csviModal').length > 0) {
+        jQuery('#csviModal').modal('show')
 
-				jQuery('.cancel-btn').on('click', function(e) {
-					e.preventDefault();
-					jQuery('#csviModal').modal('hide');
-				});
-			}
-			else
-			{
-				execute(task);
-			}
-		}
-	};
+        jQuery('.ok-btn').on('click', function (e) {
+          e.preventDefault()
+          jQuery('#csviModal').modal('hide')
+          execute(task)
+        })
 
-	function execute(task) {
-		if (jQuery('#operation').val() === null || jQuery('#operation').val() == '')
-		{
-			jQuery('#warning').modal('show');
+        jQuery('.cancel-btn').on('click', function (e) {
+          e.preventDefault()
+          jQuery('#csviModal').modal('hide')
+        })
+      }
+      else {
+        execute(task)
+      }
+    }
+  }
 
-			return false;
-		}
-		else
-		{
-			Joomla.submitform(task);
-		}
-	};
+  function execute (task) {
+    if (jQuery('#operation').val() === null || jQuery('#operation').val() == '') {
+      jQuery('#warning').modal('show')
+
+      return false
+    }
+    else {
+      Joomla.submitform(task)
+    }
+  }
 </script>

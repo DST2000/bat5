@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaCategories
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -47,7 +47,7 @@ class Com_CategoriesHelperCom_Categories
 	/**
 	 * Database connector
 	 *
-	 * @var    JDatabase
+	 * @var    JDatabaseDriver
 	 * @since  6.0
 	 */
 	protected $db = null;
@@ -66,9 +66,9 @@ class Com_CategoriesHelperCom_Categories
 	public function __construct(CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperFields $fields, JDatabase $db)
 	{
 		$this->template = $template;
-		$this->log = $log;
-		$this->fields = $fields;
-		$this->db = $db;
+		$this->log      = $log;
+		$this->fields   = $fields;
+		$this->db       = $db;
 	}
 
 	/**
@@ -84,13 +84,14 @@ class Com_CategoriesHelperCom_Categories
 	public function getCategoryId($category_path, $extension)
 	{
 		$query = $this->db->getQuery(true);
-		$query->select('id')
+		$query->select($this->db->quoteName('id'))
 			->from($this->db->quoteName('#__categories'))
 			->where($this->db->quoteName('extension') . ' = ' . $this->db->quote($extension))
 			->where($this->db->quoteName('path') . ' = ' . $this->db->quote($category_path));
 		$this->db->setQuery($query);
-		$catid = $this->db->loadResult();
 
-		return $catid;
+		$this->log->add('Find the category ID');
+
+		return $this->db->loadResult();
 	}
 }

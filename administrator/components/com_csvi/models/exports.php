@@ -3,13 +3,16 @@
  * @package     CSVI
  * @subpackage  Export
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
+
+use Joomla\Utilities\ArrayHelper;
+use phpseclib\Net\SFTP;
 
 /**
  * Export model.
@@ -26,7 +29,7 @@ class CsviModelExports extends CsviModelDefault
 	 * @var    object
 	 * @since  6.0
 	 */
-	protected $exportclass = null;
+	protected $exportclass;
 
 	/**
 	 * The file handler for writing the export file
@@ -34,7 +37,7 @@ class CsviModelExports extends CsviModelDefault
 	 * @var    resource
 	 * @since  6.0
 	 */
-	private $handle = null;
+	private $handle;
 
 	/**
 	 * Set the export format being used
@@ -42,7 +45,7 @@ class CsviModelExports extends CsviModelDefault
 	 * @var    string
 	 * @since  6.0
 	 */
-	protected $exportformat = null;
+	protected $exportFormat;
 
 	/**
 	 * Set the array of export formats that use nodes
@@ -58,7 +61,7 @@ class CsviModelExports extends CsviModelDefault
 	 * @var    CsviHelperSef
 	 * @since  6.0
 	 */
-	protected $sef = null;
+	protected $sef;
 
 	/**
 	 * Contents to be exported
@@ -74,7 +77,15 @@ class CsviModelExports extends CsviModelDefault
 	 * @var    CsviHelperExportFields
 	 * @since  6.0
 	 */
-	protected $fields = null;
+	protected $fields;
+
+	/**
+	 * Export  data
+	 *
+	 * @var    array
+	 * @since  6.7.0
+	 */
+	protected $exportData;
 
 	/**
 	 * Constructor.
@@ -87,8 +98,6 @@ class CsviModelExports extends CsviModelDefault
 	{
 		parent::__construct($config = array());
 
-		$this->csvidb = new CsviHelperDb;
-
 		// Load Joomla helpers
 		jimport('joomla.filesystem.file');
 		jimport('joomla.filesystem.folder');
@@ -99,20 +108,26 @@ class CsviModelExports extends CsviModelDefault
 	 *
 	 * @param   int  $template_id  The ID of the template to load
 	 *
-	 * @return  array  The field option objects.
+	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  Exception
+	 * @throws  CsviException
 	 */
 	public function initialise($template_id)
 	{
 		// Check the temporary folder
 		$this->checkTmpFolder();
 
-		// Load the language files
+		// Load the CSVI language files
 		$this->loadLanguageFiles();
 
 		// Load the template
-		$this->loadTemplate($template_id, $this->helper);
+		$this->loadTemplate($template_id);
+
+		// Set the export format
+		$this->setExportFormat();
 
 		// Generate the filename to create
 		$this->exportFilename();
@@ -122,8 +137,6 @@ class CsviModelExports extends CsviModelDefault
 
 		// Prepare for export
 		$this->initialiseExport($runId);
-
-		return true;
 	}
 
 	/**
@@ -134,6 +147,8 @@ class CsviModelExports extends CsviModelDefault
 	 * @return  bool  Always returns true.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  CsviException
 	 */
 	public function initialiseExport($csvi_process_id)
 	{
@@ -144,6 +159,8 @@ class CsviModelExports extends CsviModelDefault
 
 		// Load the SEF helper
 		$this->sef = new CsviHelperSef($this->settings, $this->template, $this->log);
+
+		return true;
 	}
 
 	/**
@@ -161,6 +178,18 @@ class CsviModelExports extends CsviModelDefault
 	}
 
 	/**
+	 * Set the export format.
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.0.1
+	 */
+	public function setExportFormat()
+	{
+		$this->exportFormat = $this->template->get('export_file', 'csv');
+	}
+
+	/**
 	 * Load the export file handler.
 	 *
 	 * @return  void.
@@ -170,10 +199,10 @@ class CsviModelExports extends CsviModelDefault
 	protected function loadExportFile()
 	{
 		// Set the export format
-		$this->exportformat = $this->template->get('export_file', 'csv');
+		$this->setExportFormat();
 
 		// Get the export site
-		switch ($this->exportformat)
+		switch ($this->exportFormat)
 		{
 			case 'xml':
 			case 'html':
@@ -185,7 +214,7 @@ class CsviModelExports extends CsviModelDefault
 		}
 
 		// Construct the class name
-		$classname = 'CsviHelperFileExport' . ucfirst($this->exportformat) . ucfirst($exportsite);
+		$classname = 'CsviHelperFileExport' . ucfirst($this->exportFormat) . ucfirst($exportsite);
 
 		// Instantiate the new export class
 		$this->exportclass = new $classname($this->template);
@@ -199,6 +228,8 @@ class CsviModelExports extends CsviModelDefault
 	 * @return  int  The template ID.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function getTemplateId($csvi_process_id)
 	{
@@ -261,6 +292,8 @@ class CsviModelExports extends CsviModelDefault
 	 * @return  bool  True if all is OK | False if something is not OK.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function onBeforeExport($addon)
 	{
@@ -273,7 +306,7 @@ class CsviModelExports extends CsviModelDefault
 		if (!empty($this->fields))
 		{
 			// Allow big SQL selects
-			$this->db->setQuery("SET SQL_BIG_SELECTS=1")->execute();
+			$this->db->setQuery('SET SQL_BIG_SELECTS=1')->execute();
 
 			// Get the filename for the export file
 			$this->exportFilename();
@@ -283,6 +316,10 @@ class CsviModelExports extends CsviModelDefault
 			$this->log->addStats('incorrect', 'COM_CSVI_NO_EXPORT_FIELDS');
 			throw new RuntimeException(JText::_('COM_CSVI_NO_EXPORT_FIELDS'), 500);
 		}
+
+		// Load component language files
+		$language = new CsviHelperLanguage;
+		$language->loadAddonLanguage($addon);
 
 		// All is good
 		return true;
@@ -294,6 +331,11 @@ class CsviModelExports extends CsviModelDefault
 	 * @return  bool  True if export started | False if export cannot be started.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \Exception
+	 * @throws  \CsviException
+	 * @throws  \RuntimeException
+	 * @throws  \UnexpectedValueException
 	 */
 	final public function runExport()
 	{
@@ -304,7 +346,7 @@ class CsviModelExports extends CsviModelDefault
 		if ($this->startExport())
 		{
 			// Set the last run time for the template
-			$templateTable = FOFTable::getInstance('Templates');
+			$templateTable = $this->getTable('Template', 'Table');
 			$templateTable->load($this->template->getId());
 			$templateTable->set('lastrun', JFactory::getDate()->toSql());
 			$templateTable->store();
@@ -426,11 +468,11 @@ class CsviModelExports extends CsviModelDefault
 		}
 
 		// Add header for XML
-		if ($this->exportformat == 'xml')
+		if ($this->exportFormat == 'xml')
 		{
 		}
 		// Add header for HTML
-		elseif ($this->exportformat == 'html')
+		elseif ($this->exportFormat == 'html')
 		{
 			$this->contents[] = $this->exportclass->bodyText();
 		}
@@ -486,60 +528,63 @@ class CsviModelExports extends CsviModelDefault
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \Exception
 	 */
 	protected function endExport()
 	{
 		// Close the temporary file
 		fclose($this->handle);
 
-		// Get output destinations
-		$destinations = $this->template->get('exportto', 'todownload');
-		$keep = false;
-
-		if (!is_array($destinations))
+		// Only export the data if we are on the admin side of things, the front side controls this in the controller
+		if (JFactory::getApplication()->isAdmin())
 		{
-			$destinations = array($destinations);
-		}
+			// Get output destinations
+			$destinations = $this->template->get('exportto', 'todownload');
 
-		// Check output destinations
-		foreach ($destinations as $destination)
-		{
-			switch ($destination)
+			// Set not to keep the temporary file
+			$keep = false;
+
+			// Delete any empty file if needed
+			$this->deleteEmptyFile($this->processfile);
+
+			if (JFile::exists($this->processfile))
 			{
-				case 'todownload':
-					break;
-				case 'tofile':
-					// Copy the file to the correct location
-					$destFile = $this->template->get('localpath', JPATH_SITE) . '/' . basename($this->processfile);
+				if (!is_array($destinations))
+				{
+					$destinations = array($destinations);
+				}
 
-					if ($this->processfile == $destFile)
+				// Check output destinations
+				foreach ($destinations as $destination)
+				{
+					switch ($destination)
 					{
-						$keep = true;
+						case 'todownload':
+							$this->log->add(JText::sprintf('COM_CSVI_EXPORTFILE_HAS_BEEN_DOWNLOADED', basename($this->processfile)));
+							$this->log->addStats('information', JText::sprintf('COM_CSVI_EXPORTFILE_HAS_BEEN_DOWNLOADED', basename($this->processfile)));
+							break;
+						case 'tofile':
+							$keep = $this->writeFile($this->processfile);
+							break;
+						case 'toftp':
+							$this->ftpFile($this->processfile);
+							break;
+						case 'toemail':
+							$this->emailFile($this->processfile);
+							break;
+						case 'todatabase':
+							$this->exportToDatabase();
+							break;
 					}
-
-					if ($this->processfile == $destFile || JFile::copy($this->processfile, $destFile))
-					{
-						$this->log->setFilename($destFile);
-						$this->log->addStats('information', JText::sprintf('COM_CSVI_EXPORTFILE_CREATED', $destFile));
-					}
-					else
-					{
-						$this->log->addStats('error', JText::sprintf('COM_CSVI_EXPORTFILE_NOT_CREATED', $destFile));
-					}
-					break;
-				case 'toftp':
-					$this->ftpFile($this->processfile);
-					break;
-				case 'toemail':
-					$this->emailFile($this->processfile);
-					break;
+				}
 			}
-		}
 
-		// Remove the temporary file if needed
-		if (!in_array('todownload', $destinations) && !$keep)
-		{
-			JFile::delete($this->processfile);
+			// Remove the temporary file if needed
+			if (!$keep && !in_array('todownload', $destinations, true))
+			{
+				JFile::delete($this->processfile);
+			}
 		}
 
 		// Store the filename for the log
@@ -592,6 +637,8 @@ class CsviModelExports extends CsviModelDefault
 				$writedata = "\r\n" . $writedata;
 			}
 
+			$this->exportData[] = $writedata;
+
 			// Write the data to file
 			if (fwrite($this->handle, $writedata . "\r\n") === false)
 			{
@@ -607,7 +654,7 @@ class CsviModelExports extends CsviModelDefault
 	/**
 	 * Constructs a limit for a query.
 	 *
-	 * @return  string  The limit to apply to the query.
+	 * @return  array  The limits to apply to the query.
 	 *
 	 * @since   3.0
 	 */
@@ -646,6 +693,9 @@ class CsviModelExports extends CsviModelDefault
 	 */
 	protected function addExportFields($addXml = true)
 	{
+		// Initialise record processing to true
+		$this->fields->setProcessRecord(true);
+
 		// Fire the rules
 		$this->fields->runRules();
 
@@ -655,7 +705,7 @@ class CsviModelExports extends CsviModelDefault
 		$linecount = 0;
 
 		// Add the start node
-		if ($addXml && in_array($this->exportformat, $this->nodeformats))
+		if ($addXml && in_array($this->exportFormat, $this->nodeformats))
 		{
 			$nodestart = $this->exportclass->NodeStart();
 		}
@@ -668,7 +718,7 @@ class CsviModelExports extends CsviModelDefault
 
 			if ($field->enabled)
 			{
-				if ($field->value)
+				if (strlen($field->value) > 0)
 				{
 					$value = $field->value;
 				}
@@ -700,7 +750,7 @@ class CsviModelExports extends CsviModelDefault
 			if ($addXml)
 			{
 				// Add the end node
-				if (in_array($this->exportformat, $this->nodeformats))
+				if (in_array($this->exportFormat, $this->nodeformats))
 				{
 					$this->contents[] = $this->exportclass->NodeEnd();
 				}
@@ -735,22 +785,24 @@ class CsviModelExports extends CsviModelDefault
 	private function retrieveConfigFields()
 	{
 		$query = $this->db->getQuery(true)
-		->select(
+			->select(
 				array(
-						$this->db->quoteName('f.csvi_templatefield_id'),
-						$this->db->quoteName('f.field_name'),
-						$this->db->quoteName('f.column_header'),
-						$this->db->quoteName('f.xml_node'),
-						$this->db->quoteName('f.default_value'),
-						$this->db->quoteName('f.enabled'),
-						$this->db->quoteName('f.sort'),
-						$this->db->quoteName('f.ordering'),
-						$this->db->quoteName('f.cdata')
+					$this->db->quoteName('f.csvi_templatefield_id'),
+					$this->db->quoteName('f.field_name'),
+					$this->db->quoteName('f.column_header'),
+					$this->db->quoteName('f.table_name'),
+					$this->db->quoteName('f.xml_node'),
+					$this->db->quoteName('f.default_value'),
+					$this->db->quoteName('f.field_date_format'),
+					$this->db->quoteName('f.enabled'),
+					$this->db->quoteName('f.sort'),
+					$this->db->quoteName('f.ordering'),
+					$this->db->quoteName('f.cdata')
 				)
-		)
-		->from($this->db->quoteName('#__csvi_templatefields', 'f'))
-		->where($this->db->quoteName('f.csvi_template_id') . ' = ' . (int) $this->template->getId())
-		->order($this->db->quoteName('f.ordering'));
+			)
+			->from($this->db->quoteName('#__csvi_templatefields', 'f'))
+			->where($this->db->quoteName('f.csvi_template_id') . ' = ' . (int) $this->template->getId())
+			->order($this->db->quoteName('f.ordering'));
 		$this->db->setQuery($query);
 
 		// Add the fields
@@ -787,69 +839,83 @@ class CsviModelExports extends CsviModelDefault
 	 * @return  string  The name of the export file.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  UnexpectedValueException
 	 */
 	public function exportFilename()
 	{
+		$fileLimit = '';
+
 		// Check if the export is limited, if so add it to the filename
 		if (($this->template->get('recordstart') > 0) && ($this->template->get('recordend') > 0))
 		{
 			// We have valid limiters, add the limit to the filename
-			$filelimit = "_" . $this->template->get('recordend') . '_' . (($this->template->get('recordend') - 1) + $this->template->get('recordstart'));
-		}
-		else
-		{
-			$filelimit = '';
+			$fileLimit = '_' . $this->template->get('recordstart') . '_' . ($this->template->get('recordend'));
 		}
 
 		// Set the filename to use for export
-		$export_filename = trim($this->template->get('export_filename'));
+		$exportFilename = trim($this->template->get('export_filename'));
+		$localFile = 'CSVI_' . $this->template->getName() . '_' . date("j-m-Y_H.i") . $fileLimit . '.' . $this->exportFormat;
 
-		// Do some customizing
-		// Replace year
-		$export_filename = str_replace('[Y]', date('Y', time()), $export_filename);
-		$export_filename = str_replace('[y]', date('y', time()), $export_filename);
+		// Format the filename
+		$exportFilename = $this->formatExportFilename($exportFilename);
 
-		// Replace month
-		$export_filename = str_replace('[M]', date('M', time()), $export_filename);
-		$export_filename = str_replace('[m]', date('m', time()), $export_filename);
-		$export_filename = str_replace('[F]', date('F', time()), $export_filename);
-		$export_filename = str_replace('[n]', date('n', time()), $export_filename);
-
-		// Replace day
-		$export_filename = str_replace('[d]', date('d', time()), $export_filename);
-		$export_filename = str_replace('[D]', date('D', time()), $export_filename);
-		$export_filename = str_replace('[j]', date('j', time()), $export_filename);
-		$export_filename = str_replace('[l]', date('l', time()), $export_filename);
-
-		// Replace hour
-		$export_filename = str_replace('[g]', date('g', time()), $export_filename);
-		$export_filename = str_replace('[G]', date('G', time()), $export_filename);
-		$export_filename = str_replace('[h]', date('h', time()), $export_filename);
-		$export_filename = str_replace('[H]', date('H', time()), $export_filename);
-
-		// Replace minute
-		$export_filename = str_replace('[i]', date('i', time()), $export_filename);
-
-		// Replace seconds
-		$export_filename = str_replace('[s]', date('s', time()), $export_filename);
-
-		if (!empty($export_filename))
+		if (!empty($exportFilename))
 		{
-			$localfile = $export_filename;
-		}
-		else
-		{
-			$localfile = 'CSVI_' . $this->template->getName() . '_' . date("j-m-Y_H.i") . $filelimit . '.' . $this->exportformat;
+			$localFile = $exportFilename;
 		}
 
 		// Clean up
-		$localfile = JPath::clean(JPATH_SITE . '/tmp/com_csvi/export/' . $localfile, '/');
+		$localFile = JPath::clean(CSVIPATH_TMP . '/export/' . $localFile, '/');
 
 		// Set the process filename
-		$this->processfile = $localfile;
+		$this->processfile = $localFile;
 
 		// Return the filename
-		return $localfile;
+		return $localFile;
+	}
+
+	/**
+	 * Format a given filename.
+	 *
+	 * @param   string  $exportFilename  The filename to format.
+	 *
+	 * @return  string  The formatted filename.
+	 *
+	 * @since   6.5.7
+	 */
+	private function formatExportFilename($exportFilename)
+	{
+		// Do some customizing
+		// Replace year
+		$exportFilename = str_replace('[Y]', date('Y', time()), $exportFilename);
+		$exportFilename = str_replace('[y]', date('y', time()), $exportFilename);
+
+		// Replace month
+		$exportFilename = str_replace('[M]', date('M', time()), $exportFilename);
+		$exportFilename = str_replace('[m]', date('m', time()), $exportFilename);
+		$exportFilename = str_replace('[F]', date('F', time()), $exportFilename);
+		$exportFilename = str_replace('[n]', date('n', time()), $exportFilename);
+
+		// Replace day
+		$exportFilename = str_replace('[d]', date('d', time()), $exportFilename);
+		$exportFilename = str_replace('[D]', date('D', time()), $exportFilename);
+		$exportFilename = str_replace('[j]', date('j', time()), $exportFilename);
+		$exportFilename = str_replace('[l]', date('l', time()), $exportFilename);
+
+		// Replace hour
+		$exportFilename = str_replace('[g]', date('g', time()), $exportFilename);
+		$exportFilename = str_replace('[G]', date('G', time()), $exportFilename);
+		$exportFilename = str_replace('[h]', date('h', time()), $exportFilename);
+		$exportFilename = str_replace('[H]', date('H', time()), $exportFilename);
+
+		// Replace minute
+		$exportFilename = str_replace('[i]', date('i', time()), $exportFilename);
+
+		// Replace seconds
+		$exportFilename = str_replace('[s]', date('s', time()), $exportFilename);
+
+		return $exportFilename;
 	}
 
 	/**
@@ -895,6 +961,8 @@ class CsviModelExports extends CsviModelDefault
 	{
 		foreach ($data as $name => $value)
 		{
+			$name = (string) $name;
+
 			switch ($name)
 			{
 				default:
@@ -911,6 +979,7 @@ class CsviModelExports extends CsviModelDefault
 							case 'export_email_addresses':
 							case 'export_email_addresses_cc':
 							case 'export_email_addresses_bcc':
+							case 'database_password':
 								break;
 							default:
 								switch ($value)
@@ -941,7 +1010,7 @@ class CsviModelExports extends CsviModelDefault
 	 *
 	 * @since   3.0
 	 */
-	private function finishProcess($finished=false)
+	private function finishProcess($finished = false)
 	{
 		// Check if the import is finished or if we are going to reload
 		if ($finished)
@@ -953,9 +1022,10 @@ class CsviModelExports extends CsviModelDefault
 			$this->db->setQuery($query)->execute();
 
 			// Set the log end timestamp
+			$date = JFactory::getDate(time())->toSql();
 			$query = $this->db->getQuery(true)
 				->update($this->db->quoteName('#__csvi_logs'))
-				->set($this->db->quoteName('end') . ' = ' . $this->db->quote(JFactory::getDate()->toSql()))
+				->set($this->db->quoteName('end') . ' = ' . $this->db->quote($date))
 				->set($this->db->quoteName('records') . ' = ' . (int) $this->log->getLinenumber())
 				->where($this->db->quoteName('csvi_log_id') . ' = ' . (int) $this->log->getLogId());
 			$this->db->setQuery($query)->execute();
@@ -998,15 +1068,15 @@ class CsviModelExports extends CsviModelDefault
 			$destinations = array($destinations);
 		}
 
-		// Remove the temporary file if needed
+		// Generate the URL
+		$url = '';
+
 		if (in_array('todownload', $destinations))
 		{
-			return JURI::root() . 'administrator/index.php?option=com_csvi&view=exports&task=downloadfile&tmpl=component&file=' . base64_encode(basename($this->processfile));
+			$url = JUri::root() . 'administrator/index.php?option=com_csvi&task=exports.downloadfile&tmpl=component&file=' . base64_encode($this->processfile);
 		}
-		else
-		{
-			return '';
-		}
+
+		return $url;
 	}
 
 	/**
@@ -1023,11 +1093,8 @@ class CsviModelExports extends CsviModelDefault
 		// Load the file class
 		jimport('joomla.filesystem.file');
 
-		// Prefix the path to the download file
-		$localfile = JPATH_SITE . '/tmp/com_csvi/export/' . $downloadFile;
-
 		// Check if the file exists
-		if (JFile::exists($localfile))
+		if (JFile::exists($downloadFile))
 		{
 			if (preg_match('/Opera(\/| )([0-9].[0-9]{1,2})/', $_SERVER['HTTP_USER_AGENT']))
 			{
@@ -1035,14 +1102,14 @@ class CsviModelExports extends CsviModelDefault
 			}
 			elseif (preg_match('/MSIE ([0-9].[0-9]{1,2})/', $_SERVER['HTTP_USER_AGENT']))
 			{
-				$UserBrowser = "IE";
+				$UserBrowser = 'IE';
 			}
 			else
 			{
 				$UserBrowser = '';
 			}
 
-			$mime_type = ($UserBrowser == 'IE' || $UserBrowser == 'Opera') ? 'application/octetstream' : 'application/octet-stream';
+			$mime_type = ($UserBrowser === 'IE' || $UserBrowser === 'Opera') ? 'application/octetstream' : 'application/octet-stream';
 
 			// Clean the buffer
 			ob_end_clean();
@@ -1050,24 +1117,24 @@ class CsviModelExports extends CsviModelDefault
 			header('Content-Type: ' . $mime_type);
 			header('Content-Encoding: UTF-8');
 			header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-			header('Content-Length: ' . filesize($localfile));
+			header('Content-Length: ' . filesize($downloadFile));
 
-			if ($UserBrowser == 'IE')
+			if ($UserBrowser === 'IE')
 			{
-				header('Content-Disposition: inline; filename="' . $downloadFile . '"');
+				header('Content-Disposition: inline; filename="' . basename($downloadFile) . '"');
 				header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 				header('Pragma: public');
 			}
 			else
 			{
-				header('Content-Disposition: attachment; filename="' . $downloadFile . '"');
+				header('Content-Disposition: attachment; filename="' . basename($downloadFile) . '"');
 			}
 
 			// Output the file
-			readfile($localfile);
+			readfile($downloadFile);
 
 			// Delete the file
-			@unlink($localfile);
+			@unlink($downloadFile);
 		}
 	}
 
@@ -1085,39 +1152,111 @@ class CsviModelExports extends CsviModelDefault
 		// Load the file class
 		jimport('joomla.filesystem.file');
 
-		// Prefix the path to the download file
-		$localfile = JPATH_SITE . '/tmp/com_csvi/export/' . $downloadFile;
-
 		// Check if the file exists
-		if (JFile::exists($localfile))
+		if (JFile::exists($downloadFile))
 		{
+			// Find out which header we need to send
+			$extension = JFile::getExt($downloadFile);
+
+			switch ($extension)
+			{
+				case 'xml':
+					$contentType = 'application/xml';
+					break;
+				case 'html':
+				case 'tsv':
+				case 'csv':
+				default:
+					// We always use this content type because it otherwise downloads the file
+					$contentType = 'text/html';
+					break;
+			}
+
 			// Clean the buffer
 			ob_end_clean();
 
+			// Send the correct headers
+			header('Content-Type: ' . $contentType);
+			header('Content-Disposition: inline; filename="' . basename($downloadFile) . '"');
+			header('Expires: 0');
+			header('Cache-Control: must-revalidate');
+			header('Pragma: public');
+			header('Content-Length: ' . filesize($downloadFile));
+
 			// Output the file
-			readfile($localfile);
+			readfile($downloadFile);
 		}
+	}
+
+	/**
+	 * Write a file to the server.
+	 *
+	 * @param   string  $downloadFile  The full path and name of the file to email.
+	 *
+	 * @return  bool  True if the file needs to be kept | False if file can be deleted.
+	 *
+	 * @since   6.5.6
+	 */
+	public function writeFile($downloadFile)
+	{
+		$keep = false;
+
+		// Copy the file to the correct location
+		$destinationFile = $this->template->get('localpath', JPATH_SITE) . '/' . basename($downloadFile);
+
+		if ($this->processfile === $destinationFile)
+		{
+			$keep = true;
+		}
+
+		if ($this->processfile === $destinationFile || JFile::copy($this->processfile, $destinationFile))
+		{
+			$this->log->setFilename($destinationFile);
+			$this->log->add('Export file ' . $destinationFile . ' has been created', false);
+			$this->log->addStats('information', JText::sprintf('COM_CSVI_EXPORTFILE_CREATED', $destinationFile));
+		}
+		else
+		{
+			$this->log->add('Cannot create the export file ' .  $destinationFile . ' Is the folder writable?', false);
+			$this->log->addStats('error', JText::sprintf('COM_CSVI_EXPORTFILE_NOT_CREATED', $destinationFile));
+		}
+
+		return $keep;
 	}
 
 	/**
 	 * Email a generated file.
 	 *
-	 * @return  void.
+	 * @param   string  $downloadFile  The full path and name of the file to email.
+	 *
+	 * @return  bool   True on success | False on failure.
 	 *
 	 * @since   6.5.0
+	 *
+	 * @throws  \Exception
 	 */
 	public function emailFile($downloadFile)
 	{
 		// Load the mailer
-		$app = Jfactory::getApplication();
+		$app = JFactory::getApplication();
 		jimport('joomla.mail.helper');
 
 		// Get the mailer
-		$mailer = JFactory::getMailer();
-		$mailer->isHTML(true);
-		$mailer->From = $app->get('mailfrom');
+		$mailer           = JFactory::getMailer();
+		$mailer->From     = $app->get('mailfrom');
 		$mailer->FromName = $app->get('sitename');
-		$mailer->AddReplyTo(array($app->get('mailfrom'), $app->get('sitename')));
+		$result           = true;
+		$mailer->isHtml(true);
+
+		try
+		{
+			$mailer->addReplyTo($app->get('mailfrom'), $app->get('sitename'));
+		}
+		catch (Exception $e)
+		{
+			$this->log->add($e->getMessage());
+			$result = false;
+		}
 
 		// Add the email address
 		$addresses = explode(',', $this->template->get('export_email_addresses'));
@@ -1125,22 +1264,32 @@ class CsviModelExports extends CsviModelDefault
 		// Addresses
 		foreach ($addresses as $address)
 		{
-			if (!empty($address))
+			try
 			{
-				$mailer->AddAddress($address);
+				$mailer->addAddress($address);
+			}
+			catch (Exception $e)
+			{
+				$this->log->add($e->getMessage());
+				$result = false;
 			}
 		}
 
 		// Carbon copy addresses
 		$addresses_cc = explode(',', $this->template->get('export_email_addresses_cc'));
 
-		if (!empty($addresses_cc))
+		if ($addresses_cc)
 		{
 			foreach ($addresses_cc as $address)
 			{
-				if (!empty($address))
+				try
 				{
-					$mailer->AddCC($address);
+					$mailer->addCc($address);
+				}
+				catch (Exception $e)
+				{
+					$this->log->add($e->getMessage());
+					$result = false;
 				}
 			}
 		}
@@ -1148,13 +1297,18 @@ class CsviModelExports extends CsviModelDefault
 		// Blind carbon copy addresses
 		$addresses_bcc = explode(',', $this->template->get('export_email_addresses_bcc'));
 
-		if (!empty($addresses_bcc))
+		if ($addresses_bcc)
 		{
 			foreach ($addresses_bcc as $address)
 			{
-				if (!empty($address))
+				try
 				{
-					$mailer->AddBCC($address);
+					$mailer->addBcc($address);
+				}
+				catch (Exception $e)
+				{
+					$this->log->add($e->getMessage());
+					$result = false;
 				}
 			}
 		}
@@ -1167,54 +1321,159 @@ class CsviModelExports extends CsviModelDefault
 		$mailer->setSubject($this->template->get('export_email_subject'));
 
 		// Add the attachment
-		$mailer->AddAttachment($downloadFile);
+		try
+		{
+			$mailer->addAttachment($downloadFile);
+		}
+		catch (Exception $e)
+		{
+			$this->log->add($e->getMessage());
+			$result = false;
+		}
 
 		// Send the mail
-		$sendmail = $mailer->Send();
+		try
+		{
+			$sendmail = $mailer->Send();
 
-		if (is_a($sendmail, 'JException'))
-		{
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NO_MAIL_SEND', $sendmail->getMessage()));
+			if (is_a($sendmail, 'JException'))
+			{
+				$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NO_MAIL_SEND', $sendmail->getMessage()));
+				$result = false;
+			}
+			else
+			{
+				$this->log->add('Email has been sent', false);
+				$this->log->addStats('information', 'COM_CSVI_MAIL_SEND');
+			}
 		}
-		else
+		catch (Exception $e)
 		{
-			$this->log->addStats('information', 'COM_CSVI_MAIL_SEND');
+			$this->log->add($e->getMessage(), false);
+			$this->log->addStats('incorrect', $e->getMessage());
+
+			$result = false;
 		}
 
 		// Clear the mail details
-		$mailer->ClearAddresses();
+		$mailer->clearAddresses();
+
+		return $result;
 	}
 
 	/**
 	 * FTP a generated file.
 	 *
-	 * @return  void.
+	 * @param   string  $downloadFile  The full path and name of the file to email.
+	 *
+	 * @return  bool   True on success | False on failure.
 	 *
 	 * @since   3.5.0
 	 */
 	public function ftpFile($downloadFile)
 	{
-		if (JFile::exists($downloadFile))
+		if (!JFile::exists($downloadFile))
 		{
-			// Start the FTP
-			jimport('joomla.client.ftp');
-			$ftp = JClientFtp::getInstance(
-				$this->template->get('ftphost', '', 'string'),
-				$this->template->get('ftpport', 21, 'int'),
-				array(),
-				$this->template->get('ftpusername', '', 'string'),
-				$this->template->get('ftppass', '', 'string')
-			);
-			$ftp->chdir($this->template->get('ftproot', '/', 'string'));
-			$ftp->store($downloadFile, $this->template->get('ftpfile', basename($downloadFile), 'string'));
-			$ftp->quit();
+			$this->log->addStats('information', JText::sprintf('COM_CSVI_FTP_EXPORTFILE_NOT_CREATED', $downloadFile));
+			$this->log->add('Could not store the file ' . $downloadFile . ' on the FTP server', false);
 
-			$this->log->addStats('information', JText::sprintf('COM_CSVI_FTP_EXPORTFILE_CREATED', $downloadFile));
+			return false;
+		}
+
+		if ($this->template->get('sftp', '', 'int'))
+		{
+			return $this->sftpFile($downloadFile);
+		}
+
+		// Generate the FTP file
+		$ftpFile = $this->formatExportFilename($this->template->get('ftpfile', basename($downloadFile), 'string'));
+
+		// Start the FTP
+		jimport('joomla.client.ftp');
+		$ftp = JClientFtp::getInstance(
+			$this->template->get('ftphost', '', 'string'),
+			$this->template->get('ftpport', 21, 'int'),
+			array(),
+			$this->template->get('ftpusername', '', 'string'),
+			$this->template->get('ftppass', '', 'string')
+		);
+		$ftp->chdir($this->template->get('ftproot', '/', 'string'));
+		$result = $ftp->store($downloadFile, $ftpFile);
+		$ftp->quit();
+
+		if ($result)
+		{
+			$this->log->addStats('information', JText::sprintf('COM_CSVI_FTP_EXPORTFILE_CREATED', $ftpFile));
+			$this->log->add('Stored the file ' . $ftpFile . ' on the FTP server', false);
 		}
 		else
 		{
 			$this->log->addStats('information', JText::sprintf('COM_CSVI_FTP_EXPORTFILE_NOT_CREATED', $downloadFile));
+			$this->log->add('Could not store the file  ' . $downloadFile . ' on the FTP server', false);
 		}
+
+		return $result;
+	}
+
+	/**
+	 * SFTP a generated file.
+	 *
+	 * @param   string  $downloadFile  The full path and name of the file to email.
+	 *
+	 * @return  bool   True on success | False on failure.
+	 *
+	 * @since   3.5.0
+	 */
+	public function sftpFile($downloadFile)
+	{
+		if (!JFile::exists($downloadFile))
+		{
+			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_FTP_EXPORTFILE_NOT_CREATED', $downloadFile));
+			$this->log->add('The export file  ' . $downloadFile . ' does not exist', false);
+
+			return false;
+		}
+
+		// Generate the FTP file
+		$ftpFile = $this->formatExportFilename($this->template->get('ftpfile', basename($downloadFile), 'string'));
+
+		$host     = $this->template->get('ftphost', '', 'string');
+		$port     = $this->template->get('ftpport', 21, 'int');
+		$username = $this->template->get('ftpusername', '', 'string');
+		$pass     = $this->template->get('ftppass', '', 'string');
+		$root     = $this->template->get('ftproot', '/', 'string');
+
+		// Start the SFTP
+		$sftp = new SFTP($host, $port);
+
+		// Get the data to store
+		$data = file_get_contents($downloadFile);
+
+		if (!$sftp->login($username, $pass))
+		{
+			$this->log->addStats('incorrect', JText::_('COM_CSVI_FTP_CANNOT_LOGIN'));
+			$this->log->add('Cannot login into the FTP server.', false);
+
+			return false;
+		}
+
+		$this->log->add('Logged into the SFTP server', false);
+
+		if (!$sftp->chdir($root))
+		{
+			$this->log->add('Cannot change to folder ' . $root, false);
+
+			return false;
+		}
+
+		$this->log->add('Changed to folder ' . $root, false);
+
+		$sftp->put($ftpFile, $data);
+
+		$this->log->addStats('information', JText::sprintf('COM_CSVI_FTP_EXPORTFILE_CREATED', $ftpFile));
+		$this->log->add('Stored the file ' . $ftpFile . ' on the FTP server', false);
+
+		return true;
 	}
 
 	/**
@@ -1239,7 +1498,7 @@ class CsviModelExports extends CsviModelDefault
 
 			$query = $this->db->getQuery(true)
 				->update($this->db->quoteName('#__csvi_logs'))
-				->set($this->db->quoteName('end') . ' = ' . $this->db->quote(JFactory::getDate()->toSql()))
+				->set($this->db->quoteName('end') . ' = ' . $this->db->quote(JFactory::getDate(time())->toSql()))
 				->set($this->db->quoteName('run_cancelled') . ' = 1')
 				->where($this->db->quoteName('csvi_log_id') . ' = ' . (int) $csvi_log_id);
 			$this->db->setQuery($query);
@@ -1284,5 +1543,247 @@ class CsviModelExports extends CsviModelDefault
 		}
 
 		return $options;
+	}
+
+	/**
+	 * Export to another database table
+	 *
+	 * @return  bool True if the export went good | False otherwise.
+	 *
+	 * @since   6.7.0
+	 *
+	 * @throws  Exception
+	 */
+	private function exportToDatabase()
+	{
+		$details             = array();
+		$columns             = array();
+		$details['user']     = $this->template->get('database_username', '', 'string');
+		$details['password'] = $this->template->get('database_password', '', 'string');
+		$details['database'] = $this->template->get('database_name', '', 'string');
+		$portNo              = $this->template->get('database_portno');
+		$hostName            = $this->template->get('database_host', '', 'string');
+		$result              = false;
+		$primarySourceTable  = '';
+		$this->log->setLinenumber(0);
+
+		if ((strpos($hostName, ':') === false) && $portNo)
+		{
+			$hostName = $hostName . ':' . $portNo;
+		}
+
+		$details['host']    = $hostName;
+		$tableName          = $this->template->get('database_table', '', 'string');
+		$primaryKeySource   = $this->template->get('primary_key_source', '', 'string');
+		$primaryKeyTarget   = $this->template->get('primary_key_target', '', 'string');
+		$createNewColumns   = $this->template->get('create_new_columns', 1);
+		$database           = JDatabaseDriver::getInstance($details);
+		$database->connect();
+
+		foreach ($this->fields->getFieldnames() as $fieldName)
+		{
+			$columns[] = $fieldName;
+		}
+
+		// If the Source unique identifier field is not in columns let the user know
+		if (!in_array($primaryKeySource, $columns, true))
+		{
+			$this->log->addStats('error', JText::_('COM_CSVI_SOURCE_FIELD_NOT_IN_TEMPLATE_FIELDS'));
+
+			return false;
+		}
+
+		if ($database->connected())
+		{
+			// Find the primary key of target table
+			$primaryKeyColumns     = $database->getTableKeys($tableName);
+			$primaryKeyTargetArray = json_decode(json_encode($primaryKeyColumns), true);
+
+			// Retrieve only primary key fields from the columns array
+			if (!empty($primaryKeyTargetArray))
+			{
+				foreach ($primaryKeyTargetArray as $primaryValue)
+				{
+					if ($primaryValue['Key_name'] === 'PRIMARY')
+					{
+						$primarySourceTable = $primaryValue['Column_name'];
+					}
+				}
+			}
+
+			// Compare the table columns with exported template fields
+			$tableColumns     = $database->getTableColumns($tableName, false);
+			$tableColumnNames = ArrayHelper::getColumn(json_decode(json_encode($tableColumns), true), 'Field');
+			$query            = $database->getQuery(true);
+
+			// Check if user wants to create new columns
+			if ($createNewColumns)
+			{
+				$fieldExists      = array_diff($columns, $tableColumnNames);
+
+				if (!empty($fieldExists))
+				{
+					foreach ($fieldExists as $field)
+					{
+						$alterQuery = "ALTER TABLE " . $database->quoteName($tableName)
+							. " ADD " . $database->quoteName($field) . " TEXT NOT NULL";
+						$database->setQuery($alterQuery)->execute();
+					}
+
+					$this->log->add(JText::_('COM_CSVI_CREATED_TABLE_COLUMNS'), false);
+				}
+			}
+			else
+			{
+				// Ignore the primary key field of target table
+				if ($primarySourceTable)
+				{
+					$tableKey = array_search($primarySourceTable, $tableColumnNames);
+					unset($tableColumnNames[$tableKey]);
+				}
+
+				$columns = $tableColumnNames;
+			}
+
+			if (!in_array($primaryKeyTarget, $columns, true))
+			{
+				$this->log->addStats('error', JText::_('COM_CSVI_TARGET_FIELD_NOT_IN_TABLE'));
+
+				return false;
+			}
+
+			// Remove the headers from export data
+			$headers = explode(',', $this->exportData[0]);
+			$linecount = 0;
+
+			foreach (array_slice($this->exportData, 1) as $data)
+			{
+				$rowValue            = array();
+				$updateValue         = array();
+				$linecount++;
+
+				if (!empty($data))
+				{
+					// Only export the columns user wants as per his table
+					$newValue = explode(',', str_replace('"', '', $data));
+					$newValue = array_splice($newValue, 0, count($columns));
+					$primaryArrayKey       = array_search($primaryKeySource, $headers);
+
+					if ($newValue[$primaryArrayKey])
+					{
+						foreach ($newValue as $key => $value)
+						{
+							$rowValue[$key] = $database->quote(str_replace('"', '', $value));
+
+							// Set the values for update if primary key field is used
+							$updateValue[] = $database->quoteName(str_replace('"', '', $headers[$key])) . " = " . $database->quote(str_replace('"', '', $value));
+						}
+
+						$insert = true;
+					}
+					else
+					{
+						$this->log->setLinenumber($linecount);
+						$this->log->addStats('skipped', JText::_('COM_CSVI_UNIQUE_IDENTIFIER_VALUE_EMPTY'));
+						$insert = false;
+					}
+
+					$values                = implode(',', $rowValue);
+					$updateDuplicateValues = implode(',', $updateValue);
+					$numRows               = 0;
+					$primaryKeyValue       = str_replace('"', '', $newValue[$primaryArrayKey]);
+
+					if ($primaryKeyValue)
+					{
+						$query->clear()
+							->select(array('*'))
+							->from($database->quoteName($tableName))
+							->where($database->quoteName($primaryKeyTarget) . ' = ' . $database->quote($primaryKeyValue));
+						$database->setQuery($query)->execute();
+						$numRows = $database->getNumRows();
+						$this->log->add(JText::_('COM_CSVI_FOUND_PRIMARY_KEY_ROWS'));
+					}
+
+					if ($numRows)
+					{
+						$query->clear()
+							->update($database->quoteName($tableName))
+							->set($updateDuplicateValues)
+							->where($database->quoteName($primaryKeyTarget) . '=' . $database->quote($primaryKeyValue));
+
+						try
+						{
+							$database->setQuery($query);
+							$database->execute();
+							$result = true;
+							$this->log->add(JText::_('COM_CSVI_DUPLICATE_PRIMARY_KEY_ROWS_UPDATED'));
+						}
+						catch (Exception $e)
+						{
+							$this->log->add(JText::sprintf('COM_CSVI_EXPORT_DATA_ERROR', $e->getMessage()), false);
+						}
+					}
+					else
+					{
+						$query->clear()
+							->insert($database->quoteName($tableName))
+							->columns($database->quoteName($columns))
+							->values($values);
+
+						try
+						{
+							if ($insert)
+							{
+								$database->setQuery($query);
+								$database->execute();
+								$result = true;
+								$this->log->add(JText::_('COM_CSVI_EXPORT_DATA_INSERTED'));
+							}
+						}
+						catch (Exception $e)
+						{
+							$this->log->add(JText::sprintf('COM_CSVI_EXPORT_DATA_ERROR', $e->getMessage()), false);
+
+						}
+					}
+				}
+				else
+				{
+					$this->log->addStats('information', JText::_('COM_CSVI_NO_DATA_TO_EXPORT'));
+				}
+			}
+
+			if ($result)
+			{
+				$this->log->setLinenumber($linecount);
+				$this->log->addStats('information', JText::sprintf('COM_CSVI_DATABASE_EXPORTED_COMPLETE', $details['database'], $tableName));
+			}
+		}
+		else
+		{
+			$this->log->addStats('error', JText::_('COM_CSVI_DATABASE_EXPORTED_ERROR'));
+		}
+
+		$database->disconnect();
+	}
+
+	/**
+	 * Delete empty file if user wants to do.
+	 *
+	 * @param   string  $file  The path of file to delete.
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.0
+	 */
+	public function deleteEmptyFile($file)
+	{
+		// Settings check if user wants to export empty file or not
+		if (!$this->log->getLinenumber() && !$this->template->get('output_empty_file'))
+		{
+			JFile::delete($file);
+			$this->log->addStats('information', JText::_('COM_CSVI_EXPORTFILE_EMPTY_DELETED'));
+			$this->log->add('No export file has been created because there are no records to export. Set Output empty file to Yes in the template settings to generate an empty file.', false);
+		}
 	}
 }

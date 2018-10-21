@@ -19,7 +19,26 @@
 				type="list"
 				size="1"
 				default="1"
-				class="input-small advancedSelect">
+				class="input-small advancedSelect"
+				onchange="Csvi.showFields(this.value, '.sef');">
+				<option value="1">JYES</option>
+				<option value="0">JNO</option>
+			</field>
+
+			<field name="cachesefurls"
+				   type="list"
+				   size="1"
+				   default="1"
+				   class="input-small sef advancedSelect">
+				<option value="1">JYES</option>
+				<option value="0">JNO</option>
+			</field>
+
+			<field name="emptysefcache"
+				   type="list"
+				   size="1"
+				   default="0"
+				   class="input-small sef advancedSelect">
 				<option value="1">JYES</option>
 				<option value="0">JNO</option>
 			</field>
@@ -125,7 +144,7 @@
                 class="input-mini" />
 
             <field name="shopper_group_price"
-                   type="CsviVirtuemartShoppergroup"
+                   type="Csvivirtuemart.Shoppergroup"
                    size="1"
                    multiple="false"
 				   class="advancedSelect"
@@ -159,7 +178,7 @@
 			</field>
 
 			<field name="force_shopper_group_price"
-				   type="CsviVirtuemartShoppergroup"
+				   type="Csvivirtuemart.Shoppergroup"
 				   size="1"
 				   multiple="false"
 				   class="advancedSelect"
@@ -169,7 +188,7 @@
 			</field>
 
 			<field name="shopper_groups"
-				type="CsviVirtuemartShoppergroup"
+				type="Csvivirtuemart.Shoppergroup"
 				size="7"
 				multiple="true"
 				class="input-xxlarge advancedSelect"

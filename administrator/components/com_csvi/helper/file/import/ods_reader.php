@@ -1,27 +1,28 @@
 <?php
 /**
- * XML parser for ODS files
+ * @package     CSVI
+ * @subpackage  Helpers
  *
- * Parses the content.xml file
- *
- * @package 	CSVI
- * @subpackage 	Helpers
- * @author 		Roland Dalmulder
- * @link 		http://www.csvimproved.com
- * @copyright 	Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
- * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @version 	$Id: ods_reader.php 2273 2013-01-03 16:33:30Z RolandD $
- *
- * @todo add support for zip file
- * @todo Check if file xists
- * @todo Better error handling, no die usage
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
+ * @link        https://csvimproved.com
  */
 
+defined('_JEXEC') or die;
+
 /**
- * Parse ODS files
+ * XML parser for ODS files
  *
- * @package CSVI
- * @subpackage Helpers
+ * Parses the content.xml file.
+ *
+ * @todo add support for zip file
+ * @todo Check if file exists
+ * @todo Better error handling, no die usage
+ *
+ * @package     CSVI
+ * @subpackage  Helpers
+ * @since       6.0
  */
 class ODSParser
 {
@@ -110,10 +111,7 @@ class ODSParser
 				break;
 			case 'TABLE:TABLE-CELL':
 				$styles = array_keys($attribs);
-				if (empty($styles)) {
-					$this->_data[$this->_linecount]['options']['repeat'] = 1;
-				}
-				else {
+				if ($styles) {
 					foreach ($styles as $stylekey => $style) {
 						switch ($style) {
 							case 'TABLE:NUMBER-COLUMNS-REPEATED':

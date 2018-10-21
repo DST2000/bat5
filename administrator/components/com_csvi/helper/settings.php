@@ -3,13 +3,15 @@
  * @package     CSVI
  * @subpackage  Helper
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
+
+use Joomla\Registry\Registry;
 
 /**
  * Settings class.
@@ -23,7 +25,7 @@ final class CsviHelperSettings
 	/**
 	 * Contains the CSVI settings
 	 *
-	 * @var    JRegistry
+	 * @var    Registry
 	 * @since  6.0
 	 */
 	private $params = false;
@@ -39,11 +41,12 @@ final class CsviHelperSettings
 	{
 		$query = $db->getQuery(true)
 			->select($db->quoteName('params'))
-			->from($db->quoteName('#__csvi_settings'))
-			->where($db->quoteName('csvi_setting_id') . ' = 1');
+			->from($db->quoteName('#__extensions'))
+			->where($db->quoteName('element') . ' = ' . $db->quote('com_csvi'))
+			->where($db->quoteName('type') . ' = ' . $db->quote('component'));
 		$db->setQuery($query);
 		$settings = $db->loadResult();
-		$registry = new JRegistry($settings);
+		$registry = new Registry($settings);
 
 		$this->params = $registry;
 	}

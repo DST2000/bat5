@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Model
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,7 +18,7 @@ defined('_JEXEC') or die;
  * @subpackage  Model
  * @since       6.0
  */
-class CsviModelDefault extends FOFModel
+class CsviModelDefault extends JModelLegacy
 {
 	/**
 	 * Template helper
@@ -26,7 +26,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    CsviHelperTemplate
 	 * @since  6.0
 	 */
-	protected $template = null;
+	protected $template;
 
 	/**
 	 * Logger helper
@@ -34,7 +34,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    CsviHelperLog
 	 * @since  6.0
 	 */
-	protected $log = null;
+	protected $log;
 
 	/**
 	 * CSVI helper
@@ -42,7 +42,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    CsviHelperCsvi
 	 * @since  6.0
 	 */
-	protected $csvihelper = null;
+	protected $csvihelper;
 
 	/**
 	 * Fields helper
@@ -50,7 +50,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    CsviHelperImportfields
 	 * @since  6.0
 	 */
-	protected $fields = null;
+	protected $fields;
 
 	/**
 	 * File helper
@@ -58,7 +58,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    CsviHelperFile
 	 * @since  6.0
 	 */
-	protected $file = null;
+	protected $file;
 
 	/**
 	 * Name of the file to process
@@ -69,12 +69,28 @@ class CsviModelDefault extends FOFModel
 	protected $processfile = '';
 
 	/**
-	 * Database connector
+	 * Name of the folder to process
 	 *
-	 * @var    JDatabase
+	 * @var    string
 	 * @since  6.0
 	 */
-	protected $db = null;
+	protected $processfolder = '';
+
+	/**
+	 * Database connector
+	 *
+	 * @var    JDatabaseDriver
+	 * @since  6.0
+	 */
+	protected $db;
+
+	/**
+	 * The CSVI Language helper
+	 *
+	 * @var    CsviHelperLanguage
+	 * @since  7.1.0
+	 */
+	protected $language;
 
 	/**
 	 * The addon helper
@@ -82,7 +98,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    object
 	 * @since  6.0
 	 */
-	protected $helper = null;
+	protected $helper;
 
 	/**
 	 * The addon config helper
@@ -90,7 +106,7 @@ class CsviModelDefault extends FOFModel
 	 * @var    object
 	 * @since  6.0
 	 */
-	protected $helperconfig = null;
+	protected $helperConfig;
 
 	/**
 	 * The ID of the current run
@@ -99,6 +115,22 @@ class CsviModelDefault extends FOFModel
 	 * @since  6.0
 	 */
 	protected $runId = 0;
+
+	/**
+	 * The CSVI Helper Settings
+	 *
+	 * @var    CsviHelperSettings
+	 * @since  6.0
+	 */
+	protected $settings;
+
+	/**
+	 * JInput instance.
+	 *
+	 * @var    JInput
+	 * @since  6.0
+	 */
+	protected $input;
 
 	/**
 	 * Public class constructor
@@ -120,9 +152,19 @@ class CsviModelDefault extends FOFModel
 		// Load the logger
 		$this->log = new CsviHelperLog($this->settings, $this->db);
 
+		// Load the languages
+		$this->language = new CsviHelperLanguage;
+
 		// Load the CSVI helper
 		$this->csvihelper = new CsviHelperCsvi;
 		$this->csvihelper->initialise($this->log);
+
+		$this->input = JFactory::getApplication()->input;
+
+		if (array_key_exists('input', $config))
+		{
+			$this->input = $config['input'];
+		}
 	}
 
 	/**
@@ -167,27 +209,26 @@ class CsviModelDefault extends FOFModel
 
 			// Setup the addon autoloader
 			$component = $this->template->get('component');
+			$extension = substr($component, 4);
 
 			// If the addon is not installed show message to install it
-			if (file_exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component))
-			{
-				JLoader::registerPrefix(ucfirst($component), JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $component);
-			}
-			else
+			if (!file_exists(JPATH_PLUGINS . '/csviaddon/' . $extension))
 			{
 				throw new CsviException(JText::sprintf('COM_CSVI_NO_ADDON_INSTALLED', $component));
 			}
 
+			JLoader::registerPrefix(ucfirst($component), JPATH_PLUGINS . '/csviaddon/' . $extension);
+
 			// Setup the logger
 			$this->log->setLogId($details->csvi_log_id);
-			$this->log->setActive($this->template->get('log', false));
+			$this->log->setActive($this->template->getLog());
+
+			// Check the source
+			$source = $this->template->get('source', 'fromupload');
 
 			// Set the file being processed
 			if (empty($details->processfile) && empty($details->processfolder))
 			{
-				// Check the source
-				$source = $this->template->get('source', 'fromupload');
-
 				// If fromserver we already have the full path and name, store it
 				if ($source == 'fromserver')
 				{
@@ -209,6 +250,8 @@ class CsviModelDefault extends FOFModel
 			// Check if we already have a file to process
 			if (empty($details->processfile) && !empty($details->processfolder))
 			{
+				jimport('joomla.filesystem.folder');
+
 				// Load the first file in line
 				$files = JFolder::files(
 					$details->processfolder,
@@ -224,6 +267,12 @@ class CsviModelDefault extends FOFModel
 				{
 					$details->processfile = $details->processfolder . '/' . $files[0];
 				}
+			}
+
+			// Add a dummy file for the database as it doesn't use a real file
+			if ($source === 'fromdatabase')
+			{
+				$details->processfile = 'database';
 			}
 
 			if ($details->processfile)
@@ -280,43 +329,50 @@ class CsviModelDefault extends FOFModel
 			throw new CsviException(JText::_('COM_CSVI_NO_TEMPLATE_LOADED'), 501);
 		}
 
-		// Get the file extension of the import file
-		$upload_parts = pathinfo($this->processfile);
-
-		// Force an extension if needed
-		$force_ext = $this->template->get('use_file_extension');
-
-		if (!empty($force_ext))
+		if ($this->template->get('source') === 'fromdatabase')
 		{
-			$upload_parts['extension'] = $force_ext;
-		}
-
-		// Set the file helper
-		if (!array_key_exists('extension', $upload_parts))
-		{
-			throw new CsviException(JText::sprintf('COM_CSVI_NO_EXTENSION_FOUND_ON_IMPORT_FILE', $this->processfile), 502);
+			$fileclass = 'CsviHelperFileImportDatabase';
 		}
 		else
 		{
-			$fileclass = 'CsviHelperFileImport';
+			// Get the file extension of the import file
+			$upload_parts = pathinfo($this->processfile);
 
-			switch (strtolower($upload_parts['extension']))
+			// Force an extension if needed
+			$force_ext = $this->template->get('use_file_extension');
+
+			if (!empty($force_ext))
 			{
-				case 'xml':
-				case 'xls':
-				case 'ods':
-					$fileclass .= ucfirst($upload_parts['extension']);
-					break;
-				case 'csv':
-				case 'txt':
-				case 'tsv':
-					$fileclass .= 'Csv';
-					break;
-				default:
-					throw new CsviException(
-						JText::sprintf('COM_CSVI_EXTENSTION_NOT_RECOGNIZED_ON_IMPORT_FILE', $upload_parts['extension'], $this->processfile), 516
-					);
-					break;
+				$upload_parts['extension'] = $force_ext;
+			}
+
+			// Set the file helper
+			if (!array_key_exists('extension', $upload_parts))
+			{
+				throw new CsviException(JText::sprintf('COM_CSVI_NO_EXTENSION_FOUND_ON_IMPORT_FILE', $this->processfile), 502);
+			}
+			else
+			{
+				$fileclass = 'CsviHelperFileImport';
+
+				switch (strtolower($upload_parts['extension']))
+				{
+					case 'xml':
+					case 'xls':
+					case 'ods':
+						$fileclass .= ucfirst($upload_parts['extension']);
+						break;
+					case 'csv':
+					case 'txt':
+					case 'tsv':
+						$fileclass .= 'Csv';
+						break;
+					default:
+						throw new CsviException(
+							JText::sprintf('COM_CSVI_EXTENSTION_NOT_RECOGNIZED_ON_IMPORT_FILE', $upload_parts['extension'], $this->processfile), 516
+						);
+						break;
+				}
 			}
 		}
 
@@ -329,6 +385,9 @@ class CsviModelDefault extends FOFModel
 		// Validate the file
 		if ($this->file->processFile())
 		{
+			// Set the filename generated by the file handler in case it changed
+			$this->processfile = $this->file->getFilename();
+
 			return true;
 		}
 		else
@@ -525,18 +584,20 @@ class CsviModelDefault extends FOFModel
 		// Load the component helpers
 		JLoader::import('joomla.filesystem.file');
 
+		$extension = substr($addon, 4);
+
 		// Load the helper
-		if (JFile::exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $addon . '/helper/' . $addon . '.php'))
+		if (JFile::exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $addon . '/helper/' . $addon . '.php'))
 		{
 			$helperName = ucfirst($addon) . 'Helper' . ucfirst($addon);
 			$this->helper = new $helperName($this->template, $this->log, $this->fields, $this->db);
 		}
 
 		// Load the config helper
-		if (JFile::exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $addon . '/helper/' . $addon . '_config.php'))
+		if (JFile::exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $addon . '/helper/' . $addon . '_config.php'))
 		{
 			$helperName = ucfirst($addon) . 'Helper' . ucfirst($addon) . '_config';
-			$this->helperconfig = new $helperName;
+			$this->helperConfig = new $helperName;
 		}
 	}
 
@@ -582,18 +643,17 @@ class CsviModelDefault extends FOFModel
 	 *
 	 * @since   6.0
 	 *
+	 * @throws  Exception
 	 * @throws  CsviException
 	 */
 	public function loadTemplate($template_id)
 	{
-		if ($template_id)
-		{
-			$this->template = new CsviHelperTemplate($template_id, $this->csvihelper);
-		}
-		else
+		if (!$template_id)
 		{
 			throw new CsviException(JText::_('COM_CSVI_NO_TEMPLATE_SPECIFIED'), 402);
 		}
+
+		$this->template = new CsviHelperTemplate($template_id);
 
 		return true;
 	}
@@ -651,7 +711,10 @@ class CsviModelDefault extends FOFModel
 		// Get the correct fields helper
 		$className = 'CsviHelper' . ucfirst($this->template->get('action')) . 'fields';
 
+		// Instantiate the fields
 		$this->fields = new $className($this->template, $this->log, $this->db);
+
+		// Add the file handler to the fields
 		$this->fields->setFile($this->file);
 
 		return true;
@@ -729,6 +792,22 @@ class CsviModelDefault extends FOFModel
 	}
 
 	/**
+	 * Set the log ID.
+	 *
+	 * Used in export
+	 *
+	 * @param   int  $csvi_log_id  The ID of the log
+	 *
+	 * @return  int  The ID of the log.
+	 *
+	 * @since   7.2.0
+	 */
+	public function setLogId($csvi_log_id)
+	{
+		return $this->log->setLogId($csvi_log_id);
+	}
+
+	/**
 	 * Return the run ID.
 	 *
 	 * Used in export
@@ -753,6 +832,4 @@ class CsviModelDefault extends FOFModel
 	{
 		return $this->processfile;
 	}
-
-
 }

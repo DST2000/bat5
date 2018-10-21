@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Plugin.Fieldcopy
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,7 +37,7 @@ class PlgCsvirulesFieldcopy extends RantaiPluginDispatcher
 	 */
 	public function getName()
 	{
-		return array('value' => $this->id, 'text' => 'CSVI Field copy');
+		return array('value' => $this->id, 'text' => 'CSVI Field Copy');
 	}
 
 	/**
@@ -53,7 +53,7 @@ class PlgCsvirulesFieldcopy extends RantaiPluginDispatcher
 	{
 		if ($plugin == $this->id)
 		{
-			return 'CSVI Field copy';
+			return 'CSVI Field Copy';
 		}
 	}
 
@@ -66,10 +66,14 @@ class PlgCsvirulesFieldcopy extends RantaiPluginDispatcher
 	 * @return  string  The rendered form with plugin options.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  RuntimeException
+	 * @throws  InvalidArgumentException
+	 *
 	 */
-	public function getForm($plugin, $options=array())
+	public function getForm($plugin, $options = array())
 	{
-		if ($plugin == $this->id)
+		if ($plugin === $this->id)
 		{
 			// Load the language files
 			$lang = JFactory::getLanguage();
@@ -77,23 +81,22 @@ class PlgCsvirulesFieldcopy extends RantaiPluginDispatcher
 			$lang->load('plg_csvirules_fieldcopy', JPATH_ADMINISTRATOR, null, true);
 
 			// Add the form path for this plugin
-			FOFForm::addFormPath(JPATH_PLUGINS . '/csvirules/fieldcopy/');
+			JForm::addFormPath(JPATH_PLUGINS . '/csvirules/fieldcopy/');
 
 			// Load the helper that renders the form
 			$helper = new CsviHelperCsvi;
 
 			// Instantiate the form
-			$form = FOFForm::getInstance('fieldcopy', 'form_fieldcopy');
+			$form = JForm::getInstance('fieldcopy', 'form_fieldcopy');
 
 			// Bind any existing data
 			$form->bind(array('pluginform' => $options));
 
 			// Create some dummies
-			$input = new FOFInput;
-			$model = new FOFModel;
+			$input = new JInput;
 
 			// Render the form
-			return $helper->renderMyForm($form, $model, $input);
+			return $helper->renderCsviForm($form, $input);
 		}
 	}
 
@@ -111,10 +114,10 @@ class PlgCsvirulesFieldcopy extends RantaiPluginDispatcher
 	 */
 	public function runRule($plugin, $settings, $field, CsviHelperFields $fields)
 	{
-		if ($plugin == $this->id)
+		if ($plugin === $this->id)
 		{
 			// Perform the replacement
-			if (!empty($settings) && ($field->field_name == $settings->source))
+			if (!empty($settings) && ($field->field_name === $settings->source))
 			{
 				// Check if we have a source value
 				if ($settings->target)

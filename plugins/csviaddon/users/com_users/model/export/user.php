@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  JoomlaUsers
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace users\com_users\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export Joomla Users.
@@ -20,8 +20,17 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  JoomlaUsers
  * @since       6.0
  */
-class Com_UsersModelExportUser extends CsviModelExports
+class User extends \CsviModelExports
 {
+
+	/**
+	 * List of available custom fields
+	 *
+	 * @var    array
+	 * @since  7.2.0
+	 */
+	private $customFields = array();
+
 	/**
 	 * Export the data.
 	 *
@@ -33,9 +42,12 @@ class Com_UsersModelExportUser extends CsviModelExports
 	{
 		if (parent::exportBody())
 		{
+			$this->loadCustomFields();
+
 			// Build something fancy to only get the fieldnames the user wants
 			$userfields = array();
 			$exportfields = $this->fields->getFields();
+			$userfields[] = $this->db->quoteName('u.id');
 
 			foreach ($exportfields as $field)
 			{
@@ -45,12 +57,16 @@ class Com_UsersModelExportUser extends CsviModelExports
 						$userfields[] = $this->db->quoteName('u.name', 'fullname');
 						break;
 					case 'usergroup_name':
+					case 'usergroup_path':
 						$userfields[] = $this->db->quoteName('id');
 						break;
 					case 'custom':
 						break;
 					default:
-						$userfields[] = $this->db->quoteName($field->field_name);
+						if (!in_array($field->field_name, $this->customFields))
+						{
+							$userfields[] = $this->db->quoteName($field->field_name);
+						}
 						break;
 				}
 			}
@@ -105,7 +121,7 @@ class Com_UsersModelExportUser extends CsviModelExports
 				jimport('joomla.utilities.date');
 
 				// Get UTC for now.
-				$dNow = new JDate;
+				$dNow = new \JDate;
 				$dStart = clone $dNow;
 
 				switch ($user_range)
@@ -133,15 +149,15 @@ class Com_UsersModelExportUser extends CsviModelExports
 
 					case 'today':
 						// Ranges that need to align with local 'days' need special treatment.
-						$app	= JFactory::getApplication();
+						$app	= \JFactory::getApplication();
 						$offset	= $app->get('offset');
 
 						// Reset the start time to be the beginning of today, local time.
-						$dStart	= new JDate('now', $offset);
+						$dStart	= new \JDate('now', $offset);
 						$dStart->setTime(0, 0, 0);
 
 						// Now change the timezone back to UTC.
-						$tz = new DateTimeZone('GMT');
+						$tz = new \DateTimeZone('GMT');
 						$dStart->setTimezone($tz);
 						break;
 				}
@@ -163,15 +179,16 @@ class Com_UsersModelExportUser extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -204,14 +221,77 @@ class Com_UsersModelExportUser extends CsviModelExports
 								$this->db->setQuery($query);
 								$groups = $this->db->loadColumn();
 
+								$fieldvalue = '';
+
 								if (is_array($groups))
 								{
 									$fieldvalue = implode('|', $groups);
 								}
-								else
+
+								break;
+							case 'usergroup_path':
+								$query = $this->db->getQuery(true);
+
+								$query->select($this->db->quoteName('group_id'))
+									->from($this->db->quoteName('#__user_usergroup_map'))
+									->where($this->db->quoteName('user_id') . ' = ' . (int) $record->id);
+								$this->db->setQuery($query);
+								$userGroupIds = $this->db->loadColumn();
+
+								$groupPaths = $this->helper->getGroupPath($userGroupIds, true);
+
+								if (is_array($groupPaths))
 								{
-									$fieldvalue = '';
+									$fieldvalue = implode('|', $groupPaths);
 								}
+
+								break;
+							default:
+								if (in_array($fieldname, $this->customFields))
+								{
+									$query->clear()
+										->select($this->db->quoteName('id'))
+										->from($this->db->quoteName('#__fields'))
+										->where($this->db->quoteName('name') . '  = ' . $this->db->quote($fieldname));
+									$this->db->setQuery($query);
+									$fieldId = $this->db->loadResult();
+									$itemId  = $record->id;
+
+									$query->clear()
+										->select($this->db->quoteName('value'))
+										->from($this->db->quoteName('#__fields_values'))
+										->where($this->db->quoteName('field_id') . ' = ' . (int) $fieldId)
+										->where($this->db->quoteName('item_id') . ' = ' . (int) $itemId);
+									$this->db->setQuery($query);
+									$fieldResult = $this->db->loadObjectList();
+
+									// Check if the custom field is a multiple image list
+									if ($this->fields->checkCustomFieldType($fieldname, 'imagelist'))
+									{
+										$fieldArray = array();
+
+										foreach ($fieldResult as $result)
+										{
+											$fieldArray[] = $result->value;
+										}
+
+										$fieldvalue = implode('|', $fieldArray);
+
+									}
+									else
+									{
+										if (!empty($fieldResult))
+										{
+											$fieldvalue = $fieldResult[0]->value;
+										}
+									}
+
+									if ($fieldvalue && $this->fields->checkCustomFieldType($fieldname, 'calendar'))
+									{
+										$fieldvalue = $this->fields->getDateFormat($fieldname, $fieldvalue, $field->column_header);
+									}
+								}
+
 								break;
 						}
 
@@ -228,11 +308,38 @@ class Com_UsersModelExportUser extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();
 			}
 		}
+	}
+
+	/**
+	 * Get a list of custom fields that can be used as available field.
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.2.0
+	 *
+	 * @throws  \Exception
+	 */
+	private function loadCustomFields()
+	{
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('name'))
+			->from($this->db->quoteName('#__fields'))
+			->where($this->db->quoteName('state') . ' = 1')
+			->where($this->db->quoteName('context') . ' = ' . $this->db->quote('com_users.user'));
+		$this->db->setQuery($query);
+		$results = $this->db->loadObjectList();
+
+		foreach ($results as $result)
+		{
+			$this->customFields[] = $result->name;
+		}
+
+		$this->log->add('Load the Joomla custom fields for articles');
 	}
 }

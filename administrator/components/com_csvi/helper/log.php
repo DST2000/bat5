@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Helper
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -23,7 +23,7 @@ class CsviHelperLog
 	/**
 	 * Contains the current line number
 	 *
-	 * @var    int
+	 * @var    integer
 	 * @since  6.0
 	 */
 	private $linenumber = 0;
@@ -31,7 +31,7 @@ class CsviHelperLog
 	/**
 	 * Contains the database log ID
 	 *
-	 * @var    int
+	 * @var    integer
 	 * @since  6.0
 	 */
 	private $logid = 0;
@@ -63,7 +63,7 @@ class CsviHelperLog
 	/**
 	 * The status if debug info is to be collected
 	 *
-	 * @var    bool
+	 * @var    boolean
 	 * @since  6.0
 	 */
 	private $active = false;
@@ -87,7 +87,7 @@ class CsviHelperLog
 	/**
 	 * The maximum number of logs to keep
 	 *
-	 * @var    int
+	 * @var    integer
 	 * @since  6.0
 	 */
 	private $log_max = 25;
@@ -133,6 +133,14 @@ class CsviHelperLog
 	private $templateName = null;
 
 	/**
+	 * The maximum number of lines in log file
+	 *
+	 * @var    integer
+	 * @since  7.7.0
+	 */
+	private $logLines = 20;
+
+	/**
 	 * Constructor
 	 *
 	 * @param   CsviHelperSettings  $settings  An instance of CsviHelperSettings
@@ -143,9 +151,24 @@ class CsviHelperLog
 	public function __construct(CsviHelperSettings $settings, JDatabaseDriver $db)
 	{
 		// Initialise the settings
-		$this->log_max = $settings->get('log.log_max', 25);
+		$this->log_max = $settings->get('log_max', 25);
+
+		// Get the number of lines into the log file
+		$this->logLines = $settings->get('log_entries', 20);
 
 		$this->db = $db;
+	}
+
+	/**
+	 * Get the active status of the logger.
+	 *
+	 * @return  boolean  True if logging is turned on | False if logging is turned off.
+	 *
+	 * @since   6.6.3
+	 */
+	public function isActive()
+	{
+		return $this->active;
 	}
 
 	/**
@@ -221,21 +244,24 @@ class CsviHelperLog
 	/**
 	 * Initialise the log.
 	 *
-	 * @return  void.
+	 * @return  void
 	 *
 	 * @since   6.0
 	 */
 	public function initialise()
 	{
+		// Make sure the table can be found
+		JTable::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_csvi/tables');
+
 		// Store the log entry
-		$table = FOFTable::getAnInstance('Logs', 'CsviTable');
+		$table = JTable::getInstance('Log', 'Table');
 		$data = array(
-			'csvi_log_id' => $this->logid,
-			'userid' => JFactory::getUser()->get('id', 0),
-			'start' => JFactory::getDate(time())->toSql(),
-			'addon' => $this->addon,
-			'action' => $this->action,
-			'action_type' => $this->actionType,
+			'csvi_log_id'   => $this->logid,
+			'userid'        => JFactory::getUser()->get('id', 0),
+			'start'         => JFactory::getDate(time())->toSql(),
+			'addon'         => $this->addon,
+			'action'        => $this->action,
+			'action_type'   => $this->actionType,
 			'template_name' => $this->templateName
 		);
 
@@ -243,6 +269,12 @@ class CsviHelperLog
 
 		// Get the log ID
 		$this->logid = $table->get('csvi_log_id');
+
+		// Load the current settings
+		$table->load();
+
+		// Get the line number
+		$this->setLinenumber($table->records);
 
 		// Clean out any old logs
 		$this->cleanUpLogs();
@@ -261,10 +293,13 @@ class CsviHelperLog
 		$jinput = JFactory::getApplication()->input;
 
 		// Check if there are any logs to remove
-		$query = $this->db->getQuery(true)->select('csvi_log_id')->from('#__csvi_logs')->order('csvi_log_id');
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('csvi_log_id'))
+			->from($this->db->quoteName('#__csvi_logs'))
+			->order($this->db->quoteName('csvi_log_id'));
 		$this->db->setQuery($query);
 		$dblogs = $this->db->loadColumn();
-		$this->add(JText::sprintf('COM_CSVI_CLEAN_OLD_LOGS', count($dblogs), $this->log_max));
+		$this->add(sprintf('Clean up old logs. Found %s logs and threshold is %s logs', count($dblogs), $this->log_max), false);
 
 		if (count($dblogs) > $this->log_max)
 		{
@@ -273,7 +308,7 @@ class CsviHelperLog
 			// Load the log model
 			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/logs.php';
 			$log_model = new CsviModelLogs;
-			$log_model->getDelete();
+			$log_model->delete();
 		}
 	}
 
@@ -322,8 +357,8 @@ class CsviHelperLog
 	 */
 	private function getLogName()
 	{
-			$this->logfile = 'com_csvi.log.' . $this->getLogId() . '.php';
-			$this->logpath = JPATH_SITE . '/logs';
+		$this->logfile = 'com_csvi.log.' . $this->getLogId() . '.php';
+		$this->logpath = CSVIPATH_DEBUG;
 
 		return $this->logpath . '/' . $this->logfile;
 	}
@@ -474,8 +509,16 @@ class CsviHelperLog
 	 */
 	public function add($message, $sql=true, $action='DEBUG')
 	{
+		$addLine = false;
+
+		// Check the settings and add only the requested log lines in debug log
+		if (!(int) $this->logLines || $this->linenumber <= $this->logLines)
+		{
+			$addLine = true;
+		}
+
 		// Check if we should add the log line
-		if ($this->active)
+		if ($this->active && $addLine)
 		{
 			// Store the message in the log file
 			$this->simpleLog($message, $this->linenumber, '[' . strtoupper($action) . ']');
@@ -541,14 +584,16 @@ class CsviHelperLog
 
 				if (isset($caller['class']))
 				{
-					$area = $caller['class'];
+					// Get only the last part of the namespace
+					$space = explode('\\', $caller['class']);
+					$area = end($space);
 				}
 			}
 
 			// Set the result
 			$success = array('updated', 'deleted', 'added', 'empty', 'processed');
 			$failure = array('incorrect', 'nosupport');
-			$notice = array('information', 'nofiles', 'skipped');
+			$notice  = array('information', 'nofiles', 'skipped');
 
 			if (in_array($action, $success))
 			{

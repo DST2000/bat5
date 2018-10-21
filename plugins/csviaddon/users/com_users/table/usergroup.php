@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaUser
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -65,6 +65,21 @@ class UsersTableUsergroup extends CsviTableDefault
 		$table = JTable::getInstance('Usergroup', 'JTable', array('dbo' => $this->getDbo()));
 
 		return $table->delete($id);
+	}
+
+	/**
+	 * Rebuild the usergroups
+	 *
+	 * @return  bool  True on success | False on failure.
+	 *
+	 * @since   6.5.0
+	 */
+	public function rebuildUsergroup()
+	{
+		// Verify that the alias is unique
+		$table = JTable::getInstance('Usergroup', 'JTable', array('dbo' => $this->getDbo()));
+
+		return $table->rebuild();
 	}
 
 	/**

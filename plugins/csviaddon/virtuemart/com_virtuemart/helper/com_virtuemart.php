@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -69,6 +69,14 @@ class Com_VirtuemartHelperCom_Virtuemart
 	private $relatedId = null;
 
 	/**
+	 * Product related field type
+	 *
+	 * @var    string
+	 * @since  7.1.0
+	 */
+	private $relatedType = null;
+
+	/**
 	 * Category separator
 	 *
 	 * @var    string
@@ -98,16 +106,16 @@ class Com_VirtuemartHelperCom_Virtuemart
 	 * @param   CsviHelperTemplate  $template  An instance of CsviHelperTemplate.
 	 * @param   CsviHelperLog       $log       An instance of CsviHelperLog.
 	 * @param   CsviHelperFields    $fields    An instance of CsviHelperFields.
-	 * @param   JDatabase           $db        Database connector.
+	 * @param   JDatabaseDriver     $db        Database connector.
 	 *
 	 * @since   4.0
 	 */
-	public function __construct(CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperFields $fields, JDatabase $db)
+	public function __construct(CsviHelperTemplate $template, CsviHelperLog $log, CsviHelperFields $fields, JDatabaseDriver $db)
 	{
-		$this->template = $template;
-		$this->log = $log;
-		$this->fields = $fields;
-		$this->db = $db;
+		$this->template     = $template;
+		$this->log          = $log;
+		$this->fields       = $fields;
+		$this->db           = $db;
 		$this->icecatFields = array(
 			'PROD_ID' => 'related_products',
 			'PROD_NAME' => 'product_name',
@@ -413,7 +421,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 		$str = $lang->transliterate($name);
 
 		// Trim white spaces at beginning and end of alias and make lowercase
-		$str = trim(\Joomla\String\String::strtolower($str));
+		$str = trim(\Joomla\String\StringHelper::strtolower($str));
 
 		// Remove any duplicate whitespace, and ensure all characters are alphanumeric
 		$str = preg_replace('/(\s|[^A-Za-z0-9\-])+/', '-', $str);
@@ -434,13 +442,15 @@ class Com_VirtuemartHelperCom_Virtuemart
 	/**
 	 * Get the custom related field ID.
 	 *
+	 * @param   string  $type  Type of field
+	 *
 	 * @return  int  The ID of the related field.
 	 *
 	 * @since   4.0
 	 */
 	public function getRelatedId($type = 'R')
 	{
-		if (!$this->relatedId)
+		if (!$this->relatedId || $this->relatedType !== $type)
 		{
 			$query = $this->db->getQuery(true)
 				->select($this->db->quoteName('virtuemart_custom_id'))
@@ -449,6 +459,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 				->where($this->db->quoteName('field_type') . ' = ' . $this->db->quote($type));
 			$this->db->setQuery($query);
 			$this->relatedId = $this->db->loadResult();
+			$this->relatedType = $type;
 		}
 
 		return $this->relatedId;
@@ -471,7 +482,10 @@ class Com_VirtuemartHelperCom_Virtuemart
 			->where($this->db->quoteName('order_status_name') . ' = ' . $this->db->quote($order_status_name));
 		$this->db->setQuery($query);
 
-		return $this->db->loadResult();
+		$orderStatusCode = $this->db->loadResult();
+		$this->log->add('Get the order status code');
+
+		return $orderStatusCode;
 	}
 
 	/**
@@ -493,7 +507,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 			->where($this->db->quoteName('virtuemart_vendor_id') . ' = ' . (int) $vendor_id);
 		$this->db->setQuery($query);
 		$currency_id = $this->db->loadResult();
-		$this->log->add(JText::_('COM_CSVI_DEBUG_GET_CURRENCY_ID'), true);
+		$this->log->add('Get the currency ID');
 
 		return $currency_id;
 	}
@@ -534,7 +548,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 
 			$this->db->setQuery($query);
 			$country_id = $this->db->loadResult();
-			$this->log->add(JText::_('COM_CSVI_DEBUG_GET_COUNTRY_ID'), true);
+			$this->log->add('Get the country ID', true);
 		}
 
 		return $country_id;
@@ -578,7 +592,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 
 			$this->db->setQuery($query);
 			$state_id = $this->db->loadResult();
-			$this->log->add('COM_CSVI_DEBUG_GET_STATE_ID', true);
+			$this->log->add('Get the state ID', true);
 		}
 
 		return $state_id;
@@ -784,7 +798,8 @@ class Com_VirtuemartHelperCom_Virtuemart
 					return null;
 				}
 			}
-			else {
+			else
+			{
 				$catpaths = $this->constructCategoryPath($catids);
 
 				if (is_array($catpaths))
@@ -1002,13 +1017,22 @@ class Com_VirtuemartHelperCom_Virtuemart
 	 * @return  void.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function unpublishBeforeImport(CsviHelperTemplate $template, CsviHelperLog $log, JDatabase $db)
 	{
 		if ($this->template->get('unpublish_before_import', 0))
 		{
+			$table = '#__virtuemart_products';
+
+			if ($this->template->get('operation') === 'category')
+			{
+				$table = '#__virtuemart_categories';
+			}
+
 			$query = $this->db->getQuery(true)
-				->update($this->db->quoteName('#__virtuemart_products'))
+				->update($this->db->quoteName($table))
 				->set($this->db->quoteName('published') . ' = 0');
 			$this->db->setQuery($query);
 
@@ -1031,6 +1055,8 @@ class Com_VirtuemartHelperCom_Virtuemart
 	 * @return  int  The ID of the product SKU.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function getProductIdBySku($productSku)
 	{
@@ -1039,7 +1065,7 @@ class Com_VirtuemartHelperCom_Virtuemart
 			->from($this->db->quoteName('#__virtuemart_products'))
 			->where($this->db->quoteName('product_sku') . ' = ' . $this->db->quote($productSku));
 		$this->db->setQuery($query);
-		$this->log->add(JText::_('COM_CSVI_FIND_PRODUCT_SKU'), true);
+		$this->log->add('Find the product ID by SKU');
 
 		return $this->db->loadResult();
 	}
@@ -1104,6 +1130,10 @@ class Com_VirtuemartHelperCom_Virtuemart
 				$this->icecat = new CsviHelperIcecat($this->template, $this->log, $this->db);
 			}
 
+			// Clean up any previous ICEcat data
+			$this->fields->clearIcecatData();
+			$fields = array();
+
 			// Check conditions
 			// 1. Do we have an MPN
 			$update_based_on = $this->template->get('update_based_on');
@@ -1162,5 +1192,126 @@ class Com_VirtuemartHelperCom_Virtuemart
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get default language in virtuemart
+	 *
+	 * @return  string language code
+	 *
+	 * @since   6.5.7
+	 */
+	public function getDefaultLanguage()
+	{
+		require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart_config.php';
+
+		$helperConfig = new Com_VirtuemartHelperCom_Virtuemart_Config;
+
+		$language     = $helperConfig->get('active_languages');
+		$languageCode = '';
+
+		if (is_array($language) && array_key_exists(0, $language))
+		{
+			$languageCode = strtolower(str_replace('-', '_', $language[0]));
+		}
+
+		// Check if no language is set in VirtueMart, take the default Joomla! frontend language
+		if ('' === $languageCode)
+		{
+			$languageCode = strtolower(str_replace('-', '_', JComponentHelper::getParams('com_languages')->get('site')));
+		}
+
+		return $languageCode;
+	}
+
+	/**
+	 * Load specific language files if needed.
+	 *
+	 * @return  array  List of language files to load.
+	 *
+	 * @since   7.1.0
+	 */
+	public function loadLanguage()
+	{
+		return array(
+			'com_virtuemart_shoppers' => JPATH_SITE . '/components/com_virtuemart',
+			'com_virtuemart_orders' => JPATH_SITE . '/components/com_virtuemart',
+		);
+	}
+
+	/**
+	 * Get the order id from order number
+	 *
+	 * @param   string  $orderNumber  The order number to find the ID for
+	 *
+	 * @return  int  The order ID is returned.
+	 *
+	 * @since   7.3.0
+	 */
+	public function getOrderId($orderNumber = null)
+	{
+		if (!$orderNumber)
+		{
+			return false;
+		}
+
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('virtuemart_order_id'))
+			->from($this->db->quoteName('#__virtuemart_orders'))
+			->where($this->db->quoteName('order_number') . ' = ' . $this->db->quote($orderNumber));
+		$this->db->setQuery($query);
+		$this->log->add('Found order id for the given order number');
+
+		return $this->db->loadResult();
+	}
+
+	/**
+	 * Get the custom field group ID.
+	 *
+	 * @param   string  $groupName  The group name.
+	 *
+	 * @return  int  The ID of the group.
+	 *
+	 * @since   7.3.0
+	 *
+	 * @throws  RuntimeException
+	 */
+	public function getCustomFieldGroup($groupName)
+	{
+		if (!$groupName)
+		{
+			return false;
+		}
+
+		$query = $this->db->getQuery(true);
+		$query->select('virtuemart_custom_id')
+			->from($this->db->quoteName('#__virtuemart_customs'))
+			->where($this->db->quoteName('custom_title') . '  = ' . $this->db->quote($groupName));
+		$this->db->setQuery($query);
+		$groupId = $this->db->loadResult();
+
+		if (!$groupId)
+		{
+			$this->log->add('No group found with name ' . $groupName);
+		}
+
+		return $groupId;
+	}
+
+	/**
+	 * Get a active virtuemart languages
+	 *
+	 * @return  array.
+	 *
+	 * @since   7.5.0
+	 *
+	 */
+	public function getActiveLanguages()
+	{
+		require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart_config.php';
+		$helperConfig = new \Com_VirtuemartHelperCom_Virtuemart_Config;
+		$languages    = $helperConfig->get('active_languages');
+
+		return $languages;
 	}
 }

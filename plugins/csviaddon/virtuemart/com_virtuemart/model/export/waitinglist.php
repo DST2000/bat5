@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace virtuemart\com_virtuemart\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export VirtueMart waiting lists.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelExportWaitinglist extends CsviModelExports
+class Waitinglist extends \CsviModelExports
 {
 	/**
 	 * Export the data.
@@ -160,15 +160,16 @@ class Com_VirtuemartModelExportWaitinglist extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -192,8 +193,7 @@ class Com_VirtuemartModelExportWaitinglist extends CsviModelExports
 							case 'created_on':
 							case 'modified_on':
 							case 'locked_on':
-								$date = JFactory::getDate($record->$fieldname);
-								$fieldvalue = date($this->template->get('export_date_format'), $date->toUnix());
+								$fieldvalue = $this->fields->getDateFormat($fieldname, $record->$fieldname, $field->column_header);
 								break;
 						}
 
@@ -210,7 +210,7 @@ class Com_VirtuemartModelExportWaitinglist extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();

@@ -3,101 +3,117 @@
  * @package     CSVI
  * @subpackage  Tasks
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
 
-JHtml::_('formbehavior.chosen', 'select');
+JHtml::_('formbehavior.chosen');
+
+$listOrder  = $this->escape($this->state->get('list.ordering'));
+$listDirn   = $this->escape($this->state->get('list.direction'));
 ?>
 <form action="<?php echo JRoute::_('index.php?option=com_csvi&view=processes'); ?>" method="post" id="adminForm" name="adminForm" class="form-horizontal">
-	<input type="hidden" name="task" value="browse" />
-	<input type="hidden" name="boxchecked" value="0" />
-	<input type="hidden" name="filter_order" id="filter_order" value="<?php echo $this->lists->order ?>" />
-	<input type="hidden" name="filter_order_Dir" id="filter_order_Dir" value="<?php echo $this->lists->order_Dir ?>" />
-	<input type="hidden" name="<?php echo JFactory::getSession()->getFormToken();?>" value="1" />
-	<div class="pull-right">
-		<?php echo $this->pagination->getLimitBox(); ?>
+	<div id="j-sidebar-container" class="span2">
+		<?php echo $this->sidebar; ?>
 	</div>
-	<div class="clearfix"></div>
-	<table class="adminlist table table-striped">
-		<thead>
-			<tr>
-				<th>
-					<input type="checkbox" name="toggle" value="" onclick="Joomla.checkAll(this);" />
-				</th>
-				<th>
-					<?php
-						echo JHtml::_('grid.sort', 'COM_CSVI_PROCESSES_TEMPLATE_LABEL', 'csvi_template_id', $this->lists->order_Dir, $this->lists->order, 'browse');
-					?>
-				</th>
-				<th>
-					<?php
-						echo JHtml::_('grid.sort', 'COM_CSVI_PROCESSES_USERID_LABEL', 'userId', $this->lists->order_Dir, $this->lists->order, 'browse');
-					?>
-				</th>
-				<th>
-					<?php
-						echo JHtml::_('grid.sort', 'COM_CSVI_PROCESSES_PROCESSFILE_LABEL', 'processfile', $this->lists->order_Dir, $this->lists->order, 'browse');
-					?>
-				</th>
-				<th>
-					<?php
-						echo JHtml::_('grid.sort', 'COM_CSVI_PROCESSES_PROCESSFOLDER_LABEL', 'processfolder', $this->lists->order_Dir, $this->lists->order, 'browse');
-					?>
-				</th>
-				<th>
-					<?php
-						echo JHtml::_('grid.sort', 'COM_CSVI_PROCESSES_POSITION_LABEL', 'position', $this->lists->order_Dir, $this->lists->order, 'browse');
-					?>
-				</th>
-			</tr>
-		</thead>
-		<tfoot>
-			<tr>
-				<td colspan="20">
-					<?php
-						if ($this->pagination->total > 0)
-						{
-							echo $this->pagination->getListFooter();
-						}
-					?>
-				</td>
-			</tr>
-		</tfoot>
-		<tbody>
-			<?php
-			if (!empty($this->items))
-			{
-				foreach ($this->items as $i => $item)
-				{
-					$ordering = $this->lists->order == 'ordering';
-			?>
+	<div id="j-main-container" class="span10">
+		<?php
+		// Search tools bar
+		echo JLayoutHelper::render('joomla.searchtools.default', array('view' => $this, 'options' => array('filterButton' => false)));
+		?>
+		<?php if (!$this->items) : ?>
+			<div class="alert alert-no-items">
+				<?php echo JText::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
+			</div>
+		<?php else : ?>
+			<table class="table table-striped">
+				<thead>
 					<tr>
-						<td class="center">
-							<?php echo JHtml::_('grid.id', $i, $item->csvi_process_id); ?>
-						</td>
-						<td>
-							<?php echo $item->template_name; ?>
-						</td>
-						<td>
-							<?php echo $item->userId; ?>
-						</td>
-						<td>
-							<?php echo $item->processfile; ?>
-						</td>
-						<td>
-							<?php echo $item->processfolder; ?>
-						</td>
-						<td>
-							<?php echo $item->position; ?>
+						<th>
+							<input type="checkbox" name="toggle" value="" onclick="Joomla.checkAll(this);" />
+						</th>
+						<th>
+							<?php
+								echo JHtml::_('searchtools.sort', 'COM_CSVI_PROCESSES_TEMPLATE_LABEL', 't.template_name', $listDirn, $listOrder);
+							?>
+						</th>
+						<th>
+							<?php
+								echo JHtml::_('searchtools.sort', 'COM_CSVI_PROCESSES_USERNAME_LABEL', 'u.name', $listDirn, $listOrder);
+							?>
+						</th>
+						<th>
+							<?php
+								echo JHtml::_('searchtools.sort', 'COM_CSVI_PROCESSES_PROCESSFILE_LABEL', 'a.processfile', $listDirn, $listOrder);
+							?>
+						</th>
+						<th>
+							<?php
+								echo JHtml::_('searchtools.sort', 'COM_CSVI_PROCESSES_PROCESSFOLDER_LABEL', 'a.processfolder', $listDirn, $listOrder);
+							?>
+						</th>
+						<th>
+							<?php
+								echo JHtml::_('searchtools.sort', 'COM_CSVI_PROCESSES_POSITION_LABEL', 'a.position', $listDirn, $listOrder);
+							?>
+						</th>
+						<th>
+							<?php
+							echo JHtml::_('searchtools.sort', 'COM_CSVI_PROCESSES_ID_LABEL', 'a.csvi_process_id', $listDirn, $listOrder);
+							?>
+						</th>
+					</tr>
+				</thead>
+				<tfoot>
+					<tr>
+						<td colspan="20">
+							<div class="pull-left">
+								<?php
+								if ($this->pagination->total > 0)
+								{
+									echo $this->pagination->getListFooter();
+								}
+								?>
+							</div>
+							<div class="pull-right"><?php echo $this->pagination->getResultsCounter(); ?></div>
 						</td>
 					</tr>
-				<?php } ?>
-			<?php } ?>
-		</tbody>
-	</table>
+				</tfoot>
+				<tbody>
+					<?php foreach ($this->items as $i => $item) : ?>
+						<tr>
+							<td class="center">
+								<?php echo JHtml::_('grid.id', $i, $item->csvi_process_id); ?>
+							</td>
+							<td>
+								<?php echo $item->template_name; ?>
+							</td>
+							<td>
+								<?php echo $item->name; ?>
+							</td>
+							<td>
+								<?php echo $item->processfile; ?>
+							</td>
+							<td>
+								<?php echo $item->processfolder; ?>
+							</td>
+							<td>
+								<?php echo $item->position; ?>
+							</td>
+							<td>
+								<?php echo $item->csvi_process_id; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+	</div>
+	<input type="hidden" name="task" value="browse" />
+	<input type="hidden" name="boxchecked" value="0" />
+	<?php echo JHtml::_('form.token'); ?>
 </form>

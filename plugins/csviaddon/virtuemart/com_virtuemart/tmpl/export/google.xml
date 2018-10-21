@@ -125,7 +125,7 @@
                 class="input-mini" />
 
             <field name="shopper_group_price"
-                   type="CsviVirtuemartShoppergroup"
+                   type="Csvivirtuemart.Shoppergroup"
                    size="1"
                    multiple="false"
 				   class="advancedSelect"
@@ -159,7 +159,7 @@
 			</field>
 
 			<field name="force_shopper_group_price"
-				   type="CsviVirtuemartShoppergroup"
+				   type="Csvivirtuemart.Shoppergroup"
 				   size="1"
 				   multiple="false"
 				   class="advancedSelect"
@@ -169,7 +169,7 @@
 			</field>
 
 			<field name="shopper_groups"
-				type="CsviVirtuemartShoppergroup"
+				type="Csvivirtuemart.Shoppergroup"
 				size="7"
 				multiple="true"
 				class="input-xxlarge advancedSelect"

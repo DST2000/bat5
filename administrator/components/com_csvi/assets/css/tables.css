@@ -28,3 +28,4 @@ table.adminlist thead th.showallbutton {
 table#selectuserid tbody tr, table#selectproductsku tbody tr, table#selectitemproductsku tbody tr {
 	cursor: pointer;
 }
+

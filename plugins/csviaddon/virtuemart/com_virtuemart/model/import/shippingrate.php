@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
+class Shippingrate extends \RantaiImportEngine
 {
 	/**
 	 * Shipping method table.
 	 *
-	 * @var    VirtueMartTableShipmentmethod
+	 * @var    \VirtueMartTableShipmentmethod
 	 * @since  6.0
 	 */
 	private $shipmentmethodTable = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	/**
 	 * Shipping method language table.
 	 *
-	 * @var    VirtueMartTableShipmentmethodLang
+	 * @var    \VirtueMartTableShipmentmethodLang
 	 * @since  6.0
 	 */
 	private $shipmentmethodLangTable = null;
@@ -39,18 +41,10 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	/**
 	 * Shipping method shopper group table.
 	 *
-	 * @var    VirtueMartTableShipmentmethodShoppergroup
+	 * @var    \VirtueMartTableShipmentmethodShoppergroup
 	 * @since  6.0
 	 */
 	private $shipmentmethodShoppergroupTable = null;
-
-	/**
-	 * Set to true if the language tables exist
-	 *
-	 * @var    bool
-	 * @since  6.0
-	 */
-	private $tablesexist = true;
 
 	/**
 	 * Start the product import process.
@@ -61,83 +55,75 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	 */
 	public function getStart()
 	{
-		// Only continue if all tables exist
-		if ($this->tablesexist)
+		// Process data
+		foreach ($this->fields->getData() as $fields)
 		{
-			// Process data
-			foreach ($this->fields->getData() as $fields)
+			foreach ($fields as $name => $details)
 			{
-				foreach ($fields as $name => $details)
+				$value = $details->value;
+
+				switch ($name)
 				{
-					$value = $details->value;
+					case 'published':
+						switch ($value)
+						{
+							case 'n':
+							case 'no':
+							case 'N':
+							case 'NO':
+							case '0':
+								$value = 0;
+								break;
+							default:
+								$value = 1;
+								break;
+						}
 
-					switch ($name)
-					{
-						case 'published':
-							switch ($value)
-							{
-								case 'n':
-								case 'N':
-								case '0':
-									$value = 0;
-									break;
-								default:
-									$value = 1;
-									break;
-							}
-
-							$this->setState($name, $value);
-							break;
-						default:
-							$this->setState($name, $value);
-							break;
-					}
+						$this->setState($name, $value);
+						break;
+					default:
+						$this->setState($name, $value);
+						break;
 				}
 			}
+		}
 
-			// Reset loaded state
-			$this->loaded = true;
+		// Reset loaded state
+		$this->loaded = true;
 
-			// Required fields are calc_kind, calc_value_mathop, calc_value
-			if ($this->getState('shipment_name', false))
+		// Required fields are shipment_name
+		if ($this->getState('shipment_name', false))
+		{
+			// Bind the values
+			$this->shipmentmethodLangTable->bind($this->state);
+
+			if ($this->shipmentmethodLangTable->check())
 			{
-				// Bind the values
-				$this->shipmentmethodLangTable->bind($this->state);
+				$this->setState('virtuemart_shipmentmethod_id', $this->shipmentmethodLangTable->virtuemart_shipmentmethod_id);
 
-				if ($this->shipmentmethodLangTable->check())
+				// Check if we have an existing item
+				if ($this->getState('virtuemart_shipmentmethod_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->setState('virtuemart_shipmentmethod_id', $this->shipmentmethodLangTable->virtuemart_shipmentmethod_id);
-
-					// Check if we have an existing item
-					if ($this->getState('virtuemart_shipmentmethod_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
-					{
-						$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
-						$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
-						$this->loaded = false;
-					}
-					else
-					{
-						// Load the current content data
-						$this->shipmentmethodTable->load($this->getState('virtuemart_shipmentmethod_id'));
-						$this->loaded = true;
-					}
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('shipment_name')));
+					$this->loaded = false;
+				}
+				else
+				{
+					// Load the current content data
+					$this->shipmentmethodTable->load($this->getState('virtuemart_shipmentmethod_id'));
+					$this->loaded = true;
 				}
 			}
-			else
-			{
-				$this->loaded = false;
-
-				$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
-			}
-
-			return true;
 		}
 		else
 		{
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_LANG_TABLE_NOT_EXIST', $this->template->get('language')));
+			$this->loaded = false;
 
-			return false;
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
+
+		return true;
 	}
 
 	/**
@@ -162,12 +148,12 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 			}
 			elseif (!$virtuemart_shipmentmethod_id && $shippingrate_delete == 'Y')
 			{
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_NO_SHIPPINGRATE_ID_NO_DELETE', $this->getState('shipment_name')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_NO_SHIPPINGRATE_ID_NO_DELETE', $this->getState('shipment_name')));
 			}
 			elseif (!$virtuemart_shipmentmethod_id && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new products when user chooses to ignore new products
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('shipment_name')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('shipment_name')));
 			}
 			else
 			{
@@ -214,7 +200,13 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 								if ($value)
 								{
 									// Retrieve the country ID
-									$countries = explode(',', $value);
+									$countries = explode('|', $value);
+
+									if (strpos($value, '|') === false)
+									{
+										$countries = explode(',', $value);
+									}
+
 									$country_ids = array();
 
 									foreach ($countries as $country)
@@ -355,7 +347,7 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 
 						if (!$this->shipmentmethodLangTable->store())
 						{
-							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHIPMENTMETHOD_LANG_NOT_ADDED', $this->shipmentmethodLangTable->getError()));
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_SHIPMENTMETHOD_LANG_NOT_ADDED', $this->shipmentmethodLangTable->getError()));
 
 							return false;
 						}
@@ -383,7 +375,7 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 					}
 					else
 					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHIPMENTMETHOD_NOT_ADDED', $this->shipmentmethodTable->getError()));
+						$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_SHIPMENTMETHOD_NOT_ADDED', $this->shipmentmethodTable->getError()));
 					}
 				}
 				else
@@ -406,6 +398,9 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \CsviException
+	 * @throws  \RuntimeException
 	 */
 	public function loadTables()
 	{
@@ -414,24 +409,30 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		if ($this->template->get('language') == $this->template->get('target_language'))
+		// Get the language to use
+		$language = $this->template->get('target_language');
+
+		if ($this->template->get('language') === $this->template->get('target_language'))
 		{
-			$lang = $this->template->get('language');
-		}
-		else
-		{
-			$lang = $this->template->get('target_language', 'general');
+			$language = $this->template->get('language');
 		}
 
-		if (!in_array($this->db->getPrefix() . 'virtuemart_shipmentmethods_' . $lang, $tables))
+		// Get the table name to check
+		$tableName = $this->db->getPrefix() . 'virtuemart_shipmentmethods_' . $language;
+
+		if (!in_array($tableName, $tables))
 		{
-			$this->tablesexist = false;
-		}
-		else
-		{
-			$this->shipmentmethodLangTable = $this->getTable('ShipmentmethodLang');
+			$message = \JText::_('COM_CSVI_LANGUAGE_MISSING');
+
+			if ($language)
+			{
+				$message = \JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
+			}
+
+			throw new \CsviException($message, 510);
 		}
 
+		$this->shipmentmethodLangTable = $this->getTable('ShipmentmethodLang');
 		$this->shipmentmethodShoppergroupTable = $this->getTable('ShipmentmethodShoppergroup');
 	}
 
@@ -479,7 +480,7 @@ class Com_VirtuemartModelImportShippingrate extends RantaiImportEngine
 			// Delete shipmentmethod
 			if (!$this->shipmentmethodTable->delete($this->getState('virtuemart_shipmentmethod_id')))
 			{
-				$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_SHIPMENTMETHOD_NOT_DELETED', $this->shipmentmethodTable->getError()));
+				$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_SHIPMENTMETHOD_NOT_DELETED', $this->shipmentmethodTable->getError()));
 			}
 		}
 		else

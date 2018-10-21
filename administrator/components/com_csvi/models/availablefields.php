@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  AvailableFields
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -18,38 +18,57 @@ defined('_JEXEC') or die;
  * @subpackage  AvailableFields
  * @since       6.0
  */
-class CsviModelAvailablefields extends CsviModelDefault
+class CsviModelAvailablefields extends JModelList
 {
 	/**
-	 * Get the filters to apply to the query.
+	 * The database class
 	 *
-	 * @return  object  An object with filters.
+	 * @var    JDatabase
+	 * @since  6.6.0
+	 */
+	protected $db;
+
+	/**
+	 * Construct the class.
+	 *
+	 * @param   array  $config  An optional associative array of configuration settings.
 	 *
 	 * @since   6.0
 	 */
-	private function getFilterValues()
+	public function __construct($config = array())
 	{
-		return (object) array(
-				'action'		=> $this->getState('jform_action', $this->getState('action', '', 'string'), 'string'),
-				'component'		=> $this->getState('jform_component', $this->getState('component', '', 'string'), 'string'),
-				'operation'		=> $this->getState('jform_operation', $this->getState('operation', '', 'string'), 'string'),
-				'template_table' => $this->getState('template_table', '', 'string'),
-				'avfields'		=> $this->getState('avfields', '', 'string'),
-				'idfields'		=> $this->input->get('idfields', $this->getState('idfields', false)),
-		);
+		if (empty($config['filter_fields']))
+		{
+			$config['filter_fields'] = array(
+				'action', 'tbl.action',
+				'component', 'tbl.component',
+				'operation', 'tbl.operation',
+				'template_name', 't.template_name',
+				'idfields', 'tbl.idfields',
+				'csvi_name', 'tbl.csvi_name',
+				'component_name', 'tbl.component_name',
+				'template_table', 't.template_table',
+			);
+		}
+
+		// Load the basics
+		$this->db = JFactory::getDbo();
+
+		parent::__construct($config);
 	}
 
 	/**
-	 * Builds the SELECT query
+	 * Build an SQL query to load the list data.
 	 *
-	 * @param   boolean  $overrideLimits  Are we requested to override the set limits?
+	 * @return  JDatabaseQuery  The query to execute.
 	 *
-	 * @return  JDatabaseQuery
+	 * @since   4.0
+	 *
+	 * @throws  RuntimeException
 	 */
-	public function buildQuery($overrideLimits = false)
+	protected function getListQuery()
 	{
-		// Get the parent query
-		$query = parent::buildQuery($overrideLimits);
+		$query = $this->db->getQuery(true);
 
 		// Clean out some settings so we can reset them
 		$query->clear('select');
@@ -73,48 +92,66 @@ class CsviModelAvailablefields extends CsviModelDefault
 			. ' ON ' . $this->db->quoteName('t.template_table') . ' = ' . $this->db->quoteName('tbl.component_table')
 		);
 
-		$state = $this->getFilterValues();
+		// Filter by search field
+		$search = $this->getState('filter.search');
 
-		if ($state->action)
-		{
-			$query->where($this->db->quoteName('tbl.action') . ' = ' . $this->db->quote($state->action));
-			$query->where($this->db->quoteName('t.action') . ' = ' . $this->db->quote($state->action));
-		}
-
-		if ($state->component)
-		{
-			$query->where($this->db->quoteName('tbl.component') . ' = ' . $this->db->quote($state->component));
-			$query->where($this->db->quoteName('t.component') . ' = ' . $this->db->quote($state->component));
-		}
-
-		if ($state->operation)
-		{
-			$query->where($this->db->quoteName('t.task_name') . ' = ' . $this->db->quote($state->operation));
-		}
-
-		if ($state->template_table)
-		{
-			$query->where($this->db->quoteName('t.template_table') . ' = ' . $this->db->quote($state->template_table));
-		}
-
-		if ($state->avfields)
+		if ($search)
 		{
 			$query->where(
 				'('
-				. $this->db->quoteName('csvi_name') . ' LIKE ' . $this->db->quote('%' . $state->avfields . '%')
-				. ' OR ' . $this->db->quoteName('component_name') . ' LIKE ' . $this->db->quote('%' . $state->avfields . '%')
-				. ' OR ' . $this->db->quoteName('csvi_name') . ' LIKE ' . $this->db->quote('%' . $state->avfields . '%')
+				. $this->db->quoteName('csvi_name') . ' LIKE ' . $this->db->quote('%' . $search . '%')
+				. ' OR ' . $this->db->quoteName('component_name') . ' LIKE ' . $this->db->quote('%' . $search . '%')
+				. ' OR ' . $this->db->quoteName('csvi_name') . ' LIKE ' . $this->db->quote('%' . $search . '%')
 				. ')'
 			);
 		}
 
-		if (!$state->idfields)
+		// Filter by action
+		$action = $this->getState('filter.action');
+
+		if ($action)
+		{
+			$query->where($this->db->quoteName('tbl.action') . ' = ' . $this->db->quote($action));
+			$query->where($this->db->quoteName('t.action') . ' = ' . $this->db->quote($action));
+		}
+
+		// Filter by component
+		$component = $this->getState('filter.component');
+
+		if ($component)
+		{
+			$query->where($this->db->quoteName('tbl.component') . ' = ' . $this->db->quote($component));
+			$query->where($this->db->quoteName('t.component') . ' = ' . $this->db->quote($component));
+		}
+
+		// Filter by operation
+		$operation = $this->getState('filter.operation');
+
+		if ($operation)
+		{
+			$query->where($this->db->quoteName('t.task_name') . ' = ' . $this->db->quote($operation));
+		}
+
+		// Filter by operation
+		$idfields = $this->getState('filter.idfields');
+
+		if (!$idfields)
 		{
 			$query->where(
 				'(' . $this->db->quoteName('csvi_name') . ' NOT LIKE ' . $this->db->quote('%\_id') . ' AND ' . $this->db->quoteName('csvi_name')
 				. ' NOT LIKE ' . $this->db->quote('id') . ')'
 			);
 		}
+
+		// Add the list ordering clause.
+		$query->order(
+			$this->db->quoteName(
+				$this->db->escape(
+					$this->getState('list.ordering', 'tbl.csvi_name')
+				)
+			)
+			. ' ' . $this->db->escape($this->getState('list.direction', 'ASC'))
+		);
 
 		// Group the value
 		$query->group($this->db->quoteName(array('csvi_name', 'component_table')));
@@ -123,53 +160,45 @@ class CsviModelAvailablefields extends CsviModelDefault
 	}
 
 	/**
-	 * Get the fields belonging to a certain operation type.
+	 * Method to auto-populate the model state.
 	 *
-	 * @param   string  $type       The task name.
-	 * @param   string  $component  The name of the component to get the available fields for.
-	 * @param   string  $action     The type of action the fields belong to.
-	 * @param   string  $filter     The type of return value either array or object.
-	 * @param   string  $tableName  The name of the table to filter on.
+	 * Note. Calling getState in this method will result in recursion.
 	 *
-	 * @return  array  List of fields.
+	 * @param   string  $ordering   An optional ordering field.
+	 * @param   string  $direction  An optional direction (asc|desc).
 	 *
-	 * @since   3.0
+	 * @return  void
+	 *
+	 * @since   6.6.0
 	 */
-	public function getAvailableFields($type, $component, $action, $filter='array', $tableName=null)
+	protected function populateState($ordering = 'tbl.csvi_name', $direction = 'ASC')
 	{
-		$query = $this->db->getQuery(true)
-			->select($this->db->quoteName('csvi_name', 'value') . ',' . $this->db->quoteName('csvi_name', 'text'))
-			->from($this->db->quoteName('#__csvi_availablefields', 'a'))
-			->leftJoin(
-				$this->db->quoteName('#__csvi_availabletables', 't')
-				. ' ON ' . $this->db->quoteName('t.template_table') . ' = ' . $this->db->quoteName('a.component_table')
-			)
-			->where($this->db->quoteName('t.task_name') . ' = ' . $this->db->quote($type))
-			->where($this->db->quoteName('t.action') . ' = ' . $this->db->quote($action))
-			->where($this->db->quoteName('t.component') . ' = ' . $this->db->quote($component))
-			->where($this->db->quoteName('a.component') . ' = ' . $this->db->quote($component));
+		// List state information.
+		parent::populateState($ordering, $direction);
+	}
 
-		if ($tableName)
-		{
-			$query->where($this->db->quoteName('t.template_table') . ' = ' . $this->db->quote($tableName));
-		}
+	/**
+	 * Method to get a store id based on the model configuration state.
+	 *
+	 * This is necessary because the model is used by the component and
+	 * different modules that might need different sets of data or different
+	 * ordering requirements.
+	 *
+	 * @param   string  $id  An identifier string to generate the store id.
+	 *
+	 * @return  string  A store id.
+	 *
+	 * @since   12.2
+	 */
+	protected function getStoreId($id = '')
+	{
+		// Add the list state to the store id.
+		$id .= ':' . $this->getState('list.start');
+		$id .= ':' . $this->getState('list.limit');
+		$id .= ':' . $this->getState('list.ordering');
+		$id .= ':' . $this->getState('list.direction');
+		$id .= ':' . $this->getState('filter.search');
 
-		$query->group($this->db->quoteName('csvi_name'));
-		$this->db->setQuery($query);
-
-		// Get the results
-		$fields = array();
-
-		if ($filter == 'array')
-		{
-			$fields = $this->db->loadColumn();
-		}
-		elseif ($filter == 'object')
-		{
-			$fields = $this->db->loadObjectList();
-		}
-
-		// Return the array of fields
-		return $fields;
+		return md5($this->context . ':' . $id);
 	}
 }

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Fields
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,6 +37,8 @@ class JFormFieldCsviRules extends JFormFieldCsviForm
 	 * @return  string  The field input markup.
 	 *
 	 * @since   6.0
+	 *          
+	 * @throws  InvalidArgumentException
 	 */
 	protected function getInput()
 	{
@@ -46,9 +48,9 @@ class JFormFieldCsviRules extends JFormFieldCsviForm
 		$plugins = $dispatcher->trigger('getName');
 		$class = $this->element['class'] ? ' class="' . (string) $this->element['class'] . '"' : '';
 
-		$html = JHtml::_('select.genericlist', array_merge(parent::getOptions(), $plugins), 'plugin', $class, 'value', 'text', $this->value);
+		$html = JHtml::_('select.genericlist', array_merge(parent::getOptions(), $plugins), $this->name, $class, 'value', 'text', $this->value);
 
-		$html .= '<button onclick="Csvi.loadPluginForm(jQuery(\'#plugin\').val()); return false;" class="btn">'
+		$html .= '<button onclick="Csvi.loadPluginForm(jQuery(\'#jformplugin\').val()); return false;" class="btn">'
 					. JText::_('COM_CSVI_ADD_PLUGIN_FIELD')
 				. '</button>';
 

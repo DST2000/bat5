@@ -1,21 +1,23 @@
 <?php
 /**
- * Control panel model
+ * @package     CSVI
+ * @subpackage  ControlPanel
  *
- * @author 		Roland Dalmulder
- * @link 		http://www.csvimproved.com
- * @copyright 	Copyright (C) 2006 - 2013 RolandD Cyber Produksi. All rights reserved.
- * @license 	GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @version 	$Id: csvi.php 2368 2013-03-08 14:17:15Z RolandD $
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
+ * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
+ * @link        https://csvimproved.com
  */
 
-defined( '_JEXEC' ) or die;
-
-jimport( 'joomla.application.component.model' );
+defined('_JEXEC') or die;
 
 /**
- * Control panel model
+ * Control panel model.
  *
-* @package CSVI
+ * @package     CSVI
+ * @subpackage  ControlPanel
+ * @since       6.0
  */
-class CsviModelCsvi extends JModelLegacy { }
+class CsviModelCsvi extends JModelLegacy
+{
+}

@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -29,7 +29,7 @@ $form = $this->forms->custom_order;
 	</div>
 </div>
 
-<?php if ($this->operation != 'snelstart' && $this->operation != 'orderadvanced'): ?>
+<?php if ($this->operation != 'orderadvanced'): ?>
 <div class="control-group">
 	<label class="control-label <?php echo $form->getField('splitorderline', 'jform')->labelClass; ?>" for="<?php echo $form->getField('splitorderline', 'jform')->id; ?>">
 		<?php echo JText::_('COM_CSVI_' . $form->getField('splitorderline', 'jform')->id . '_LABEL'); ?>
@@ -75,6 +75,21 @@ $form = $this->forms->custom_order;
 		</span>
 		<span class="cron-block">
 			<?php echo str_replace('jform_', 'form.', $form->getField('orderlist', 'jform')->id); ?>
+		</span>
+	</div>
+</div>
+
+<div class="control-group">
+	<label class="control-label <?php echo $form->getField('usedatefield', 'jform')->labelClass; ?>" for="<?php echo $form->getField('usedatefield', 'jform')->id; ?>">
+		<?php echo JText::_('COM_CSVI_' . $form->getField('usedatefield', 'jform')->id . '_LABEL'); ?>
+	</label>
+	<div class="controls">
+		<?php echo $form->getInput('usedatefield', 'jform'); ?>
+		<span class="help-block">
+			<?php echo JText::_('COM_CSVI_' . $form->getField('usedatefield', 'jform')->id . '_DESC'); ?>
+		</span>
+		<span class="cron-block">
+			<?php echo str_replace('jform_', 'form.', $form->getField('usedatefield', 'jform')->id); ?>
 		</span>
 	</div>
 </div>
@@ -156,6 +171,21 @@ $form = $this->forms->custom_order;
 		</span>
 		<span class="cron-block">
 			<?php echo str_replace('jform_', 'form.', $form->getField('orderpayment', 'jform')->id); ?>
+		</span>
+	</div>
+</div>
+
+<div class="control-group">
+	<label class="control-label <?php echo $form->getField('ordershipment', 'jform')->labelClass; ?>" for="<?php echo $form->getField('ordershipment', 'jform')->id; ?>">
+		<?php echo JText::_('COM_CSVI_' . $form->getField('ordershipment', 'jform')->id . '_LABEL'); ?>
+	</label>
+	<div class="controls">
+		<?php echo $form->getInput('ordershipment', 'jform'); ?>
+		<span class="help-block">
+			<?php echo JText::_('COM_CSVI_' . $form->getField('ordershipment', 'jform')->id . '_DESC'); ?>
+		</span>
+		<span class="cron-block">
+			<?php echo str_replace('jform_', 'form.', $form->getField('ordershipment', 'jform')->id); ?>
 		</span>
 	</div>
 </div>

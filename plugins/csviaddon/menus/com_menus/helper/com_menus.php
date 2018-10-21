@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaMenus
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - [year] RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -84,6 +84,8 @@ class Com_MenusHelperCom_Menus
 	 * @return  int  The ID of the menu.
 	 *
 	 * @since   6.3.0
+	 *
+	 * @throws  RuntimeException
 	 */
 	public function getMenuId($path, $type)
 	{
@@ -93,8 +95,9 @@ class Com_MenusHelperCom_Menus
 			->where($this->db->quoteName('path') . ' = ' . $this->db->quote($path))
 			->where($this->db->quoteName('type') . '  = ' . $this->db->quote($type));
 		$this->db->setQuery($query);
-		$menuid = $this->db->loadResult();
 
-		return $menuid;
+		$this->log->add('Get the menu ID');
+
+		return $this->db->loadResult();
 	}
 }

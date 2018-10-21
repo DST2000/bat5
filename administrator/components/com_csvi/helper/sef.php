@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  SEF
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -20,14 +20,6 @@ defined('_JEXEC') or die;
  */
 class CsviHelperSef
 {
-	/**
-	 * The SEF engine to ise
-	 *
-	 * @var    string
-	 * @since  4.0
-	 */
-	private $sef = null;
-
 	/**
 	 * The domain name to use for URLs
 	 *
@@ -53,6 +45,22 @@ class CsviHelperSef
 	private $log = null;
 
 	/**
+	 * JDatabaseDriver
+	 *
+	 * @var    JDatabaseDriver
+	 * @since  7.1.0
+	 */
+	private $db;
+
+	/**
+	 * Total number of SEF URLs in the database
+	 *
+	 * @var    int
+	 * @since  7.1.0
+	 */
+	private $sefCount = 0;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param   CsviHelperSettings  $settings  An instance of CsviHelperSettings.
@@ -60,12 +68,47 @@ class CsviHelperSef
 	 * @param   CsviHelperLog       $log       An instance of CsviHelperLog.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  CsviException
 	 */
 	public function __construct(CsviHelperSettings $settings, CsviHelperTemplate $template, CsviHelperLog $log)
 	{
 		$this->domainname = $settings->get('hostname');
-		$this->template = $template;
-		$this->log = $log;
+
+		// Make sure we have a valid domain name
+		if (filter_var($this->domainname, FILTER_VALIDATE_URL) === false)
+		{
+			throw new CsviException(JText::_('COM_CSVI_NO_VALID_DOMAIN_NAME_SET'));
+		}
+
+		$this->template   = $template;
+		$this->log        = $log;
+		$this->db         = JFactory::getDbo();
+
+		if ($template->get('emptysefcache', false))
+		{
+			$this->db->truncateTable('#__csvi_sefurls');
+		}
+
+		// Check if there are any SEF URLs in the database
+		$this->countSefUrls();
+	}
+
+	/**
+	 * Count the total number of SEF URLs.
+	 *
+	 * @return  void
+	 *
+	 * @since   7.1.0
+	 */
+	private function countSefUrls()
+	{
+		$query = $this->db->getQuery(true)
+			->select('COUNT(' . $this->db->quoteName('sefurl_id') . ')')
+			->from($this->db->quoteName('#__csvi_sefurls'));
+		$this->db->setQuery($query);
+
+		$this->sefCount = $this->db->loadResult();
 	}
 
 	/**
@@ -77,286 +120,146 @@ class CsviHelperSef
 	 *
 	 * @since   6.0
 	 */
-	public function getSEF($url)
+	public function getSefUrl($url)
 	{
 		if ($this->template->get('exportsef', false))
 		{
-			$parseurl = base64_encode($url);
+			$language = substr($this->template->get('language'), 0, 2);
+			$language = $language ? '&lang=' . $language : '';
 
-			if (function_exists('curl_init'))
+			if ($this->sefCount > 0)
 			{
-				// Create a new cURL resource
-				$ch = curl_init();
+				$sefUrl = $this->loadSefUrl($url . $language);
 
-				// Set URL and other appropriate options
-				curl_setopt($ch, CURLOPT_URL, JURI::root() . 'index.php?option=com_csvi&view=sefs&task=getsef&parseurl=' . $parseurl . '&format=raw');
-				curl_setopt($ch, CURLOPT_HEADER, 0);
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-				// Grab URL and pass it to the browser
-				$url = curl_exec($ch);
-
-				// Close cURL resource, and free up system resources
-				curl_close($ch);
+				if ($sefUrl)
+				{
+					return $sefUrl;
+				}
 			}
-			else
+
+			$parseUrl = json_encode($url);
+			$http     = JHttpFactory::getHttp(null, array('curl', 'stream'));
+			$result   = $http->post(
+				$this->domainname . '/index.php?option=com_csvi&task=sefs.getsef&format=json' . $language, array('parseurl' => $parseUrl)
+			);
+			$output   = json_decode($result->body);
+
+			if (is_object($output) && $output->success)
 			{
-				$url = file_get_contents(JURI::root() . 'index.php?option=com_csvi&view=sefs&task=getsef&parseurl=' . $parseurl . '&format=raw');
+				$sefUrl       = '';
+				$cacheSefUrls = $this->template->get('cachesefurls', false);
+
+				foreach ($output->data as $url => $sefUrl)
+				{
+					if ($cacheSefUrls)
+					{
+						$this->saveSefUrl($url . $language, $sefUrl);
+					}
+				}
+
+				return $sefUrl;
 			}
+		}
+
+		// Get position of the forward slash
+		$slashPosition = strpos($url, '/');
+
+		if ($slashPosition > 0 || $slashPosition === false)
+		{
+			$url = '/' . $url;
 		}
 
 		return $this->domainname . $url;
 	}
 
 	/**
-	 * Create a SEF URL by loading the SEF class directly.
+	 * Create a list of SEF URLs.
 	 *
-	 * @param   string  $url  The URL to change to SEF.
+	 * @param   array   $urls      An array of URLs to convert.
+	 * @param   string  $language  The language to get the SEF URL for.
 	 *
-	 * @return  string  The SEF URL.
+	 * @return  bool  True on success | False on failure.
 	 *
-	 * @since   3.0
+	 * @since   7.1.0
+	 *
+	 * @throws  CsviException
 	 */
-	public function getSiteRoute($url)
+	public function getSefUrls($urls, $language = '')
 	{
-		$parsed_url = null;
+		$parseUrl = json_encode($urls);
+		$language = substr($language, 0, 2);
+		$language = $language ? '&lang=' . $language : '';
+		$options  = new Joomla\Registry\Registry;
+		$options->set('follow_location', false);
+		$http     = JHttpFactory::getHttp($options, array('curl', 'stream'));
+		$result   = $http->post(
+			$this->domainname . '/index.php?option=com_csvi&task=sefs.getsef&format=json' . $language, array('parseurl' => $parseUrl), null, 5
+		);
+		$output   = json_decode($result->body);
 
-		// Check which SEF component is installed
-		if (empty($this->sef))
+		// Check if the status is different from 200
+		if ((int) $result->code !== 200)
 		{
-			if ($this->template->get('exportsef', false))
+			throw new CsviException(JText::sprintf('COM_CSVI_SEF_URL_INCORRECT_HTTP_HEADER', $result->code, $result->body));
+		}
+
+		if (is_object($output) && $output->success && (is_array($output->data) || is_object($output->data)))
+		{
+			foreach ($output->data as $url => $sefUrl)
 			{
-				// Joomla SEF
-				if (JPluginHelper::isEnabled('system', 'sef'))
-				{
-					$this->sef = 'joomla';
-				}
+				$sefUrl .= $this->template->get('producturl_suffix', '');
 
-				// sh404SEF check
-				if (JPluginHelper::isEnabled('system', 'shsef'))
-				{
-					$this->sef = 'sh404sef';
-				}
-
-				if (JPluginHelper::isEnabled('system', 'sh404sef'))
-				{
-					$this->sef = 'sh404sef';
-				}
-
-				// JoomSEF check
-				// if (JPluginHelper::isEnabled('system', 'joomsef')) $this->_sef = 'joomsef';
-
-				// AceSEF check
-				//if (JPluginHelper::isEnabled('system', 'acesef')) $this->_sef = 'acesef';
-
-				// There is no SEF enabled
-				if (empty($this->sef))
-				{
-					$this->sef = 'nosef';
-				}
-			}
-			else
-			{
-				$this->sef = 'nosef';
+				$this->saveSefUrl($url . $language, $sefUrl);
 			}
 		}
 
-		switch ($this->sef)
-		{
-			case 'sh404sef':
-				$parsed_url = $this->_sh404Sef($url);
-				break;
-			case 'joomsef':
-				$parsed_url = $this->_joomSef($url);
-				break;
-			case 'joomla':
-				$parsed_url = $this->_joomlaSef($url);
-				break;
-			case 'acesef':
-				$parsed_url = $this->_aceSef($url);
-				break;
-			case 'nosef':
-			default:
-				// No SEF router found, returning regular URL
-				return $this->domainname . '/' . $url;
-				break;
-		}
-
-		// Clean up the parsed SEF URL
-		if (!empty($parsed_url))
-		{
-			// Clean up the parsed SEF URL
-			if (substr($parsed_url, 4) == 'http')
-			{
-				return $parsed_url;
-			}
-			else
-			{
-				// Check for administrator in the domain
-				$adminpos = strpos($parsed_url, '/administrator/');
-
-				if ($adminpos !== false)
-				{
-					$parsed_url = substr($parsed_url, $adminpos + 15);
-				}
-
-				// Check if we have a domain name in the URL
-				if (!empty($this->domainname))
-				{
-					$check_domain = str_replace('https', 'http', $this->domainname);
-					$domain = strpos($parsed_url, $check_domain);
-
-					if ($domain === false)
-					{
-						if (substr($parsed_url, 0, 1) == '/')
-						{
-							$parsed_url = $this->domainname . $parsed_url;
-						}
-						else
-						{
-							$parsed_url = $this->domainname . '/' . $parsed_url;
-						}
-					}
-
-					return $parsed_url;
-				}
-				else
-				{
-					$this->log->add(JText::_('COM_CSVI_NO_DOMAINNAME_SET'));
-
-					return $url;
-				}
-			}
-		}
+		return true;
 	}
 
 	/**
-	 * Create sh404SEF URLs.
+	 * Load SEF URL from database.
 	 *
 	 * @param   string  $url  The URL to change to SEF.
 	 *
-	 * @see     http://dev.anything-digital.com/sh404SEF/
+	 * @return  string  The SEF URL from the database or empty if nothing is found.
 	 *
-	 * @return  string  The SEF URL.
-	 *
-	 * @since   3.0
+	 * @since   7.1.0
 	 */
-	private function _sh404sef($url)
+	private function loadSefUrl($url)
 	{
-		return Sh404sefHelperGeneral::getSefFromNonSef( $url, $fullyQualified = false, $xhtml = false, $ssl = null);
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('sefurl'))
+			->from($this->db->quoteName('#__csvi_sefurls'))
+			->where($this->db->quoteName('plainurl') . ' = ' . $this->db->quote($url));
+
+		$this->db->setQuery($query);
+
+		return $this->db->loadResult();
 	}
 
 	/**
-	 * Create JoomSEF URLs.
+	 * Store a SEF URL in the database.
 	 *
-	 * @param   string  $url  The URL to change to SEF.
+	 * @param   string  $plainUrl  The non-SEF URL to store.
+	 * @param   string  $sefUrl    The SEF URL to store.
 	 *
-	 * @see     http://www.artio.net/joomla-extensions/joomsef
+	 * @return  void
 	 *
-	 * @return  string  The SEF URL.
-	 *
-	 * @since   3.0
+	 * @since   7.1.0
 	 */
-	private function _joomSef($url)
+	private function saveSefUrl($plainUrl, $sefUrl)
 	{
-		// Include Joomla files
-		jimport('joomla.application.router');
-		require_once JPATH_ROOT . '/includes/application.php';
-
-		// Include JoomSEF
-		require_once JPATH_ROOT . '/components/com_sef/sef.router.php';
-		$shRouter = new JRouterJoomSef();
-
-		// Build the SEF URL
-		$uri = $shRouter->build($url);
-
-		return $uri->toString();
-	}
-
-	/**
-	 * Create Joomla SEF URLs.
-	 *
-	 * In the backend, the languagefilter plugin is not triggered, so we need
-	 * to add our own language tag to the URL.
-	 *
-	 * @param   string  $url  The URL to change to SEF.
-	 *
-	 * @see     http://www.joomla.org/
-	 *
-	 * @return  string  The SEF URL.
-	 *
-	 * @since   3.0
-	 */
-	private function _joomlaSef($url)
-	{
-		// Load Joomla core files for SEF
-		jimport('joomla.application.router');
-
-		require_once JPATH_LIBRARIES . '/cms/router/router.php';
-		require_once JPATH_LIBRARIES . '/cms/router/site.php';
-
-		$router = new JRouterSite(array('mode' => 1));
-		$uri = $router->build($url);
-
-		// Add the language tag since we can't use the languagefilter
-		$jconfig = JFactory::getConfig();
-		$path = str_ireplace(JURI::root(true), '', $uri->getPath());
-		$adminpos = strpos($path, '/administrator/');
-
-		// Check if the language filter is being used
-		if (JPluginHelper::isEnabled('system', 'languagefilter'))
-		{
-			if ($jconfig->get('sef_rewrite'))
-			{
-				// Using SEF Rewrite
-				if ($adminpos !== false)
-				{
-					$path = substr($this->template->get('language'), 0, 2) . '/' . substr($path, $adminpos + 15);
-				}
-			}
-			else
-			{
-				//  Not using SEF Rewrite
-				if ($adminpos !== false)
-				{
-					$path = 'index.php/' . substr($this->template->get('language'), 0, 2) . '/' . substr($path, $adminpos + 24);
-				}
-			}
-		}
-		else
-		{
-			if ($adminpos !== false)
-			{
-				$path = substr($path, $adminpos + 15);
-			}
-		}
-
-		$uri->setPath($path);
-
-		return $uri->toString();
-	}
-
-	/**
-	 * Create aceSEF URLs.
-	 *
-	 * @param   string  $url  The URL to change to SEF.
-	 *
-	 * @see     http://www.joomace.net/joomla-extensions/acesef
-	 *
-	 * @return  string  The SEF URL.
-	 *
-	 * @since   3.0
-	 */
-	private function _aceSef($url)
-	{
-		jimport('joomla.application.router');
-		require_once JPATH_ROOT . '/includes/application.php';
-		require_once JPATH_ADMINISTRATOR . '/components/com_acesef/library/router.php';
-		require_once JPATH_ADMINISTRATOR . '/components/com_acesef/library/loader.php';
-
-		$router = new JRouterAcesef();
-		$uri = $router->build($url);
-
-		return $uri->toString();
+		$query = $this->db->getQuery(true)
+			->insert($this->db->quoteName('#__csvi_sefurls'))
+			->columns(
+				array(
+					'plainurl',
+					'sefurl',
+				)
+			)
+			->values(
+				$this->db->quote($plainUrl) . ',' . $this->db->quote($sefUrl)
+			);
+		$this->db->setQuery($query)->execute();
 	}
 }

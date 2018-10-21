@@ -7,6 +7,7 @@ INSERT IGNORE INTO `#__csvi_availablefields` (`csvi_name`, `component_name`, `co
 ('image', 'image', 'category', 'com_categories', 'import'),
 ('meta_author', 'meta_author', 'category', 'com_categories', 'import'),
 ('meta_robots', 'meta_robots', 'category', 'com_categories', 'import'),
+('tags', 'tags', 'category', 'com_categories', 'import'),
 
 /* Joomla category export */
 ('custom', 'custom', 'category', 'com_categories', 'export'),
@@ -14,4 +15,5 @@ INSERT IGNORE INTO `#__csvi_availablefields` (`csvi_name`, `component_name`, `co
 ('category_layout', 'category_layout', 'category', 'com_categories', 'export'),
 ('image', 'image', 'category', 'com_categories', 'export'),
 ('meta_author', 'meta_author', 'category', 'com_categories', 'export'),
-('meta_robots', 'meta_robots', 'category', 'com_categories', 'export');
+('meta_robots', 'meta_robots', 'category', 'com_categories', 'export'),
+('tags', 'tags', 'category', 'com_categories', 'export');

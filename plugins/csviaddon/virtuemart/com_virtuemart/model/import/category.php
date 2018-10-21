@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportCategory extends RantaiImportEngine
+class Category extends \RantaiImportEngine
 {
 	/**
 	 * Category table
 	 *
-	 * @var    VirtueMartTableCategory
+	 * @var    \VirtueMartTableCategory
 	 * @since  6.0
 	 */
 	private $category = null;
@@ -31,7 +33,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	/**
 	 * Media table
 	 *
-	 * @var    VirtueMartTableMedia
+	 * @var    \VirtueMartTableMedia
 	 * @since  6.0
 	 */
 	private $media = null;
@@ -39,7 +41,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	/**
 	 * Category media table
 	 *
-	 * @var    VirtueMartTableCategorymedia
+	 * @var    \VirtueMartTableCategorymedia
 	 * @since  6.0
 	 */
 	private $categoryMedia = null;
@@ -47,7 +49,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	/**
 	 * Category language table
 	 *
-	 * @var    VirtueMartTableCategoryLang
+	 * @var    \VirtueMartTableCategoryLang
 	 * @since  6.0
 	 */
 	private $categoryLang = null;
@@ -55,7 +57,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	/**
 	 * Category model helper
 	 *
-	 * @var    Com_virtuemartHelperCategory
+	 * @var    \Com_virtuemartHelperCategory
 	 * @since  6.0
 	 */
 	private $categoryModel = null;
@@ -69,14 +71,6 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	private $categorySeparator = null;
 
 	/**
-	 * Set if language tables exist
-	 *
-	 * @var    bool
-	 * @since  6.0
-	 */
-	private $tablesExist = true;
-
-	/**
 	 * Here starts the processing.
 	 *
 	 * @return  bool  Akways returns true.
@@ -85,82 +79,102 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	 */
 	public function getStart()
 	{
-		// Only continue if all tables exist
-		if ($this->tablesExist)
+		// Get the general category functions
+		$this->categoryModel = new \Com_virtuemartHelperCategory(
+			$this->db,
+			$this->template,
+			$this->log,
+			$this->csvihelper,
+			$this->fields,
+			$this->helper,
+			$this->helperconfig,
+			$this->userId
+		);
+		$this->categoryModel->getStart();
+
+		// Check for vendor ID
+		$this->setState('virtuemart_vendor_id', $this->helper->getVendorId());
+
+		// Process data
+		foreach ($this->fields->getData() as $fields)
 		{
-			// Get the general category functions
-			$this->categoryModel = new Com_virtuemartHelperCategory(
-				$this->db,
-				$this->template,
-				$this->log,
-				$this->csvihelper,
-				$this->fields,
-				$this->helper,
-				$this->helperconfig,
-				$this->userId
-			);
-			$this->categoryModel->getStart();
-
-			// Check for vendor ID
-			$this->setState('virtuemart_vendor_id', $this->helper->getVendorId());
-
-			// Process data
-			foreach ($this->fields->getData() as $fields)
+			foreach ($fields as $name => $details)
 			{
-				foreach ($fields as $name => $details)
+				$value = $details->value;
+
+				switch ($name)
 				{
-					$value = $details->value;
+					case 'published':
+					case 'media_published':
+						switch ($value)
+						{
+							case 'n':
+							case 'no':
+							case 'N':
+							case 'NO':
+							case '0':
+								$value = 0;
+								break;
+							default:
+								$value = 1;
+								break;
+						}
 
-					switch ($name)
-					{
-						case 'published':
-							switch ($value)
-							{
-								case 'n':
-								case 'N':
-								case '0':
-									$value = 0;
-									break;
-								default:
-									$value = 1;
-									break;
-							}
+						$this->setState($name, $value);
+						break;
+					case 'show_store_desc':
+					case 'showcategory_desc':
+					case 'showcategory':
+					case 'showproducts':
+					case 'omitLoaded':
+					case 'showsearch':
+					case 'featured':
+					case 'omitLoaded_featured':
+					case 'discontinued':
+					case 'omitLoaded_discontinued':
+					case 'latest':
+					case 'omitLoaded_latest':
+					case 'topten':
+					case 'omitLoaded_topten':
+					case 'recent':
+					case 'omitLoaded_recent':
+						switch (strtolower($value))
+						{
+							case 'n':
+							case 'no':
+							case '0':
+								$value = 0;
+								break;
+							case 'y':
+							case 'yes':
+							case '1':
+								$value = 1;
+								break;
+							default:
+								$value = '';
+								break;
+						}
 
-							$this->setState('published', $value);
-							break;
-						default:
-							$this->setState($name, $value);
-							break;
-					}
+						$this->setState($name, $value);
+						break;
+					default:
+						$this->setState($name, $value);
+						break;
 				}
 			}
-
-			// If we have no category path we cannot continue
-			$categoryPath = $this->getState('category_path', false);
-
-			if (!$categoryPath)
-			{
-				$this->log->addStats('incorrect', 'COM_CSVI_NO_CATEGORY_PATH_SET');
-
-				return false;
-			}
-
-			return true;
 		}
-		else
+
+		// If we have no category path we cannot continue
+		$categoryPath = $this->getState('category_path', false);
+
+		if (!$categoryPath)
 		{
-			$lang = $this->template->get('target_language');
-
-			if ($this->template->get('language') == $this->template->get('target_language'))
-			{
-				$lang = $this->template->get('language');
-			}
-
-			$tblname = $this->db->getPrefix() . 'virtuemart_categories_' . $lang;
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_LANG_TABLE_NOT_EXIST', $tblname));
+			$this->log->addStats('incorrect', 'COM_CSVI_NO_CATEGORY_PATH_SET');
 
 			return false;
 		}
+
+		return true;
 	}
 
 	/**
@@ -198,18 +212,21 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 		}
 		elseif ($this->template->get('language') == $this->template->get('target_language'))
 		{
-			$trans_paths = array($this->getState('category_path'));
-			$paths = array($this->getState('category_path'));
+			$trans_paths = explode($this->categorySeparator, $this->getState('category_path'));
+			$paths = explode($this->categorySeparator, $this->getState('category_path'));
 		}
 		else
 		{
 			$this->log->addStats(
 				'incorrect',
-				JText::sprintf('COM_CSVI_CATEGORY_LANGUAGE_UNKNOWN', $this->template->get('language'), $this->template->get('target_language'))
+				\JText::sprintf('COM_CSVI_CATEGORY_LANGUAGE_UNKNOWN', $this->template->get('language'), $this->template->get('target_language'))
 			);
 
 			return false;
 		}
+
+		// Get the count of categories in the path
+		$countPaths = count($paths) - 1;
 
 		// Get the last category
 		$last = end($paths);
@@ -231,23 +248,24 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 			// First get the category ID
 			try
 			{
-				$categoryid = $this->categoryModel->getCategoryIdFromPath($workPath);
+				$categoryDetails = $this->categoryModel->getCategoryIdFromPath($workPath);
 
-				$this->setState('virtuemart_category_id', $categoryid['category_id']);
+				$this->setState('virtuemart_category_id', $categoryDetails['category_id']);
+				$categoryid = $this->getState('virtuemart_category_id', false);
 			}
-			catch (Exception $e)
+			catch (\Exception $e)
 			{
 				$this->log->addStats('incorrect', $e->getMessage());
 
 				return false;
 			}
 
-			if ($this->getState('virtuemart_category_id', false) && !$this->template->get('overwrite_existing_data'))
+			if ($categoryid && !$this->template->get('overwrite_existing_data'))
 			{
-				$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $categoryid));
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $categoryid));
+				$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $categoryid));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_PRODUCT_SKU', $categoryid));
 			}
-			elseif ($last == $path)
+			elseif ($last === $path && $key === $countPaths)
 			{
 				// We have the category ID, lets see if it should be deleted
 				if ($this->getState('category_delete', 'N') == 'Y')
@@ -258,6 +276,9 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 				{
 					// Handle the images
 					$this->processMedia();
+
+					// Check on cat_params
+					$this->processCategoryParams();
 
 					// Set some basic values
 					if (!$this->getState('modified_on', false))
@@ -271,7 +292,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 					{
 						if ($path != $this->getState('category_name'))
 						{
-							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_CATEGORY_NAME_NO_MATCH_CATEGORY_PATH', $path, $this->getState('category_name')));
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CATEGORY_NAME_NO_MATCH_CATEGORY_PATH', $path, $this->getState('category_name')));
 
 							return false;
 						}
@@ -283,7 +304,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 					// Now store the data
 					if (!$this->category->store())
 					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_CATEGORY_DETAILS_NOT_ADDED', $this->category->getError()));
+						$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CATEGORY_DETAILS_NOT_ADDED', $this->category->getError()));
 					}
 
 					// Store the language fields
@@ -299,6 +320,9 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 					// Check and store the language data
 					if ($this->categoryLang->check())
 					{
+						// Bind the new values
+						$this->categoryLang->bind($this->state);
+
 						// Recreate the slug
 						if ($this->template->get('recreate_alias', false))
 						{
@@ -307,14 +331,51 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 
 						if (!$this->categoryLang->store())
 						{
-							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_CATEGORY_LANG_NOT_ADDED', $this->categoryLang->getError()));
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CATEGORY_LANG_NOT_ADDED', $this->categoryLang->getError()));
 
 							return false;
 						}
 					}
 					else
 					{
-						$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_CATEGORY_LANG_NOT_ADDED', $this->categoryLang->getError()));
+						$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CATEGORY_LANG_NOT_ADDED', $this->categoryLang->getError()));
+
+						return false;
+					}
+				}
+			}
+			else
+			{
+				// Do the parent category processing for transalation category path
+				if ($categoryid && $translate)
+				{
+					// Store the language fields
+					$this->categoryLang->load($categoryid);
+					$this->categoryLang->category_name = $trans_paths[$key];
+					$this->categoryLang->bind($this->state);
+
+					// Check and store the language data
+					if ($this->categoryLang->check())
+					{
+						// Bind the new values
+						$this->categoryLang->bind($this->state);
+
+						// Recreate the slug
+						if ($this->template->get('recreate_alias', false))
+						{
+							$this->categoryLang->createSlug();
+						}
+
+						if (!$this->categoryLang->store())
+						{
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CATEGORY_LANG_NOT_ADDED', $this->categoryLang->getError()));
+
+							return false;
+						}
+					}
+					else
+					{
+						$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_CATEGORY_LANG_NOT_ADDED', $this->categoryLang->getError()));
 
 						return false;
 					}
@@ -334,6 +395,9 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \CsviException
+	 * @throws  \RuntimeException
 	 */
 	public function loadTables()
 	{
@@ -344,24 +408,30 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 		// Check if the language tables exist
 		$tables = $this->db->getTableList();
 
-		if ($this->template->get('language') == $this->template->get('target_language'))
+		// Get the language to use
+		$language = $this->template->get('target_language');
+
+		if ($this->template->get('language') === $this->template->get('target_language'))
 		{
-			$lang = $this->template->get('language');
-		}
-		else
-		{
-			$lang = $this->template->get('target_language');
+			$language = $this->template->get('language');
 		}
 
-		if (!in_array($this->db->getPrefix() . 'virtuemart_categories_' . $lang, $tables))
+		// Get the table name to check
+		$tableName = $this->db->getPrefix() . 'virtuemart_categories_' . $language;
+
+		if (!in_array($tableName, $tables))
 		{
-			$this->tablesExist = false;
+			$message = \JText::_('COM_CSVI_LANGUAGE_MISSING');
+
+			if ($language)
+			{
+				$message = \JText::sprintf('COM_CSVI_TABLE_NOT_FOUND', $tableName);
+			}
+
+			throw new \CsviException($message, 510);
 		}
-		else
-		{
-			$this->tablesExist = true;
-			$this->categoryLang = $this->getTable('CategoryLang');
-		}
+
+		$this->categoryLang = $this->getTable('CategoryLang');
 	}
 
 	/**
@@ -471,7 +541,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 				$max_height = $this->template->get('resize_max_height', 768);
 
 				// Image handling
-				$imagehelper = new CsviHelperImage($this->template, $this->log, $this->csvihelper);
+				$imagehelper = new \CsviHelperImage($this->template, $this->log, $this->csvihelper);
 
 				// Delete existing image links before importing new one
 				if ($this->template->get('delete_category_images', false))
@@ -510,7 +580,14 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 
 							if (strpos($imgpath, $dirname) !== false)
 							{
+								// Collect rest of folder path if it is more than image default path
+								$imageleftpath = str_replace($imgpath, '', $dirname . '/');
 								$image = basename($image);
+
+								if ($imageleftpath)
+								{
+									$image = $imageleftpath . $image;
+								}
 							}
 
 							$original = $imgpath . $image;
@@ -572,13 +649,15 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 									$media['file_meta'] = $meta;
 								}
 
-								$media['file_mimetype'] = $file_details['mime_type'];
-								$media['file_type'] = 'category';
+								$media['file_mimetype']         = $file_details['mime_type'];
+								$media['file_type']             = 'category';
 								$media['file_is_product_image'] = 0;
-								$media['file_is_downloadable'] = 0;
-								$media['file_is_forSale'] = 0;
-								$media['file_url'] = (empty($file_details['output_path'])) ? $file_details['output_name'] : $file_details['output_path'] . $file_details['output_name'];
-								$media['published'] = $this->getState('published', 0);
+								$media['file_is_downloadable']  = 0;
+								$media['file_is_forSale']       = 0;
+								$media['file_url']              = (empty($file_details['output_path'])) ? $file_details['output_name'] : $file_details['output_path'] . $file_details['output_name'];
+								$media['published']             = $this->getState('media_published', $this->getState('published', 0));
+								$media['file_is_product_image'] = 0;
+								$media['file_url_thumb']        = '';
 
 								// Create the thumbnail
 								if ($file_details['isimage'])
@@ -587,32 +666,31 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 
 									if ($this->template->get('thumb_create'))
 									{
-										$thumb_sizes = getimagesize(JPATH_SITE . '/' . $media['file_url']);
+										$thumb_sizes             = getimagesize(JPATH_SITE . '/' . $media['file_url']);
+										$media['file_url_thumb'] = '';
 
 										if ($thumb && ($thumb_sizes[0] < $max_width || $thumb_sizes[1] < $max_height))
 										{
 											$media['file_url_thumb'] = $imagehelper->createThumbnail($media['file_url'], $this->template->get('file_location_category_images'), $thumb);
 										}
-										else
-										{
-											$media['file_url_thumb'] = '';
-										}
 									}
 									else
 									{
-										$media['file_url_thumb'] = (empty($thumb)) ? $media['file_url'] : $file_details['output_path'] . $thumb;
+										$resizeFolder = '';
+
+										if (strpos($thumb, 'resized') !== false)
+										{
+											$resizeFolder = 'resized/';
+										}
+
+										$media['file_url_thumb'] = empty($thumb) ? $media['file_url'] : $file_details['output_path'] . $resizeFolder . basename($thumb);
 
 										if (substr($media['file_url_thumb'], 0, 4) == 'http')
 										{
-											$this->log->add(JText::sprintf('COM_CSVI_RESET_THUMB_NOHTTP', $media['file_url_thumb']));
+											$this->log->add(\JText::sprintf('COM_CSVI_RESET_THUMB_NOHTTP', $media['file_url_thumb']));
 											$media['file_url_thumb'] = '';
 										}
 									}
-								}
-								else
-								{
-									$media['file_is_product_image'] = 0;
-									$media['file_url_thumb'] = '';
 								}
 
 								// Bind the media data
@@ -647,7 +725,7 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 								}
 								else
 								{
-									$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->media->getError()));
+									$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_MEDIA_NOT_ADDED', $this->media->getError()));
 								}
 
 								// Reset the product media table
@@ -659,5 +737,38 @@ class Com_VirtuemartModelImportCategory extends RantaiImportEngine
 				}
 			}
 		}
+	}
+
+	/**
+	 * Process category params
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.2.0
+	 */
+	private function processCategoryParams()
+	{
+		$newParam = array();
+		$catParams = array('show_store_desc', 'showcategory_desc', 'showcategory', 'categories_per_row', 'showproducts',
+			'omitLoaded', 'showsearch', 'productsublayout', 'featured', 'featured_rows', 'omitLoaded_featured',
+			'discontinued', 'discontinued_rows', 'omitLoaded_discontinued', 'latest', 'latest_rows', 'omitLoaded_latest',
+			'topten', 'topten_rows', 'omitLoaded_topten', 'recent', 'recent_rows', 'omitLoaded_recent');
+
+		foreach ($catParams as $param)
+		{
+			$paramVal = $this->getState($param, '');
+
+			if (isset($paramVal))
+			{
+				$newParam[] = $param . '="' . $this->getState($param, '') . '"';
+			}
+			else
+			{
+				$newParam[] = $param . '=""';
+			}
+		}
+
+		$categoryParams = implode('|', $newParam);
+		$this->setState('cat_params', $categoryParams);
 	}
 }

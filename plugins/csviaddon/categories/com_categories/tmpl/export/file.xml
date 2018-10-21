@@ -74,15 +74,6 @@
 				type="text"
 				class="input-mini" />
 
-			<field name="groupby"
-				type="list"
-				size="1"
-				class="input-small advancedSelect"
-				default="1">
-				<option value="1">JYES</option>
-				<option value="0">JNO</option>
-			</field>
-
 			<field name="export_date_format"
 				type="text"
 				class="input-small"

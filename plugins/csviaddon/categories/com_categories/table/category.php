@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  JoomlaCategory
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -36,6 +36,14 @@ class CategoriesTableCategory extends JTableCategory
 	protected $template = null;
 
 	/**
+	 * Holds the logger
+	 *
+	 * @var    CsviHelperLog
+	 * @since  7.2.0
+	 */
+	protected $log = null;
+
+	/**
 	 * Inject the template into the table class.
 	 *
 	 * @param   CsviHelperTemplate  $template  An instance of CsviHelperTemplate.
@@ -63,7 +71,7 @@ class CategoriesTableCategory extends JTableCategory
 		// Check for a title.
 		if (trim($this->title) == '')
 		{
-			$this->setError(JText::_('JLIB_DATABASE_ERROR_MUSTCONTAIN_A_TITLE_CATEGORY'));
+			$this->log->addStats('error', JText::_('JLIB_DATABASE_ERROR_MUSTCONTAIN_A_TITLE_CATEGORY'));
 
 			return false;
 		}
@@ -119,7 +127,7 @@ class CategoriesTableCategory extends JTableCategory
 		if ($table->load(array('alias' => $this->alias, 'parent_id' => $this->parent_id, 'extension' => $this->extension))
 			&& ($table->id != $this->id || $this->id == 0))
 		{
-			$this->setError(JText::_('COM_CSVI_CATEGORY_UNIQUE_ALIAS'));
+			$this->log->addStats('error', JText::_('COM_CSVI_CATEGORY_UNIQUE_ALIAS'));
 
 			return false;
 		}
@@ -158,7 +166,7 @@ class CategoriesTableCategory extends JTableCategory
 		if ($table->load(array('alias' => $this->alias, 'parent_id' => $this->parent_id, 'extension' => $this->extension))
 			&& ($table->id != $this->id || $this->id == 0))
 		{
-			$this->setError(JText::_('JLIB_DATABASE_ERROR_CATEGORY_UNIQUE_ALIAS'));
+			$this->log->addStats('error', JText::_('JLIB_DATABASE_ERROR_CATEGORY_UNIQUE_ALIAS'));
 
 			return false;
 		}
@@ -174,6 +182,8 @@ class CategoriesTableCategory extends JTableCategory
 	 * @return  bool  True on success | False on failure.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  CsviException
 	 */
 	private function storeJTableNested($updateNulls = false)
 	{
@@ -209,22 +219,21 @@ class CategoriesTableCategory extends JTableCategory
 				if ($this->_location_id == 0)
 				{
 					// Get the last root node as the reference node.
-					$query = $this->_db->getQuery(true);
+					$query = $this->getDbo()->getQuery(true);
 					$query->select($this->_tbl_key . ', parent_id, level, lft, rgt');
 					$query->from($this->_tbl);
 					$query->where('parent_id = 0');
 					$query->order('lft DESC');
-					$this->_db->setQuery($query, 0, 1);
-					$reference = $this->_db->loadObject();
 
-					// Check for a database error.
-					if ($this->_db->getErrorNum())
+					try
 					{
-						$e = new JException(JText::sprintf('JLIB_DATABASE_ERROR_STORE_FAILED', get_class($this), $this->_db->getErrorMsg()));
-						$this->setError($e);
+						$this->getDbo()->setQuery($query, 0, 1);
+						$reference = $this->getDbo()->loadObject();
 						$this->_unlock();
-
-						return false;
+					}
+					catch (Exception $e)
+					{
+						throw new CsviException(JText::sprintf('JLIB_DATABASE_ERROR_STORE_FAILED', get_class($this), $e->getMessage()));
 					}
 
 					if ($this->_debug)
@@ -255,14 +264,14 @@ class CategoriesTableCategory extends JTableCategory
 				}
 
 				// Create space in the tree at the new location for the new node in left ids.
-				$query = $this->_db->getQuery(true);
+				$query = $this->getDbo()->getQuery(true);
 				$query->update($this->_tbl);
 				$query->set('lft = lft + 2');
 				$query->where($repositionData->left_where);
 				$this->_runQuery($query, 'JLIB_DATABASE_ERROR_STORE_FAILED');
 
 				// Create space in the tree at the new location for the new node in right ids.
-				$query = $this->_db->getQuery(true);
+				$query = $this->getDbo()->getQuery(true);
 				$query->update($this->_tbl);
 				$query->set('rgt = rgt + 2');
 				$query->where($repositionData->right_where);
@@ -277,10 +286,7 @@ class CategoriesTableCategory extends JTableCategory
 			else
 			{
 				// Negative parent ids are invalid
-				$e = new JException(JText::_('JLIB_DATABASE_ERROR_INVALID_PARENT_ID'));
-				$this->setError($e);
-
-				return false;
+				throw new CsviException(JText::_('JLIB_DATABASE_ERROR_INVALID_PARENT_ID'), 'error');
 			}
 		}
 		/*
@@ -335,11 +341,14 @@ class CategoriesTableCategory extends JTableCategory
 	 * @return  bool  True on success | False on failure.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  CsviException
 	 */
 	private function storeJTable($updateNulls = false)
 	{
 		// Initialise variables.
 		$k = $this->_tbl_key;
+		$currentAssetId = 0;
 
 		if (!empty($this->asset_id))
 		{
@@ -355,20 +364,17 @@ class CategoriesTableCategory extends JTableCategory
 		// If a primary key exists update the object, otherwise insert it.
 		if ($this->$k)
 		{
-			$stored = $this->_db->updateObject($this->_tbl, $this, $this->_tbl_key, $updateNulls);
+			$stored = $this->getDbo()->updateObject($this->_tbl, $this, $this->_tbl_key, $updateNulls);
 		}
 		else
 		{
-			$stored = $this->_db->insertObject($this->_tbl, $this, $this->_tbl_key);
+			$stored = $this->getDbo()->insertObject($this->_tbl, $this, $this->_tbl_key);
 		}
 
 		// If the store failed return false.
 		if (!$stored)
 		{
-			$e = new JException(JText::sprintf('JLIB_DATABASE_ERROR_STORE_FAILED', get_class($this), $this->_db->getErrorMsg()));
-			$this->setError($e);
-
-			return false;
+			throw new CsviException(JText::sprintf('JLIB_DATABASE_ERROR_STORE_FAILED', 'error'));
 		}
 
 		// If the table is not set to track assets return true.
@@ -382,10 +388,7 @@ class CategoriesTableCategory extends JTableCategory
 			$this->_unlock();
 		}
 
-		//
 		// Asset Tracking
-		//
-
 		$parentId = $this->_getAssetParentId();
 		$name = $this->_getAssetName();
 		$title = $this->_getAssetTitle();
@@ -420,9 +423,15 @@ class CategoriesTableCategory extends JTableCategory
 			$asset->rules = (string) $this->_rules;
 		}
 
-		if (!$asset->check() || !$asset->store($updateNulls))
+		try
 		{
-			$this->setError($asset->getError());
+			$asset->check();
+			$asset->store($updateNulls);
+		}
+		catch (Exception $e)
+		{
+			$this->log->add('Asset table. Error: ' . $e->getMessage(), false);
+			$this->log->addStats('incorrect', $e->getMessage());
 
 			return false;
 		}
@@ -433,16 +442,20 @@ class CategoriesTableCategory extends JTableCategory
 			// Update the asset_id field in this table.
 			$this->asset_id = (int) $asset->id;
 
-			$query = $this->_db->getQuery(true);
-			$query->update($this->_db->quoteName($this->_tbl));
+			$query = $this->getDbo()->getQuery(true);
+			$query->update($this->getDbo()->quoteName($this->_tbl));
 			$query->set('asset_id = ' . (int) $this->asset_id);
-			$query->where($this->_db->quoteName($k) . ' = ' . (int) $this->$k);
-			$this->_db->setQuery($query);
+			$query->where($this->getDbo()->quoteName($k) . ' = ' . (int) $this->$k);
+			$this->getDbo()->setQuery($query);
 
-			if (!$this->_db->execute())
+			try
 			{
-				$e = new JException(JText::sprintf('JLIB_DATABASE_ERROR_STORE_FAILED_UPDATE_ASSET_ID', $this->_db->getErrorMsg()));
-				$this->setError($e);
+				$this->getDbo()->execute();
+			}
+			catch (Exception $e)
+			{
+				$this->log->add('Asset table. Error: ' . $e->getMessage(), false);
+				$this->log->addStats('incorrect', $e->getMessage());
 
 				return false;
 			}
@@ -454,7 +467,7 @@ class CategoriesTableCategory extends JTableCategory
 	/**
 	 * Reset the primary key.
 	 *
-	 * @return  boolean  Always returns true.
+	 * @return  void
 	 *
 	 * @since   6.0
 	 */
@@ -463,6 +476,76 @@ class CategoriesTableCategory extends JTableCategory
 		parent::reset();
 
 		// Reset the primary key
-		$this->id = null;
+		$this->set('id', null);
+	}
+
+	/**
+	 * Inject the logger into the table class.
+	 *
+	 * @param   CsviHelperLog  $log  An instance of CsviHelperLog.
+	 *
+	 * @return  void.
+	 *
+	 * @since   7.2.0
+	 */
+	public function setLogger(CsviHelperLog $log)
+	{
+		$this->log = $log;
+	}
+
+	/**
+	 * Check if insert ID has to be kept as given
+	 *
+	 * @param   int  $categoryId  The category ID.
+	 * @param   int  $userId      The logged in user ID.
+	 *
+	 * @return  int  Insert id of category table.
+	 *
+	 * @since   7.2.0
+	 */
+	public function checkId($categoryId, $userId)
+	{
+		if (!$categoryId)
+		{
+			return false;
+		}
+
+		$query = $this->getDbo()->getQuery(true)
+			->select($this->getDbo()->quoteName($this->_tbl_key))
+			->from($this->getDbo()->quoteName($this->_tbl))
+			->where($this->getDbo()->quoteName($this->_tbl_key) . ' = ' . (int) $categoryId);
+		$this->getDbo()->setQuery($query);
+		$id = $this->getDbo()->loadResult();
+		$insertId = $id;
+
+		if (!$id && $this->template->get('keepcatid', false))
+		{
+			$query->clear()
+				->insert($this->getDbo()->quoteName($this->_tbl))
+				->columns(
+					$this->getDbo()->quoteName(
+						array(
+							$this->_tbl_key,
+							'parent_id',
+							'level',
+							'access',
+							'language',
+							'created_user_id',
+							'created_time',
+						)
+					)
+				)
+				->values(
+					(int) $categoryId . ',1,1,1,' .
+					$this->getDbo()->quote('*') .
+					',' . $userId .
+					',' . $this->getDbo()->quote((new JDate)->toSql())
+				);
+			$this->getDbo()->setQuery($query)->execute();
+			$insertId = $this->getDbo()->insertid();
+			$this->log->add('Insert a new Joomla category with id in import file');
+		}
+
+		return $insertId;
 	}
 }

@@ -2,6 +2,13 @@
 <form>
 	<fields name="jform">
 		<fieldset name="user">
+			<field name="group_separator"
+			       type="text"
+			       class="input-mini"
+			       label="COM_CSVI_GROUP_SEPARATOR_LABEL"
+			       description="COM_CSVI_GROUP_SEPARATOR_DESC"
+			       default="/" />
+
 			<field name="user_state"
 				size="1"
 				type="list"

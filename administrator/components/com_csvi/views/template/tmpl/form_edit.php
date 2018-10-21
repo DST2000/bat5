@@ -3,10 +3,10 @@
 * @package     CSVI
 * @subpackage  Template
 *
-* @author      Roland Dalmulder <contact@csvimproved.com>
-* @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+* @author      RolandD Cyber Produksi <contact@csvimproved.com>
+* @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
 * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
-* @link        http://www.csvimproved.com
+* @link        https://csvimproved.com
 */
 
 defined('_JEXEC') or die;
@@ -65,22 +65,28 @@ defined('_JEXEC') or die;
 						?>
 						<div id="<?php echo $tabname; ?>_tab" class="tab-pane">
 							<?php
-							if ($tabname == 'fields')
+							if ($tabname === 'fields')
 							{
-								echo $this->loadAnyTemplate('admin:com_csvi/template/fields');
+								echo $this->loadTemplate('fields', false);
+							}
+							elseif ($tabname === 'customexport_fields')
+							{
+								echo $this->loadTemplate('customexport_fields', false);
 							}
 							elseif (stripos($tabname, 'custom_') !== false)
 							{
-								echo $this->loadAnyTemplate('admin:com_csvi/template/' . $tabname);
+								echo $this->loadTemplate($tabname, false);
 							}
 							else
 							{
 								echo $this->forms->$tabname;
 
 								// Load a custom template
-								if (file_exists(JPATH_ADMINISTRATOR . '/components/com_csvi/addon/' . $this->component . '/tmpl/' . $this->action . '/' . $tabname . '.php'))
+								$extension = substr($this->component, 4);
+
+								if (file_exists(JPATH_PLUGINS . '/csviaddon/' . $extension . '/' . $this->component . '/tmpl/' . $this->action . '/' . $tabname . '.php'))
 								{
-									echo $this->loadAnyTemplate('admin:com_csvi/' . $tabname);
+									echo $this->loadTemplate($tabname, false);
 								}
 							}?>
 						</div>
@@ -92,13 +98,15 @@ defined('_JEXEC') or die;
 		</div>
 	</div>
 	<?php
+	if ($this->extraHelp)
+	{
 		$layout = new JLayoutFile('csvi.help-arrow');
 		echo $layout->render(new stdClass);
+	}
 	?>
 </div>
 
 <script type="text/javascript">
-	var token = '<?php echo JSession::getFormToken(); ?>';
 	jQuery(document).ready(function ()
 	{
 		// Turn off the help texts
@@ -143,6 +151,14 @@ defined('_JEXEC') or die;
 			{
 				jQuery('#jform_localpath').val('<?php echo addslashes(JPATH_SITE); ?>');
 			}
+
+			// Set the SEF options
+			Csvi.showFields(0, '.sef');
+
+			if (<?php echo $this->item->options->get('exportsef', 0); ?> == 1)
+			{
+				Csvi.showFields(1, '.sef');
+			}
 		}
 		// Import settings
 		else if ('<?php echo $this->action; ?>' == 'import' && <?php echo ($this->item->csvi_template_id) ? $this->item->csvi_template_id : 0; ?> > 0)
@@ -151,7 +167,12 @@ defined('_JEXEC') or die;
 			Csvi.showImportSource(document.adminForm.jform_source.value);
 
 			// Hide/show the image fields
-			Csvi.showFields(jQuery('#jform_process_image').val(), '.hidden-image #full_image #thumb_image #watermark_image');
+			Csvi.showFields(jQuery('#jform_process_image').val(), '.hidden-image #full_image #thumb_image #watermark_image #credentials_image');
+
+			if (document.adminForm.advanced.value === '0') {
+				jQuery('.advancedUser').hide();
+			}
+
 
 			jQuery(document).ready(function()
 			{
@@ -224,6 +245,11 @@ defined('_JEXEC') or die;
 			{
 				jQuery('.advancedUser').show();
 				document.adminForm.advanced.value = '1';
+
+				if ('<?php echo $this->action; ?>' == 'import' && <?php echo ($this->item->csvi_template_id) ? $this->item->csvi_template_id : 0; ?> > 0)
+				{
+					Csvi.showImportSource(jQuery('#jform_source').val());
+				}
 			}
 
 			return false;

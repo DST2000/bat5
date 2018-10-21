@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Table
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -126,7 +126,10 @@ class CsviTableDefault extends JTable
 	{
 		try
 		{
-			$this->log->add('Load a row', false);
+			if (!is_null($this->log))
+			{
+				$this->log->add('Load a row', false);
+			}
 
 			$result = parent::load($keys, $reset);
 
@@ -134,7 +137,10 @@ class CsviTableDefault extends JTable
 		}
 		catch (Exception $e)
 		{
-			$this->log->add('Row cannot be loaded. Error: ' . $e->getMessage());
+			if (!is_null($this->log))
+			{
+				$this->log->add('Row cannot be loaded. Error: ' . $e->getMessage(), false);
+			}
 
 			return false;
 		}
@@ -151,30 +157,52 @@ class CsviTableDefault extends JTable
 	 */
 	public function store($updateNulls = false)
 	{
-		$result = parent::store($updateNulls);
-
 		$area = $this->getArea();
 
-		$this->log->add('Query for ' . $area);
-
-		if (!$result)
+		if (!is_null($this->log))
 		{
-			$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NOT_ADDED', $this->getError()), $area);
+			$this->log->add('Query for ' . $area);
 		}
-		else
+
+		try
 		{
-			if ($this->queryResult() == 'UPDATE')
+			$result = parent::store($updateNulls);
+
+			if (!is_null($this->log))
 			{
-				$this->log->addStats('updated', 'COM_CSVI_TABLE_' . get_called_class() . '_UPDATED', $area);
+				$this->log->add('Executed store', true);
 			}
-			elseif ($this->queryResult() == 'INSERT')
+
+			if (!$result)
 			{
-				$this->log->addStats('added', 'COM_CSVI_TABLE_' . get_called_class() . '_ADDED', $area);
+				$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_NOT_ADDED', $this->getError()), $area);
 			}
 			else
 			{
-				$this->log->addStats('processed', 'COM_CSVI_TABLE_' . get_called_class() . '_PROCESSED', $area);
+				if ($this->queryResult() == 'UPDATE')
+				{
+					$this->log->addStats('updated', 'COM_CSVI_TABLE_' . get_called_class() . '_UPDATED', $area);
+				}
+				elseif ($this->queryResult() == 'INSERT')
+				{
+					$this->log->addStats('added', 'COM_CSVI_TABLE_' . get_called_class() . '_ADDED', $area);
+				}
+				else
+				{
+					$this->log->addStats('processed', 'COM_CSVI_TABLE_' . get_called_class() . '_PROCESSED', $area);
+				}
 			}
+		}
+		catch (Exception $exception)
+		{
+			if (!is_null($this->log))
+			{
+				$this->log->add('An exception occured trying the execute the query');
+				$this->log->add($exception->getMessage());
+				$this->log->add($this->db->getQuery());
+			}
+
+			throw new RuntimeException($exception->getMessage(), $exception->getCode());
 		}
 
 		return $result;

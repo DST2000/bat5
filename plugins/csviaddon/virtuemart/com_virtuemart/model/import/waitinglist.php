@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,12 +20,12 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportWaitinglist extends RantaiImportEngine
+class Waitinglist extends \RantaiImportEngine
 {
 	/**
 	 * Waiting user table
 	 *
-	 * @var    VirtueMartTableWaitinguser
+	 * @var    \VirtueMartTableWaitinguser
 	 * @since  6.0
 	 */
 	private $waitinguserTable = null;
@@ -88,8 +90,8 @@ class Com_VirtuemartModelImportWaitinglist extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_waitinguser_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('username')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('username')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('username')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('username')));
 					$this->loaded = false;
 				}
 				else
@@ -104,7 +106,7 @@ class Com_VirtuemartModelImportWaitinglist extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -124,7 +126,7 @@ class Com_VirtuemartModelImportWaitinglist extends RantaiImportEngine
 			if (!$this->getState('virtuemart_waitinguser_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new rules when user chooses to ignore new rules
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('username')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('username')));
 			}
 			else
 			{
@@ -144,7 +146,7 @@ class Com_VirtuemartModelImportWaitinglist extends RantaiImportEngine
 				// Store the data
 				if (!$this->waitinguserTable->store())
 				{
-					$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_WAITINGLIST_NOT_ADDED', $this->waitinguserTable->getError()));
+					$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_WAITINGLIST_NOT_ADDED', $this->waitinguserTable->getError()));
 				}
 			}
 

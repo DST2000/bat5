@@ -16,6 +16,15 @@
 				label="COM_CSVI_CATEGORY_SEPARATOR_LABEL"
 				description="COM_CSVI_CATEGORY_SEPARATOR_DESC"
 				default="/" />
+
+			<field name="keepcatid"
+			       type="list"
+			       size="1"
+			       default="0"
+			       class="input-small advancedSelect">
+				<option value="1">JYES</option>
+				<option value="0">JNO</option>
+			</field>
 		</fieldset>
 	</fields>
 </form>

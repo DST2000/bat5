@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace virtuemart\com_virtuemart\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export VirtueMart manufacturers.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelExportManufacturer extends CsviModelExports
+class Manufacturer extends \CsviModelExports
 {
 	/**
 	 * Export the data.
@@ -29,7 +29,7 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 	 *
 	 * @since   6.0
 	 *
-	 * @throws  CsviException
+	 * @throws  \CsviException
 	 */
 	protected function exportBody()
 	{
@@ -40,7 +40,7 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 
 			if (!$language)
 			{
-				throw new CsviException(JText::_('COM_CSVI_NO_LANGUAGE_SET'));
+				throw new \CsviException(\JText::_('COM_CSVI_NO_LANGUAGE_SET'));
 			}
 
 			// Build something fancy to only get the fieldnames the user wants
@@ -93,6 +93,12 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 						break;
 					case 'file_url':
 					case 'file_url_thumb':
+					case 'file_title':
+					case 'file_description':
+					case 'file_meta':
+					case 'file_lang':
+					case 'file_ordering':
+						$userfields[] = $this->db->quoteName('#__virtuemart_manufacturers.virtuemart_manufacturer_id');
 						$userfields[] = $this->db->quoteName('#__virtuemart_manufacturer_medias.virtuemart_media_id');
 
 						if (array_key_exists($field->field_name, $groupbyfields))
@@ -106,6 +112,17 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 						}
 						break;
 					case 'mf_category_name':
+						$userfields[] = $this->db->quoteName('#__virtuemart_manufacturers.virtuemart_manufacturercategories_id');
+
+						if (array_key_exists($field->field_name, $groupbyfields))
+						{
+							$groupby[] = $this->db->quoteName('#__virtuemart_manufacturers.virtuemart_manufacturercategories_id');
+						}
+
+						if (array_key_exists($field->field_name, $sortbyfields))
+						{
+							$sortby[] = $this->db->quoteName('#__virtuemart_manufacturers.virtuemart_manufacturercategories_id');
+						}
 						break;
 					default:
 						$userfields[] = $this->db->quoteName($field->field_name);
@@ -167,15 +184,16 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -214,12 +232,53 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 								break;
 							case 'file_url':
 							case 'file_url_thumb':
-								$query = $this->db->getQuery(true);
-								$query->select($this->db->quoteName($fieldname));
-								$query->from($this->db->quoteName('#__virtuemart_medias'));
-								$query->where($this->db->quoteName('virtuemart_media_id') . ' = ' . (int) $record->virtuemart_media_id);
+							case 'file_title':
+							case 'file_description':
+							case 'file_meta':
+							case 'file_lang':
+								$query = $this->db->getQuery(true)
+									->select($this->db->quoteName($fieldname))
+									->from($this->db->quoteName('#__virtuemart_medias', 'm'))
+									->leftJoin(
+										$this->db->quoteName('#__virtuemart_manufacturer_medias', 'mf')
+										. ' ON ' . $this->db->quoteName('m.virtuemart_media_id') . ' = ' . $this->db->quoteName('mf.virtuemart_media_id')
+									)
+									->where($this->db->quoteName('virtuemart_manufacturer_id') . ' = ' . (int) $record->virtuemart_manufacturer_id)
+									->where($this->db->quoteName('file_type') . ' = ' . $this->db->quote('manufacturer'))
+									->order('mf.ordering');
 								$this->db->setQuery($query);
-								$fieldvalue = $this->db->loadResult();
+								$titles = $this->db->loadColumn();
+								$this->log->add('Looking for manufacturer images');
+
+								$fieldvalue = '';
+
+								if (is_array($titles))
+								{
+									$fieldvalue = implode('|', $titles);
+								}
+
+								$this->log->add('Found images: ' . $fieldvalue);
+								break;
+							case 'file_ordering':
+								$query = $this->db->getQuery(true)
+									->select($this->db->quoteName('mf.ordering'))
+									->from($this->db->quoteName('#__virtuemart_medias', 'm'))
+									->leftJoin(
+										$this->db->quoteName('#__virtuemart_manufacturer_medias', 'mf')
+										. ' ON ' . $this->db->quoteName('m.virtuemart_media_id') . ' = ' . $this->db->quoteName('mf.virtuemart_media_id')
+									)
+									->where($this->db->quoteName('virtuemart_manufacturer_id') . ' = ' . (int) $record->virtuemart_manufacturer_id)
+									->where($this->db->quoteName('file_type') . ' = ' . $this->db->quote('manufacturer'))
+									->order('mf.ordering');
+								$this->db->setQuery($query);
+								$titles = $this->db->loadColumn();
+								$fieldvalue = '';
+
+								if (is_array($titles))
+								{
+									$fieldvalue = implode('|', $titles);
+								}
+
 								break;
 						}
 
@@ -236,7 +295,7 @@ class Com_VirtuemartModelExportManufacturer extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();

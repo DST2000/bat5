@@ -74,36 +74,41 @@ if (!empty($this->showcategory_desc) and empty($this->keyword)){
 if ($this->showcategory and empty($this->keyword)) {
 	if (!empty($this->category->haschildren)) {
 		// {DST
-		echo '<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">';
+		//echo '<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">';
 		// }DST
-		echo ShopFunctionsF::renderVmSubLayout('categories',array('categories'=>$this->category->children, 'categories_per_row'=>$this->categories_per_row));
+		// {DST hide category
+//		echo ShopFunctionsF::renderVmSubLayout('categories',array('categories'=>$this->category->children, 'categories_per_row'=>$this->categories_per_row));
+		// }DST
 		// {DST
-		echo '</div>';
+		//echo '</div>';
 		// }DST
 	}
 }
 		// {DST
 	// Show child categories
-		if(!empty($this->orderByList)) { ?>
+		if(!empty($this->orderByList) and FALSE) { ?>
 		<div class="orderby-displaynumber <?php 
 					// {DST
 					if ($this->showcategory) {
-						echo 'col-xs-12 col-sm-6 col-md-8 col-lg-9';
+						echo 'col-xs-12 ';
 					} else {
-						echo 'col-xs-12 col-sm-6 offset-sm-6 col-md-8 offset-md-4 col-lg-9 offset-lg-3';	
+						echo 'col-xs-12 ';	
 					}
 					// }DST
 					?> ">
+			<?php // {DST ?>
+			<!--
 			<div class="floatleft vm-order-list">
-				<?php echo $this->orderByList['orderby']; ?>
-				<?php echo $this->orderByList['manufacturer']; ?>
+				<?php //echo $this->orderByList['orderby']; ?>
+				<?php //echo $this->orderByList['manufacturer']; ?>
 			</div>
 			<div class="vm-pagination vm-pagination-top">
-				<?php echo $this->vmPagination->getPagesLinks (); ?>
-				<span class="vm-page-counter"><?php echo $this->vmPagination->getPagesCounter (); ?></span>
+				<?php //echo $this->vmPagination->getPagesLinks (); ?>
+				<span class="vm-page-counter"><?php //echo $this->vmPagination->getPagesCounter (); ?></span>
 			</div>
-			<div class="floatright display-number"><?php echo $this->vmPagination->getResultsCounter ();?><br/><?php echo $this->vmPagination->getLimitBox ($this->category->limit_list_step); ?></div>
-
+			<div class="floatright display-number"><?php //echo $this->vmPagination->getResultsCounter ();?><br/><?php //echo $this->vmPagination->getLimitBox ($this->category->limit_list_step); ?></div>
+			-->
+			<?php // }DST ?>
 			<div class="clear"></div>
 		</div> <!-- end of orderby-displaynumber -->
 		<?php } 
@@ -123,8 +128,9 @@ if ($this->showsearch or $this->keyword !== false) {
 	$category_id  = vRequest::getInt ('virtuemart_category_id', 0); ?>
 
 	<!--BEGIN Search Box -->
+<!-- {DST hide search -->
 
-	<div class="virtuemart_search col-xs-12 col-sm-6 col-md-4 col-lg-3">
+	<div class="virtuemart_search ">
 		<form action="<?php echo JRoute::_ ('index.php?option=com_virtuemart&view=category&limitstart=0', FALSE); ?>" method="get">
 			<?php if(!empty($this->searchCustomList)) { ?>
 			<div class="vm-search-custom-list">
@@ -136,14 +142,13 @@ if ($this->showsearch or $this->keyword !== false) {
 			<div class="vm-search-custom-values">
 				<?php echo $this->searchCustomValues ?>
 			</div>
-			<?php } ?>
+			<?php } ?>		
 			<div class="vm-search-custom-search-input">
 				<input name="keyword" class="inputbox form-control" type="text" size="25" value="<?php echo $this->keyword ?>"/>
 				<input type="submit" value="<?php echo vmText::_ ('COM_VIRTUEMART_SEARCH') ?>" class="button" onclick="this.form.keyword.focus();"/>
 				<?php //echo VmHtml::checkbox ('searchAllCats', (int)$this->searchAllCats, 1, 0, 'class="changeSendForm"'); ?>
 				<span class="vm-search-descr"> <?php echo vmText::_('COM_VM_SEARCH_DESC') ?></span>
 			</div>
-
 			<!-- input type="hidden" name="showsearch" value="true"/ -->
 			<input type="hidden" name="view" value="category"/>
 			<input type="hidden" name="option" value="com_virtuemart"/>
@@ -152,6 +157,8 @@ if ($this->showsearch or $this->keyword !== false) {
 		</form>
 	</div>
 
+			
+	<!-- DST hide search -->
 	<!-- End Search Box -->
 <?php
 	/*if($this->keyword !== false){
@@ -169,9 +176,9 @@ jQuery(".changeSendForm")
 <div class="browse-view <?php
 	// {DST
 					if ($this->showsearch) {
-						echo 'col-xs-12 col-sm-6 col-md-8 col-lg-9';
+						echo 'col-xs-12';
 					} else {
-						echo 'col-xs-12 col-sm-6 offset-sm-6 col-md-8 offset-md-4 col-lg-9 offset-lg-3';	
+						echo 'col-xs-12';	
 					}
 					// }DST
 			?>">
@@ -196,7 +203,11 @@ jQuery(".changeSendForm")
 	echo shopFunctionsF::renderVmSubLayout($this->productsLayout,array('products'=>$this->products,'currency'=>$this->currency,'products_per_row'=>$this->perRow,'showRating'=>$this->showRating));
 
 	if(!empty($this->orderByList)) { ?>
-		<div class="vm-pagination vm-pagination-bottom"><?php echo $this->vmPagination->getPagesLinks (); ?><span class="vm-page-counter"><?php echo $this->vmPagination->getPagesCounter (); ?></span></div>
+		<div class="vm-pagination vm-pagination-bottom"><?php echo $this->vmPagination->getPagesLinks (); ?><span class="vm-page-counter">
+		<?php // {DST ?>
+		<div class="floatright display-number"><?php echo $this->vmPagination->getResultsCounter ();?><br/><?php echo $this->vmPagination->getLimitBox ($this->category->limit_list_step); ?></div>	
+		<?php // }DST ?>	
+		<?php echo $this->vmPagination->getPagesCounter (); ?></span></div>
 	<?php }
 } elseif ($this->keyword !== false) {
 	echo vmText::_ ('COM_VIRTUEMART_NO_RESULT') . ($this->keyword ? ' : (' . $this->keyword . ')' : '');

@@ -191,12 +191,16 @@ body {
 }
 
 .brand {
-	padding: 10px;
+	padding: 5px;
 	border: 1px solid #fff;
 	border-radius: 8px;
 	text-transform: uppercase;
 	height: 100%;
 	box-shadow: 0 0 3px rgba(0,0,0,0.5); /* Параметры тени */
+}
+
+.brandbox {
+	padding-bottom: 15px;
 }
 
 .brand-1 {

@@ -3,15 +3,17 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\export;
 
 defined('_JEXEC') or die;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+use Joomla\Utilities\ArrayHelper;
 
 /**
  * Exports VirtueMart products.
@@ -20,7 +22,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelExportProduct extends CsviModelExports
+class Product extends \CsviModelExports
 {
 	/**
 	 * The domain name for URLs.
@@ -28,7 +30,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 * @var    string
 	 * @since  6.0
 	 */
-	private $domainname = null;
+	private $domainName = '';
 
 	/**
 	 * Array of prices per product
@@ -44,7 +46,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 * @var    array
 	 * @since  6.0
 	 */
-	private $customfields = array();
+	private $customFields = array();
 
 	/**
 	 * The custom fields that can be used as available field.
@@ -52,7 +54,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 * @var    array
 	 * @since  6.0
 	 */
-	private $customfieldsExport = array();
+	private $customFieldsExport = array();
 
 	/**
 	 * The multi variant fields that can be used as available field.
@@ -60,23 +62,39 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 * @var    array
 	 * @since  6.0
 	 */
-	private $multivariantExport = array();
+	private $multiVariantExport = array();
+
+	/**
+	 * An array of parent categories
+	 *
+	 * @var    array
+	 * @since  6.5.5
+	 */
+	private $parentCategories = array();
 
 	/**
 	 * VirtueMart helper
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart
 	 * @since  6.0
 	 */
-	protected $helper = null;
+	protected $helper;
 
 	/**
 	 * VirtueMart helper config
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart_Config
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart_Config
 	 * @since  6.0
 	 */
-	protected $helperconfig = null;
+	protected $helperConfig;
+
+	/**
+	 * The multi language CF4ALL fields that can be used as available field.
+	 *
+	 * @var    array
+	 * @since  7.5.0
+	 */
+	private $multiLangFields = array();
 
 	/**
 	 * Export the data.
@@ -85,7 +103,9 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 *
 	 * @since   6.0
 	 *
-	 * @throws  CsviException
+	 * @throws  \CsviException
+	 * @throws  \Exception
+	 * @throws  \RuntimeException
 	 */
 	protected function exportBody()
 	{
@@ -96,54 +116,57 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 			if (!$language)
 			{
-				throw new CsviException(JText::_('COM_CSVI_NO_LANGUAGE_SET'));
+				throw new \CsviException(\JText::_('COM_CSVI_NO_LANGUAGE_SET'));
 			}
 
 			// Get some basic data
-			$jinput = JFactory::getApplication()->input;
-			$this->domainname = $this->settings->get('hostname');
+			$jinput           = \JFactory::getApplication()->input;
+			$this->domainName = $this->settings->get('hostname');
 			$this->loadCustomFields();
 			$this->loadMultiVariantFields();
-			$exportfields = $this->fields->getFields();
+			$this->loadMultiLanguageCF4ALLFields();
+			$exportFields   = $this->fields->getFields();
+			$groupByDefault = true;
+			$useQuantity    = false;
 
 			// Load the plugins
-			$dispatcher = new RantaiPluginDispatcher;
+			$dispatcher = new \RantaiPluginDispatcher;
 			$dispatcher->importPlugins('csviext', $this->db);
 
 			$jinput->set('vmlang', substr($language, 0, 2) . '-' . strtoupper(substr($language, 3)));
 
 			// Group by fields
-			$groupbyfields = json_decode($this->template->get('groupbyfields', '', 'string'));
-			$groupby = array();
+			$groupByFields = json_decode($this->template->get('groupbyfields', '', 'string'));
+			$groupBy       = array();
 
-			if (isset($groupbyfields->name))
+			if (isset($groupByFields->name))
 			{
-				$groupbyfields = array_flip($groupbyfields->name);
+				$groupByFields = array_flip($groupByFields->name);
 			}
 			else
 			{
-				$groupbyfields = array();
+				$groupByFields = array();
 			}
 
 			// Sort selected fields
-			$sortfields = json_decode($this->template->get('sortfields', '', 'string'));
-			$sortby = array();
+			$sortFields = json_decode($this->template->get('sortfields', '', 'string'));
+			$sortBy     = array();
 
-			if (isset($sortfields->name))
+			if (isset($sortFields->name))
 			{
-				$sortbyfields = array_flip($sortfields->name);
+				$sortByFields = array_flip($sortFields->name);
 			}
 			else
 			{
-				$sortbyfields = array();
+				$sortByFields = array();
 			}
 
 			// Build something fancy to only get the fieldnames the user wants
-			$userfields = array();
-			$userfields[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
-			$userfields[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
+			$userFields   = array();
+			$userFields[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
+			$userFields[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
 
-			foreach ($exportfields as $field)
+			foreach ($exportFields as $field)
 			{
 				switch ($field->field_name)
 				{
@@ -159,116 +182,116 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 					case 'metaauthor':
 					case 'metarobot':
 					case 'published':
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.' . $field->field_name);
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.' . $field->field_name);
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_products.' . $field->field_name);
+							$groupBy[] = $this->db->quoteName('#__virtuemart_products.' . $field->field_name);
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_products.' . $field->field_name);
+							$sortBy[] = $this->db->quoteName('#__virtuemart_products.' . $field->field_name);
 						}
 						break;
 					case 'category_id':
 					case 'category_path':
 					case 'category_name':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id');
 						}
 						break;
 					case 'product_ordering':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_categories.ordering', 'product_ordering');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_categories.ordering', 'product_ordering');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_categories.ordering', 'product_ordering');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_categories.ordering', 'product_ordering');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_categories.ordering', 'product_ordering');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_categories.ordering', 'product_ordering');
 						}
 						break;
 					case 'related_products':
 					case 'related_categories':
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id', 'main_product_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id', 'main_product_id');
 						break;
 					case 'product_box':
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.product_params');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.product_params');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_products.product_params');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_products.product_params');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_products.product_params');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_products.product_params');
 						}
 						break;
 					case 'product_price':
 					case 'price_with_tax':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
-						$userfields[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
-							$groupby[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
-							$sortby[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
 						}
 						break;
 					case 'product_url':
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.product_url');
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.product_url');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
-							$groupby[] = $this->db->quoteName('#__virtuemart_products.product_url');
-							$groupby[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_products.product_url');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
-							$sortby[] = $this->db->quoteName('#__virtuemart_products.product_url');
-							$sortby[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_products.virtuemart_product_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_products.product_url');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
 						}
 						break;
 					case 'price_with_discount':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-						$userfields[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
+						$userFields[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-							$groupby[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-							$sortby[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
 						}
 						break;
 					case 'basepricewithtax':
@@ -279,88 +302,83 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 					case 'discountamount':
 					case 'pricewithouttax':
 					case 'product_currency':
-						$userfields[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
-						}
-						break;
-					case 'custom_shipping':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
-						$userfields[] = '1 AS tax_rate';
-
-						if (array_key_exists($field->field_name, $groupbyfields))
-						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
-						}
-
-						if (array_key_exists($field->field_name, $sortbyfields))
-						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.product_price');
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_currencies.currency_code_3');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
 						}
 						break;
 					case 'max_order_level':
 					case 'min_order_level':
 					case 'step_order_level':
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.product_params');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.product_params');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_products.product_params');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_products.product_params');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_products.product_params');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_products.product_params');
 						}
 						break;
 					case 'product_discount':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.product_discount_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_prices.product_discount_id');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.product_discount_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_prices.product_discount_id');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.product_discount_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.product_discount_id');
 						}
 						break;
 					case 'virtuemart_shoppergroup_id':
 					case 'shopper_group_name_price':
-						$userfields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
 
-						if (array_key_exists($field->field_name, $groupbyfields))
+						if (array_key_exists($field->field_name, $groupByFields))
 						{
-							$groupby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+							$groupBy[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
 						}
 
-						if (array_key_exists($field->field_name, $sortbyfields))
+						if (array_key_exists($field->field_name, $sortByFields))
 						{
-							$sortby[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id');
 						}
 						break;
 					case 'product_name':
 					case 'product_s_desc':
 					case 'product_desc':
+					case 'product_parent_sku':
 					case 'metadesc':
 					case 'metakey':
 					case 'slug':
 					case 'customtitle':
-						$userfields[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
+						$userFields[] = $this->db->quoteName('#__virtuemart_products.product_parent_id');
+						break;
+					case 'price_quantity_start':
+					case 'price_quantity_end':
+						$groupByDefault = false;
+						$useQuantity    = true;
+						$userFields[]   = $this->db->quoteName('#__virtuemart_product_prices.' . $field->field_name);
+
+						if (array_key_exists($field->field_name, $sortByFields))
+						{
+							$sortBy[] = $this->db->quoteName('#__virtuemart_product_prices.' . $field->field_name);
+						}
 						break;
 
 					// Special treatment, do not export them
@@ -380,36 +398,39 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 					case 'manufacturer_name':
 					case 'picture_url':
 					case 'picture_url_thumb':
-					case 'product_parent_sku':
 					case 'custom':
 					case 'custom_override':
 					case 'custom_disabler':
 						break;
+					case stripos($field->field_name, 'custom_param_') !== false:
+						break;
 					default:
-						// Do not include custom fields into the query
-						if (!in_array($field->field_name, $this->customfieldsExport)
-							&& !in_array($field->field_name, $this->multivariantExport))
-						{
-							$userfields[] = $this->db->quoteName($field->field_name);
 
-							if (array_key_exists($field->field_name, $groupbyfields))
+						// Do not include custom fields into the query
+						if (!in_array($field->field_name, $this->customFieldsExport)
+							&& !in_array($field->field_name, $this->multiVariantExport))
+						{
+							$userFields[] = $this->db->quoteName($field->field_name);
+
+							if (array_key_exists($field->field_name, $groupByFields))
 							{
-								$groupby[] = $this->db->quoteName($field->field_name);
+								$groupBy[] = $this->db->quoteName($field->field_name);
 							}
 
-							if (array_key_exists($field->field_name, $sortbyfields))
+							if (array_key_exists($field->field_name, $sortByFields))
 							{
-								$sortby[] = $this->db->quoteName($field->field_name);
+								$sortBy[] = $this->db->quoteName($field->field_name);
 							}
 						}
+
 						break;
 				}
 			}
 
 			// Export SQL Query
-			$userfields = array_unique($userfields);
-			$query = $this->db->getQuery(true);
-			$query->select(implode(",\n", $userfields));
+			$userFields = array_unique($userFields);
+			$query      = $this->db->getQuery(true);
+			$query->select(implode(",\n", $userFields));
 			$query->from($this->db->quoteName('#__virtuemart_products'));
 			$query->leftJoin(
 				$this->db->quoteName('#__virtuemart_product_prices')
@@ -444,29 +465,26 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			 * 2. Search for all child product ID's
 			 * 3. Load all products with these ids
 			 */
-			$productcategories = $this->template->get('product_categories', false);
+			$productCategories = $this->template->get('product_categories', false);
 
 			// Sanity check
-			Joomla\Utilities\ArrayHelper::toInteger($productcategories);
+			$productCategories = ArrayHelper::toInteger($productCategories);
 
-			if ($productcategories && $productcategories[0] != '')
+			if ($productCategories && 0 !== $productCategories[0] && 0 !== count($productCategories))
 			{
 				// If selected get products of all subcategories as well
 				if ($this->template->get('incl_subcategory', false))
 				{
-					foreach ($productcategories as $productcategory)
+					foreach ($productCategories as $productcategory)
 					{
 						$subids = $this->helper->getSubCategoryIds($productcategory);
 
 						if ($subids)
 						{
-							$productcategories = array_merge($productcategories, $subids);
+							$productCategories = array_merge($productCategories, $subids);
 						}
 					}
 				}
-
-				// Add the category restriction
-				$query->where($this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id') . ' IN (' . implode(',', $productcategories) . ')');
 
 				// Get only the parent products and products without children
 				if ($this->template->get('parent_only', 0, 'bool'))
@@ -476,7 +494,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								FROM #__virtuemart_products p
 								LEFT JOIN #__virtuemart_product_categories x
 								ON p.virtuemart_product_id = x.virtuemart_product_id
-								WHERE x.virtuemart_category_id IN (" . implode(',', $productcategories) . ")
+								WHERE x.virtuemart_category_id IN (" . implode(',', $productCategories) . ")
 								AND p.product_parent_id = 0";
 					$this->db->setQuery($q_product_ids);
 					$product_ids = $this->db->loadColumn();
@@ -490,7 +508,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 										FROM #__virtuemart_products p
 										LEFT JOIN #__virtuemart_product_categories x
 										ON p.virtuemart_product_id = x.virtuemart_product_id
-										WHERE x.virtuemart_category_id IN ('" . implode("','", $productcategories) . "')";
+										WHERE x.virtuemart_category_id IN ('" . implode("','", $productCategories) . "')";
 					$this->db->setQuery($q_child);
 					$allproduct_ids = $this->db->loadColumn();
 					$this->log->add('Export query');
@@ -521,7 +539,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								FROM #__virtuemart_products p
 								LEFT JOIN #__virtuemart_product_categories x
 								ON p.virtuemart_product_id = x.virtuemart_product_id
-								WHERE x.virtuemart_category_id IN ('" . implode("','", $productcategories) . "')";
+								WHERE x.virtuemart_category_id IN ('" . implode("','", $productCategories) . "')";
 					$this->db->setQuery($q_product_ids);
 					$product_ids = $this->db->loadColumn();
 					$this->log->add('Export query');
@@ -562,7 +580,11 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 					if (!empty($category_publish))
 					{
-						$query->where($this->db->quoteName('#__virtuemart_categories.published') . ' = ' . (int) $category_publish);
+						$query->leftJoin(
+							$this->db->quoteName('#__virtuemart_categories')
+							. ' ON ' . $this->db->quoteName('#__virtuemart_categories.virtuemart_category_id') . ' = ' . $this->db->quoteName('#__virtuemart_product_categories.virtuemart_category_id')
+						)
+							->where($this->db->quoteName('#__virtuemart_categories.published') . ' = ' . (int) $category_publish);
 					}
 				}
 
@@ -581,9 +603,9 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 					{
 						$nonchildQuery
 							->leftJoin($this->db->quoteName('#__virtuemart_product_categories', 'pc'))
-							. ' ON ' . $this->db->quoteName('p.virtuemart_product_id') . ' = ' . $this->db->quoteName('pc.virtuemart_product_id')
+						. ' ON ' . $this->db->quoteName('p.virtuemart_product_id') . ' = ' . $this->db->quoteName('pc.virtuemart_product_id')
 							->leftJoin($this->db->quoteName('#__virtuemart_categories', 'c'))
-							. ' ON ' . $this->db->quoteName('pc.virtuemart_category_id') . ' = ' . $this->db->quoteName('c.virtuemart_category_id')
+						. ' ON ' . $this->db->quoteName('pc.virtuemart_category_id') . ' = ' . $this->db->quoteName('c.virtuemart_category_id')
 							->where($this->db->quoteName('c.published') . ' = ' . (int) $state);
 					}
 
@@ -598,9 +620,9 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 							->clear('join')
 							->clear('where')
 							->leftJoin($this->db->quoteName('#__virtuemart_product_categories', 'pc'))
-							. ' ON ' . $this->db->quoteName('p.virtuemart_product_id') . ' = ' . $this->db->quoteName('pc.virtuemart_product_id')
+						. ' ON ' . $this->db->quoteName('p.virtuemart_product_id') . ' = ' . $this->db->quoteName('pc.virtuemart_product_id')
 							->leftJoin($this->db->quoteName('#__virtuemart_categories', 'c'))
-							. ' ON ' . $this->db->quoteName('pc.virtuemart_category_id') . ' = ' . $this->db->quoteName('c.virtuemart_category_id')
+						. ' ON ' . $this->db->quoteName('pc.virtuemart_category_id') . ' = ' . $this->db->quoteName('c.virtuemart_category_id')
 							->where($this->db->quoteName('p.product_parent_id') . ' IN (' . implode(',', $nonchild_ids) . ')')
 							->group($this->db->quoteName('p.virtuemart_product_id'));
 
@@ -683,9 +705,9 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 				if (strpos($productskufilter, ','))
 				{
-					$skus = explode(',', $productskufilter);
+					$skus     = explode(',', $productskufilter);
 					$wildcard = '';
-					$normal = array();
+					$normal   = array();
 
 					foreach ($skus as $sku)
 					{
@@ -710,7 +732,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 						}
 					}
 
-					if (substr($wildcard, -3) == 'OR ')
+					if (substr($wildcard, -3) === 'OR ')
 					{
 						$wildcard = substr($wildcard, 0, -4);
 					}
@@ -756,7 +778,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 			if ($shopper_group_price)
 			{
-				if ($shopper_group_price == '*')
+				if ($shopper_group_price === '*')
 				{
 					$query->where(
 						'('
@@ -765,7 +787,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 						. ' OR ' . $this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id') . ' IS NULL)'
 					);
 				}
-				elseif ($shopper_group_price != 'none')
+				elseif ($shopper_group_price !== 'none')
 				{
 					$query->where($this->db->quoteName('#__virtuemart_product_prices.virtuemart_shoppergroup_id') . ' = ' . $this->db->quote($shopper_group_price));
 				}
@@ -774,24 +796,24 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			// Filter on product quantities
 			$price_quantity_start = $this->template->get('price_quantity_start', null);
 
-			if (!is_null($price_quantity_start) && $price_quantity_start >= 0)
+			if ($price_quantity_start >= 0 && $price_quantity_start !== null)
 			{
 				$query->where($this->db->quoteName('#__virtuemart_product_prices.price_quantity_start') . ' = ' . $this->db->quote($price_quantity_start));
 			}
 
 			$price_quantity_end = $this->template->get('price_quantity_end', null);
 
-			if (!is_null($price_quantity_end) && $price_quantity_end >= 0)
+			if ($price_quantity_end >= 0 && $price_quantity_end !== null)
 			{
 				$query->where($this->db->quoteName('#__virtuemart_product_prices.price_quantity_end') . ' = ' . $this->db->quote($price_quantity_end));
 			}
 
 			// Filter on price from
 			$priceoperator = $this->template->get('priceoperator', 'gt');
-			$pricefrom = $this->template->get('pricefrom', 0, 'float');
-			$priceto = $this->template->get('priceto', 0, 'float');
+			$pricefrom     = $this->template->get('pricefrom', false);
+			$priceto       = $this->template->get('priceto', 0, 'float');
 
-			if (!empty($pricefrom))
+			if ($pricefrom !== false)
 			{
 				switch ($priceoperator)
 				{
@@ -827,25 +849,29 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			}
 
 			// Filter by stocklevel start
-			$stocklevelstart = $this->template->get('stocklevelstart', 0, 'int');
+			$stocklevelstart = $this->template->get('stocklevelstart', 'none', 'cmd');
 
-			if ($stocklevelstart)
+			if ($stocklevelstart !== 'none')
 			{
-				$query->where('#__virtuemart_products.product_in_stock >= ' . (int) $stocklevelstart);
+				$stocklevelstart = (int) $stocklevelstart;
+				$query->where('#__virtuemart_products.product_in_stock >= ' . $stocklevelstart);
 			}
 
 			// Filter by stocklevel end
-			$stocklevelend = $this->template->get('stocklevelend', 0, 'int');
+			$stocklevelend = $this->template->get('stocklevelend', 'none', 'cmd');
 
-			if ($stocklevelend)
+			if ($stocklevelend !== 'none' || ($stocklevelend === 0 && $stocklevelstart === 0))
 			{
-				$query->where('#__virtuemart_products.product_in_stock <= ' . (int) $stocklevelend);
+				$stocklevelend = (int) $stocklevelend;
+				$query->where('#__virtuemart_products.product_in_stock <= ' . $stocklevelend);
 			}
 
 			// Filter by shopper group id
 			$shopper_group = $this->template->get('shopper_groups', array());
 
-			if ($shopper_group && $shopper_group[0] != 'none')
+			$shopper_group = ArrayHelper::toInteger($shopper_group);
+
+			if ($shopper_group && 0 !== $shopper_group[0] && 0 !== count($shopper_group))
 			{
 				$query->where("#__virtuemart_product_shoppergroups.virtuemart_shoppergroup_id IN ('" . implode("','", $shopper_group) . "')");
 			}
@@ -853,44 +879,47 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			// Filter by manufacturer
 			$manufacturer = $this->template->get('manufacturers', array());
 
-			if ($manufacturer && !empty($manufacturer) && $manufacturer[0] != 'none')
+			$manufacturer = ArrayHelper::toInteger($manufacturer);
+
+			if ($manufacturer && 0 !== $manufacturer[0] && 0 !== count($manufacturer))
 			{
 				$query->where("#__virtuemart_manufacturers.virtuemart_manufacturer_id IN ('" . implode("','", $manufacturer) . "')");
 			}
 
 			// Group the fields
-			$groupby = array_unique($groupby);
+			$groupBy = array_unique($groupBy);
 
-			if (!empty($groupby))
+			if (!empty($groupBy))
 			{
-				$query->group($groupby);
+				$query->group($groupBy);
 			}
-			else
+			elseif ($groupByDefault)
 			{
 				$query->group('#__virtuemart_products.virtuemart_product_id');
 			}
 
 			// Sort set fields
-			$sortby = array_unique($sortby);
+			$sortBy = array_unique($sortBy);
 
-			if (!empty($sortby))
+			if (!empty($sortBy))
 			{
-				$query->order($sortby);
+				$query->order($sortBy);
 			}
 
 			// Add export limits
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -898,34 +927,59 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 					$this->prices = array();
 
 					// Process all the export fields
-					foreach ($exportfields as $field)
+					foreach ($exportFields as $field)
 					{
 						// Get the field name
-						$fieldname = $field->field_name;
+						$fieldname     = $field->field_name;
+						$fieldValue    = '';
 
 						// Set the field value
 						if (isset($record->$fieldname))
 						{
-							$fieldvalue = $record->$fieldname;
-						}
-						else
-						{
-							$fieldvalue = '';
+							$fieldValue = $record->$fieldname;
 						}
 
 						// Process the field
 						switch ($fieldname)
 						{
 							case 'category_id':
-								$fieldvalue = trim($this->helper->createCategoryPath($record->virtuemart_product_id, true));
+								$fieldValue = trim($this->helper->createCategoryPath($record->virtuemart_product_id, true));
+
+								// Get the parent value if child has no category set
+								if (!$fieldValue && $record->product_parent_id > 0)
+								{
+									$fieldValue = trim($this->helper->createCategoryPath($record->product_parent_id, true));
+								}
+
 								break;
 							case 'category_path':
-								$fieldvalue = trim($this->helper->createCategoryPath($record->virtuemart_product_id));
+								$fieldValue = trim($this->helper->createCategoryPath($record->virtuemart_product_id));
+
+								// Get the parent value if child has no category set
+								if (!$fieldValue && $record->product_parent_id > 0)
+								{
+									$fieldValue = trim($this->helper->createCategoryPath($record->product_parent_id));
+								}
 								break;
 							case 'category_name':
 								$category_path = trim($this->helper->createCategoryPathById($record->virtuemart_category_id));
-								$names = explode($this->template->get('category_separator', '/'), $category_path);
-								$fieldvalue = array_pop($names);
+
+								// Get the parent value if child has no category set
+								if (!$category_path && $record->product_parent_id > 0)
+								{
+									$parentCategoryId = $this->helper->getCategoryId($record->product_parent_id);
+
+									if ($parentCategoryId)
+									{
+										$parentCategoryId = (array) $parentCategoryId;
+									}
+
+									$category_path = trim($this->helper->createCategoryPathById($parentCategoryId));
+								}
+
+								$names      = explode($this->template->get('category_separator', '/'), $category_path);
+								$fieldValue = array_pop($names);
+
 								break;
 							case 'product_name':
 							case 'product_s_desc':
@@ -953,27 +1007,27 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 								$this->db->setQuery($query);
 								$translation = $this->db->loadAssocList('virtuemart_product_id');
-								$fieldvalue = '';
+								$fieldValue  = '';
 
 								if (!empty($translation[$record->virtuemart_product_id][$fieldname]))
 								{
-									$fieldvalue = $translation[$record->virtuemart_product_id][$fieldname];
+									$fieldValue = $translation[$record->virtuemart_product_id][$fieldname];
 								}
 								elseif (!empty($translation[$record->product_parent_id][$fieldname]))
 								{
-									$fieldvalue = $translation[$record->product_parent_id][$fieldname];
+									$fieldValue = $translation[$record->product_parent_id][$fieldname];
 								}
 
-								if ($fieldname == 'product_name')
+								if ($fieldname === 'product_name')
 								{
-									$fieldvalue = html_entity_decode($fieldvalue, ENT_QUOTES, "UTF-8");
+									$fieldValue = html_entity_decode($fieldValue, ENT_QUOTES, "UTF-8");
 								}
 								break;
 							case 'picture_url':
 							case 'picture_url_thumb':
 								$query = $this->db->getQuery(true);
 
-								if ($fieldname == 'picture_url_thumb')
+								if ($fieldname === 'picture_url_thumb')
 								{
 									$query->select(
 										'CASE WHEN ' . $this->db->quoteName('file_url_thumb') . ' = ' . $this->db->quote('') . '
@@ -1006,10 +1060,10 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								foreach ($images as $i => $image)
 								{
 									// Check if we need to create a dynamic image name
-									if (substr($image, -3) == '-_-')
+									if (substr($image, -3) === '-_-')
 									{
-										$width = $this->helperconfig->get('img_width', 90);
-										$height = $this->helperconfig->get('img_height', 90);
+										$width  = $this->helperConfig->get('img_width');
+										$height = $this->helperConfig->get('img_height');
 
 										// Remove marker
 										$image = substr($image, 0, -3);
@@ -1017,16 +1071,16 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 										// Construct the new image name
 										$image = dirname($image)
 											. '/resized/'
-											. basename(JFile::stripExt($image))
+											. basename(\JFile::stripExt($image))
 											. '_' . $width . 'x' . $height . '.'
-											. JFile::getExt($image);
+											. \JFile::getExt($image);
 									}
 
-									$images[$i] = $this->domainname . '/' . $image;
+									$images[$i] = $this->domainName . '/' . $image;
 								}
 
 								// Check if there is already a product full image
-								$fieldvalue = implode(',', $images);
+								$fieldValue = implode(',', $images);
 								break;
 							case 'product_parent_sku':
 								$query = $this->db->getQuery(true);
@@ -1035,7 +1089,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								$query->where('virtuemart_product_id = ' . $record->product_parent_id);
 								$this->db->setQuery($query);
 
-								$fieldvalue = $this->db->loadResult();
+								$fieldValue = $this->db->loadResult();
 								break;
 							case 'related_products':
 								// Get the custom ID
@@ -1063,11 +1117,11 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 								if (is_array($related_records))
 								{
-									$fieldvalue = implode('|', $related_records);
+									$fieldValue = implode('|', $related_records);
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'related_categories':
@@ -1091,20 +1145,19 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 								if (is_array($related_records))
 								{
-									$fieldvalue = $this->helper->createCategoryPathById($related_records);
+									$fieldValue = $this->helper->createCategoryPathById($related_records);
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'product_available_date':
 							case 'created_on':
 							case 'modified_on':
 							case 'locked_on':
-								$date = JFactory::getDate($record->$fieldname);
-								$fieldvalue = date($this->template->get('export_date_format'), $date->toUnix());
-								break;
+								$fieldValue = $this->fields->getDateFormat($fieldname, $record->$fieldname, $field->column_header);
+							break;
 							case 'product_box':
 								if (strpos($record->product_params, '|'))
 								{
@@ -1118,54 +1171,55 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 											if ($param_name == $fieldname)
 											{
-												$fieldvalue = str_replace('"', '', $param_value);
+												$fieldValue = str_replace('"', '', $param_value);
 											}
 										}
 									}
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'product_price':
-								$fieldvalue = $this->convertPrice($record->product_price, $record->currency_code_3);
-								$fieldvalue = $this->formatNumber($fieldvalue);
+								$fieldValue = $this->convertPrice($record->product_price, $record->currency_code_3);
+								$fieldValue = $this->formatNumber($fieldValue);
 
-								if (strlen(trim($fieldvalue)) == 0)
+								if (strlen(trim($fieldValue)) == 0)
 								{
-									$fieldvalue = $field->default_value;
+									$fieldValue = $field->default_value;
 								}
 
 								if ($this->template->get('add_currency_to_price'))
 								{
 									if ($this->template->get('targetcurrency') != '')
 									{
-										$fieldvalue = $this->template->get('targetcurrency') . ' ' . $fieldvalue;
+										$fieldValue = $this->template->get('targetcurrency') . ' ' . $fieldValue;
 									}
 									else
 									{
-										$fieldvalue = $record->currency_code_3 . ' ' . $fieldvalue;
+										$fieldValue = $record->currency_code_3 . ' ' . $fieldValue;
 									}
 								}
 								break;
 							case 'product_override_price':
-								$fieldvalue = $this->formatNumber($record->product_override_price);
+								$fieldValue = $this->convertPrice($record->product_override_price, $record->currency_code_3);
+								$fieldValue = $this->formatNumber($fieldValue);
 
-								if (strlen(trim($fieldvalue)) == 0)
+								if (trim($fieldValue) === '')
 								{
-									$fieldvalue = $field->default_value;
+									$fieldValue = $field->default_value;
 								}
 
 								if ($this->template->get('add_currency_to_price'))
 								{
-									if ($this->template->get('targetcurrency') != '')
+									if ($this->template->get('targetcurrency') !== '')
 									{
-										$fieldvalue = $this->template->get('targetcurrency') . ' ' . $fieldvalue;
+										$fieldValue = $this->template->get('targetcurrency') . ' ' . $fieldValue;
 									}
 									else
 									{
-										$fieldvalue = $record->currency_code_3 . ' ' . $fieldvalue;
+										$fieldValue = $record->currency_code_3 . ' ' . $fieldValue;
 									}
 								}
 								break;
@@ -1173,6 +1227,8 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								// Check if there is already a product URL
 								if (is_null($record->product_url) || strlen(trim($record->product_url)) == 0)
 								{
+									$fieldValue = '';
+
 									// Get the category id
 									// Check to see if we have a child product
 									$category_id = $this->helper->getCategoryId($record->virtuemart_product_id);
@@ -1185,27 +1241,24 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 									if ($category_id > 0)
 									{
 										// Let's create a SEF URL
-										$_SERVER['QUERY_STRING'] = 'option=com_virtuemart&view=productdetails&virtuemart_product_id='
-											. $record->virtuemart_product_id . '&virtuemart_category_id='
-											. $category_id . '&Itemid='
-											. $this->template->get('vm_itemid', 1, 'int');
-										$fieldvalue = $this->sef->getSiteRoute('index.php?' . $_SERVER['QUERY_STRING']);
-									}
-									else
-									{
-										$fieldvalue = '';
+										$url = 'option=com_virtuemart&view=productdetails&' .
+											'virtuemart_product_id=' . $record->virtuemart_product_id .
+											'&virtuemart_category_id=' . $category_id .
+											'&Itemid=' . $this->template->get('vm_itemid', 1, 'int');
+
+										$fieldValue = $this->sef->getSefUrl('index.php?' . $url);
 									}
 								}
 								// There is a product URL, use it
 								else
 								{
-									$fieldvalue = $record->product_url;
+									$fieldValue = $record->product_url;
 								}
 
 								// Add the suffix
-								if (!empty($fieldvalue))
+								if (!empty($fieldValue))
 								{
-									$fieldvalue .= $this->template->get('producturl_suffix');
+									$fieldValue .= $this->template->get('producturl_suffix');
 								}
 								break;
 							case 'basepricewithtax':
@@ -1215,63 +1268,49 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 							case 'taxamount':
 							case 'discountamount':
 							case 'pricewithouttax':
-								$prices = $this->getProductPrice($record->virtuemart_product_id, $record->virtuemart_shoppergroup_id);
+								// Get the quantity
+								$quantity = $useQuantity ? $record->price_quantity_start : 1;
+								$prices   = $this->getProductPrice($record->virtuemart_product_id, $record->virtuemart_shoppergroup_id, $quantity);
 
 								// Retrieve the requested price field
 								if (isset($prices[$fieldname]))
 								{
-									$fieldvalue = $prices[$fieldname];
+									$fieldValue = $prices[$fieldname];
 
 									// Apply conversion if applicable
-									if (!in_array($fieldvalue, array('taxamount', 'discountamount')))
+									if (!in_array($fieldValue, array('taxamount', 'discountamount')))
 									{
-										$fieldvalue = $this->convertPrice($fieldvalue, $record->currency_code_3);
+										$fieldValue = $this->convertPrice($fieldValue, $record->currency_code_3);
 									}
 
-									$fieldvalue = $this->formatNumber($fieldvalue);
+									$fieldValue = $this->formatNumber($fieldValue);
 								}
 								else
 								{
-									$fieldvalue = null;
+									$fieldValue = null;
 								}
 
 								// Check if we have any content otherwise use the default value
-								if (strlen(trim($fieldvalue)) == 0)
+								if (trim($fieldValue) === '')
 								{
-									$fieldvalue = $field->default_value;
+									$fieldValue = $field->default_value;
 								}
 
 								// Check if the currency needs to be added
 								if ($this->template->get('add_currency_to_price'))
 								{
-									$fieldvalue = $record->currency_code_3 . ' ' . $fieldvalue;
+									$fieldValue = $record->currency_code_3 . ' ' . $fieldValue;
 								}
 
 								// Export the data
 								break;
 							case 'product_currency':
-								$fieldvalue = $record->currency_code_3;
+								$fieldValue = $record->currency_code_3;
 
 								// Check if we have any content otherwise use the default value
-								if ($this->template->get('targetcurrency') != '')
+								if ($this->template->get('targetcurrency') !== '')
 								{
-									$fieldvalue = $this->template->get('targetcurrency');
-								}
-								break;
-							case 'custom_shipping':
-								// Get the prices
-								$prices = $this->getProductPrice($record->virtuemart_product_id, $record->virtuemart_shoppergroup_id);
-
-								// Check the shipping cost
-								if (isset($prices['salesprice']))
-								{
-									$price_with_tax = $this->formatNumber($prices['salesprice']);
-									$result = $this->helper->shippingCost($price_with_tax);
-
-									if ($result)
-									{
-										$fieldvalue = $result;
-									}
+									$fieldValue = $this->template->get('targetcurrency');
 								}
 								break;
 							case 'manufacturer_name':
@@ -1285,7 +1324,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 									)
 									->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $record->virtuemart_product_id);
 								$this->db->setQuery($query);
-								$fieldvalue = implode('|', $this->db->loadColumn());
+								$fieldValue = implode('|', $this->db->loadColumn());
 								break;
 							case 'custom_title':
 								// Get the custom title
@@ -1294,12 +1333,12 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								$query->from($this->db->quoteName('#__virtuemart_customs', 'c'));
 								$query->leftJoin($this->db->quoteName('#__virtuemart_product_customfields', 'f') . ' ON c.virtuemart_custom_id = f.virtuemart_custom_id');
 								$query->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $record->virtuemart_product_id);
-								$query->where($this->db->quoteName('field_type') . ' NOT IN (' . $this->db->quote('R') . ', ' . $this->db->quote('Z') . ')');
+								$query->where($this->db->quoteName('field_type') . ' NOT IN (' . $this->db->quote('R') . ', ' . $this->db->quote('Z') . ', ' . $this->db->quote('G') . ')');
 
 								// Check if we need to filter
 								$title_filter = $this->template->get('custom_title', array(), 'array');
 
-								if (!empty($title_filter) && $title_filter[0] != '')
+								if (!empty($title_filter) && $title_filter[0] !== '')
 								{
 									$query->where($this->db->quoteName('f.virtuemart_custom_id') . ' IN (' . implode(',', $title_filter) . ')');
 								}
@@ -1315,11 +1354,11 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 								if (is_array($titles))
 								{
-									$fieldvalue = implode('~', $titles);
+									$fieldValue = implode('~', $titles);
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'custom_value':
@@ -1327,14 +1366,14 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 							case 'custom_param':
 							case 'custom_ordering':
 								// Do some field sanity check if needed
-								if ($fieldname != 'custom_ordering')
+								if ($fieldname !== 'custom_ordering')
 								{
 									$fieldname = str_ireplace(array('custom_', '_param'), array('customfield_', '_params'), $fieldname);
 								}
 
-								if (!isset($this->customfields[$record->virtuemart_product_id][$fieldname]))
+								if (!isset($this->customFields[$record->virtuemart_product_id][$fieldname]))
 								{
-									if ($fieldname == 'custom_ordering')
+									if ($fieldname === 'custom_ordering')
 									{
 										$qfield = $this->db->quoteName('cf.ordering', 'custom_ordering');
 									}
@@ -1387,64 +1426,68 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 										foreach ($customfields as $customfield)
 										{
-											if ($fieldname == 'customfield_params' && $customfield->field_type != 'C')
+											// Check for groups, we don't need them as they get handled automatically
+											if ($customfield->field_type !== 'G')
 											{
-												// Fire the plugin to empty any values needed
-												$result = $dispatcher->trigger(
-													'exportCustomValues',
-													array(
-														'plugin' => $customfield->custom_element,
-														'custom_param' => $customfield->customfield_params,
-														'virtuemart_product_id' => $record->virtuemart_product_id,
-														'virtuemart_custom_id' => $customfield->virtuemart_custom_id,
-														'virtuemart_customfield_id' => $customfield->virtuemart_customfield_id,
-														'log' => $this->log
-													)
-												);
+												if ($fieldname === 'customfield_params' && $customfield->field_type !== 'C')
+												{
+													// Fire the plugin to empty any values needed
+													$result = $dispatcher->trigger(
+														'exportCustomValues',
+														array(
+															'plugin'                    => $customfield->custom_element,
+															'custom_param'              => $customfield->customfield_params,
+															'virtuemart_product_id'     => $record->virtuemart_product_id,
+															'virtuemart_custom_id'      => $customfield->virtuemart_custom_id,
+															'virtuemart_customfield_id' => $customfield->virtuemart_customfield_id,
+															'log'                       => $this->log
+														)
+													);
 
-												if (is_array($result) && !empty($result))
-												{
-													$values = array_merge($values, $result[0]);
-												}
-												else
-												{
-													// Create the CSVI format
-													// option1[value1#value2;option2[value1#value2
-													$values[] = $customfield->customfield_params;
-												}
-											}
-											else
-											{
-												if (!empty($customfield->$fieldname))
-												{
-													$fieldvalue = $customfield->$fieldname;
-
-													// Apply currency formatting
-													if ($fieldname == 'customfield_price')
+													if (is_array($result) && !empty($result))
 													{
-														$fieldvalue = $this->formatNumber($customfield->$fieldname);
+														$values = array_merge($values, $result[0]);
 													}
-
-													$values[] = $fieldvalue;
+													else
+													{
+														// Create the CSVI format
+														// option1[value1#value2;option2[value1#value2
+														$values[] = $customfield->customfield_params;
+													}
 												}
 												else
 												{
-													$values[] = '';
+													if ($customfield->$fieldname !== false && !is_null($customfield->$fieldname))
+													{
+														$fieldValue = $customfield->$fieldname;
+
+														// Apply currency formatting
+														if ($fieldname === 'customfield_price')
+														{
+															$fieldValue = $this->formatNumber($customfield->$fieldname);
+														}
+
+														$values[] = $fieldValue;
+													}
+													else
+													{
+														$values[] = '';
+													}
 												}
 											}
 										}
 
-										$this->customfields[$record->virtuemart_product_id][$fieldname] = $values;
-										$fieldvalue = implode('~', $this->customfields[$record->virtuemart_product_id][$fieldname]);
+										$this->customFields[$record->virtuemart_product_id][$fieldname] = $values;
+										$fieldValue                                                     = implode('~', $this->customFields[$record->virtuemart_product_id][$fieldname]);
 									}
 									else
 									{
-										$fieldvalue = '';
+										$fieldValue = '';
 									}
 								}
 								else
 								{
-									$fieldvalue = implode('~', $this->customfields[$record->virtuemart_product_id][$fieldname]);
+									$fieldValue = implode('~', $this->customFields[$record->virtuemart_product_id][$fieldname]);
 								}
 								break;
 							case 'custom_override':
@@ -1452,9 +1495,9 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 								$query = $this->db->getQuery(true);
 								$query->select(
 									array(
-									$this->db->quoteName('cf.override', 'custom_override'),
-									$this->db->quoteName('cf.disabler', 'custom_disabler')
-								)
+										$this->db->quoteName('cf.override', 'custom_override'),
+										$this->db->quoteName('cf.disabler', 'custom_disabler')
+									)
 								);
 								$query->from($this->db->quoteName('#__virtuemart_customs', 'c'));
 								$query->leftJoin($this->db->quoteName('#__virtuemart_product_customfields', 'cf') . ' ON c.virtuemart_custom_id = cf.virtuemart_custom_id');
@@ -1468,7 +1511,8 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 									$query->where($this->db->quoteName('cf.virtuemart_custom_id') . ' IN (' . implode(',', $title_filter) . ')');
 								}
 
-								$query->order($this->db->quoteName('cf.ordering'), $this->db->quoteName('cf.virtuemart_custom_id'));
+								$query->order($this->db->quoteName('cf.ordering'))
+									->order($this->db->quoteName('cf.virtuemart_custom_id'));
 								$this->db->setQuery($query);
 								$customfields = $this->db->loadObjectList();
 
@@ -1480,29 +1524,60 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 									{
 										if (in_array($fieldname, array('custom_disabler', 'custom_override')))
 										{
-											$fieldvalue = 'N';
+											$fieldValue = 'N';
 
 											// If the customfield parent id is set then value is Y
 											if ($customfield->$fieldname > 0)
 											{
-												$fieldvalue = 'Y';
+												$fieldValue = 'Y';
 											}
 
-											$values[] = $fieldvalue;
+											$values[] = $fieldValue;
 										}
 									}
 
-									$this->customfields[$record->virtuemart_product_id][$fieldname] = $values;
-									$fieldvalue = implode('~', $this->customfields[$record->virtuemart_product_id][$fieldname]);
+									$this->customFields[$record->virtuemart_product_id][$fieldname] = $values;
+									$fieldValue                                                     = implode('~', $this->customFields[$record->virtuemart_product_id][$fieldname]);
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
+								}
+
+								break;
+							case 'file_url_thumb':
+								$fieldValue = '';
+								$query = $this->db->getQuery(true)
+									->select($this->db->quoteName(array('file_url', 'file_url_thumb')))
+									->from($this->db->quoteName('#__virtuemart_medias', 'm'))
+									->leftJoin(
+										$this->db->quoteName('#__virtuemart_product_medias', 'p')
+										. ' ON ' . $this->db->quoteName('m.virtuemart_media_id') . ' = ' . $this->db->quoteName('p.virtuemart_media_id')
+									)
+									->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $record->virtuemart_product_id)
+									->where($this->db->quoteName('file_type') . ' = ' . $this->db->quote('product'))
+									->order('p.ordering');
+								$this->db->setQuery($query);
+								$images = $this->db->loadObject();
+
+								if ($images && empty($images->file_url_thumb))
+								{
+									$imageSettings = $this->helperConfig->get('img_resize_enable');
+
+									if ($imageSettings)
+									{
+										$imageWidth    = $this->helperConfig->get('img_width');
+										$imageHeight   = $this->helperConfig->get('img_height');
+										$imageDetails  = pathinfo($images->file_url);
+										$imageFileName = $imageDetails['filename'];
+										$extension     = $imageDetails['extension'];
+										$thumbnailName = $imageFileName . '_' . $imageWidth . 'x' . $imageHeight . '.' . $extension;
+										$fieldValue    = $imageDetails['dirname'] . '/resized/' . $thumbnailName;
+									}
 								}
 
 								break;
 							case 'file_url':
-							case 'file_url_thumb':
 							case 'file_title':
 							case 'file_description':
 							case 'file_meta':
@@ -1519,15 +1594,16 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 									->order('p.ordering');
 								$this->db->setQuery($query);
 								$titles = $this->db->loadColumn();
+								$this->log->add('Looking for product images');
+
+								$fieldValue = '';
 
 								if (is_array($titles))
 								{
-									$fieldvalue = implode('|', $titles);
+									$fieldValue = implode('|', $titles);
 								}
-								else
-								{
-									$fieldvalue = '';
-								}
+
+								$this->log->add('Found images: ' . $fieldValue);
 								break;
 							case 'file_ordering':
 								$query = $this->db->getQuery(true)
@@ -1542,11 +1618,11 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 								if (is_array($titles))
 								{
-									$fieldvalue = implode('|', $titles);
+									$fieldValue = implode('|', $titles);
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'min_order_level':
@@ -1564,18 +1640,19 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 											if ($param_name == $fieldname)
 											{
-												$fieldvalue = str_replace('"', '', $param_value);
+												$fieldValue = str_replace('"', '', $param_value);
 											}
 										}
 									}
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'shopper_group_name':
-								$query = $this->db->getQuery(true)
+								$fieldValue = '';
+								$query      = $this->db->getQuery(true)
 									->select($this->db->quoteName($fieldname))
 									->from($this->db->quoteName('#__virtuemart_shoppergroups', 'g'))
 									->leftJoin(
@@ -1585,16 +1662,19 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 									->where($this->db->quoteName('virtuemart_product_id') . ' = ' . $this->db->quote($record->virtuemart_product_id));
 								$this->db->setQuery($query);
 								$this->log->add('Get shopper group', true);
-								$titles = $this->db->loadColumn();
+								$titles        = $this->db->loadColumn();
+								$shopperGroups = array();
 
 								if (is_array($titles))
 								{
-									$fieldvalue = implode('|', $titles);
+									foreach ($titles as $title)
+									{
+										$shopperGroups[] = \JText::_($title);
+									}
+
+									$fieldValue = implode('|', $shopperGroups);
 								}
-								else
-								{
-									$fieldvalue = '';
-								}
+
 								break;
 							case 'shopper_group_name_price':
 								if ($record->virtuemart_shoppergroup_id > 0)
@@ -1605,17 +1685,17 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 										->where($this->db->quoteName('virtuemart_shoppergroup_id') . ' = ' . $this->db->quote($record->virtuemart_shoppergroup_id));
 									$this->db->setQuery($query);
 									$this->log->add('Get price shopper group', true);
-									$fieldvalue = $this->db->loadResult();
+									$fieldValue = $this->db->loadResult();
 								}
 								else
 								{
-									$fieldvalue = '*';
+									$fieldValue = '*';
 								}
 								break;
 							case 'custom':
-								if (strlen(trim($fieldvalue)) == 0)
+								if (strlen(trim($fieldValue)) == 0)
 								{
-									$fieldvalue = $field->default_value;
+									$fieldValue = $field->default_value;
 								}
 								break;
 							case 'product_discount':
@@ -1628,20 +1708,20 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 								if (is_object($discount))
 								{
-									$fieldvalue = $this->formatNumber($discount->calc_value);
+									$fieldValue = $this->formatNumber($discount->calc_value);
 
-									if (stristr($discount->calc_value_mathop, '%') !== false)
+									if (strpos($discount->calc_value_mathop, '%') !== false)
 									{
-										$fieldvalue .= '%';
+										$fieldValue .= '%';
 									}
 								}
 								else
 								{
-									$fieldvalue = '';
+									$fieldValue = '';
 								}
 								break;
 							case 'product_attribute':
-								$options = json_decode($fieldvalue);
+								$options = json_decode($fieldValue);
 
 								$values = array();
 
@@ -1684,20 +1764,20 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 										}
 									}
 
-									$fieldvalue = implode('|', $values);
+									$fieldValue = implode('|', $values);
 								}
 
-								if (strlen(trim($fieldvalue)) == 0)
+								if (strlen(trim($fieldValue)) == 0)
 								{
-									$fieldvalue = $field->default_value;
+									$fieldValue = $field->default_value;
 								}
 								break;
 							default:
 								// See if we need to retrieve a custom field
-								if (in_array($fieldname, $this->customfieldsExport))
+								if (in_array($fieldname, $this->customFieldsExport))
 								{
 									$query = $this->db->getQuery(true)
-										->select($this->db->quoteName('p.customfield_value'))
+										->select($this->db->quoteName(array('p.customfield_value', 'c.field_type')))
 										->from($this->db->quoteName('#__virtuemart_product_customfields', 'p'))
 										->leftJoin(
 											$this->db->quoteName('#__virtuemart_customs', 'c')
@@ -1706,17 +1786,100 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 										->where($this->db->quoteName('c.custom_title') . ' = ' . $this->db->quote($fieldname))
 										->where($this->db->quoteName('p.virtuemart_product_id') . ' = ' . (int) $record->virtuemart_product_id);
 									$this->db->setQuery($query);
-									$fieldvalue = $this->db->loadResult();
+
+									$customValue = $this->db->loadObject();
+
+									if ($customValue)
+									{
+										$fieldValue = $customValue->customfield_value;
+
+										// Check if we are exporting media custom field id
+										if ($customValue->field_type === 'M')
+										{
+											$query->clear()
+												->select($this->db->quoteName('file_url'))
+												->from($this->db->quoteName('#__virtuemart_medias'))
+												->where($this->db->quoteName('virtuemart_media_id') . ' = ' . (int) $customValue->customfield_value);
+											$this->db->setQuery($query);
+											$fieldValue = $this->db->loadResult();
+										}
+									}
 								}
-								elseif (in_array($fieldname, $this->multivariantExport))
+								elseif (in_array($fieldname, $this->multiVariantExport))
 								{
-									$fieldvalue = $this->getMultivariantValue($record, $fieldname);
+									$fieldValue = $this->getMultivariantValue($record, $fieldname);
 								}
+								elseif (in_array($fieldname, $this->multiLangFields))
+								{
+									$values = array();
+
+									$language = substr($fieldname, strpos($fieldname, "_") + 7);
+									$query    = $this->db->getQuery(true)
+										->select(
+											$this->db->quoteName(
+												array(
+													'cf.virtuemart_customfield_id',
+													'cf.virtuemart_custom_id',
+													'cf.customfield_params',
+													'c.field_type',
+													'c.custom_element',
+												)
+											)
+										)
+										->from($this->db->quoteName('#__virtuemart_product_customfields', 'cf'))
+										->leftJoin(
+											$this->db->quoteName('#__virtuemart_customs', 'c')
+											. ' ON ' . $this->db->quoteName('c.virtuemart_custom_id') . ' = ' . $this->db->quoteName('cf.virtuemart_custom_id')
+										)
+										->where($this->db->quoteName('cf.virtuemart_product_id') . ' = ' . (int) $record->virtuemart_product_id);
+
+									// Check if we need to filter
+									$title_filter = $this->template->get('custom_title', array());
+
+									if (!empty($title_filter) && $title_filter[0] != '')
+									{
+										$query->where($this->db->quoteName('cf.virtuemart_custom_id') . ' IN (' . implode(',', $title_filter) . ')');
+									}
+
+									$query->order(
+										array(
+											$this->db->quoteName('cf.ordering'),
+											$this->db->quoteName('cf.virtuemart_custom_id')
+										)
+									);
+									$this->db->setQuery($query);
+									$customfields = $this->db->loadObjectList();
+
+									foreach ($customfields as $customfield)
+									{
+										$result = $dispatcher->trigger(
+											'exportCustomValues',
+											array(
+												'plugin'                    => $customfield->custom_element,
+												'custom_param'              => $customfield->customfield_params,
+												'virtuemart_product_id'     => $record->virtuemart_product_id,
+												'virtuemart_custom_id'      => $customfield->virtuemart_custom_id,
+												'virtuemart_customfield_id' => $customfield->virtuemart_customfield_id,
+												'log'                       => $this->log,
+												'lang'                      => $language
+											)
+										);
+
+										if (is_array($result) && !empty($result))
+										{
+											$values = array_merge($values, $result[0]);
+										}
+									}
+
+									$fieldValue = implode('~', $values);
+								}
+
+								$fieldValue = \JText::_($fieldValue);
 								break;
 						}
 
 						// Store the field value
-						$this->fields->set($field->csvi_templatefield_id, $fieldvalue);
+						$this->fields->set($field->csvi_templatefield_id, $fieldValue);
 					}
 
 					// Output the data
@@ -1728,7 +1891,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();
@@ -1739,12 +1902,14 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	/**
 	 * Convert prices to the new currency.
 	 *
-	 * @param   float   $product_price     The price to convert
-	 * @param   string  $product_currency  The currency to convert to
+	 * @param   float  $product_price    The price to convert
+	 * @param   string $product_currency The currency to convert to
 	 *
 	 * @return  float  A converted price.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function convertPrice($product_price, $product_currency)
 	{
@@ -1755,7 +1920,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 		else
 		{
 			// See if we need to convert the price
-			if ($this->template->get('targetcurrency', '') != '')
+			if ($this->template->get('targetcurrency', '') !== '')
 			{
 				$query = $this->db->getQuery(true);
 				$query->select($this->db->quoteName('currency_code') . ', ' . $this->db->quoteName('currency_rate'));
@@ -1785,14 +1950,15 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	/**
 	 * Get product prices.
 	 *
-	 * @param   int  $product_id                  The ID of the product.
-	 * @param   int  $virtuemart_shoppergroup_id  The ID of the price shopper group.
+	 * @param   int $product_id                 The ID of the product.
+	 * @param   int $virtuemart_shoppergroup_id The ID of the price shopper group.
+	 * @param   int $quantity                   The quantity to use for the prices.
 	 *
 	 * @return array List of prices.
 	 *
 	 * @since   4.0
 	 */
-	private function getProductPrice($product_id, $virtuemart_shoppergroup_id)
+	private function getProductPrice($product_id, $virtuemart_shoppergroup_id, $quantity = 1)
 	{
 		$sid = $virtuemart_shoppergroup_id;
 
@@ -1805,21 +1971,21 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			}
 
 			// Load the calculation helper
-			require_once JPATH_ADMINISTRATOR . '/components/com_csvi/addon/com_virtuemart/helper/com_virtuemart_calculation.php';
+			require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart_calculation.php';
 
 			// Load the configuration for the currency formatting
 			require_once JPATH_ADMINISTRATOR . '/components/com_virtuemart/helpers/config.php';
 
 			// Load the VirtueMart configuration
-			VmConfig::loadConfig();
+			\VmConfig::loadConfig();
 
 			// Load the calculation helper
-			/** @var CsviVmPrices $calc */
-			$calc = CsviVmPrices::getInstance();
+			/** @var \CsviVmPrices $calc */
+			$calc = \CsviVmPrices::getInstance();
 
 			// Check if we need to use a template shopper group
-			$force = $this->template->get('force_shopper_group_price', 'none');
-			$sid = $virtuemart_shoppergroup_id;
+			$force           = $this->template->get('force_shopper_group_price', 'none');
+			$sid             = $virtuemart_shoppergroup_id;
 			$setShopperGroup = true;
 
 			if ($force !== 'none')
@@ -1855,10 +2021,37 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 			// Load the product helper
 			require_once JPATH_ADMINISTRATOR . '/components/com_virtuemart/models/product.php';
-			$product = new VirtueMartModelProduct;
+			$product = new \VirtueMartModelProduct;
+
+			// Load the product info
+			$product = $product->getProductSingle($product_id, true, $quantity, true, $virtuemart_shoppergroup_id);
+
+			// See if this is a child product
+			if (!$product->virtuemart_category_id && $product->product_parent_id > 0)
+			{
+				if (!array_key_exists($product->product_parent_id, $this->parentCategories))
+				{
+					// Set a category on the child product so it calculates the correct price
+					$categoryIds = $this->helper->createCategoryPath($product->product_parent_id, true);
+
+					$this->parentCategories[$product->product_parent_id] = $categoryIds;
+				}
+
+				if (array_key_exists($product->product_parent_id, $this->parentCategories))
+				{
+					$product->categories = explode('|', $this->parentCategories[$product->product_parent_id]);
+
+					if (array_key_exists(0, $product->categories))
+					{
+						$product->virtuemart_category_id = $product->categories[0];
+					}
+				}
+			}
+
+			// Clear any existing prices
+			$calc->productPrices = array();
 
 			// Get the prices
-			$product = $product->getProductSingle($product_id, true, 1, false, $virtuemart_shoppergroup_id);
 			$prices = $calc->getProductPrices($product);
 
 			if (is_array($prices))
@@ -1880,6 +2073,8 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 * @return  void.
 	 *
 	 * @since   4.4.1
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function loadCustomFields()
 	{
@@ -1906,7 +2101,7 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			$result = array();
 		}
 
-		$this->customfieldsExport = $result;
+		$this->customFieldsExport = $result;
 	}
 
 	/**
@@ -1915,6 +2110,8 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	 * @return  void.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws \RuntimeException
 	 */
 	private function loadMultiVariantFields()
 	{
@@ -1945,20 +2142,23 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 					$group = substr($segment, 0, $firstpos);
 					$value = substr($segment, $firstpos + 1);
 
-					if ($group == 'selectoptions')
+					if ($group === 'selectoptions')
 					{
 						$values = json_decode($value);
 
-						foreach ($values as $ramification)
+						if (!empty($values))
 						{
-							$csvi_name = trim($ramification->voption);
-
-							if ($ramification->voption == 'clabels')
+							foreach ($values as $ramification)
 							{
-								$csvi_name = trim($ramification->clabel);
-							}
+								$csvi_name = trim($ramification->voption);
 
-							$this->multivariantExport[] = $csvi_name;
+								if ($ramification->voption === 'clabels')
+								{
+									$csvi_name = trim($ramification->clabel);
+								}
+
+								$this->multiVariantExport[] = $csvi_name;
+							}
 						}
 					}
 				}
@@ -1969,17 +2169,19 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	/**
 	 * Get the multi variant value.
 	 *
-	 * @param   object  $record     The current record with data.
-	 * @param   string  $fieldname  The name of the field to get the value for.
+	 * @param   object $record    The current record with data.
+	 * @param   string $fieldname The name of the field to get the value for.
 	 *
 	 * @return string The value found.
 	 *
 	 * @since   6.0
+	 *
+	 * @throws  \RuntimeException
 	 */
 	private function getMultivariantValue($record, $fieldname)
 	{
 		$virtuemart_product_id = (int) $record->virtuemart_product_id;
-		$parent_id = (int) $record->virtuemart_product_id;
+		$parent_id             = (int) $record->virtuemart_product_id;
 
 		// See if this is a child product
 		if ($record->product_parent_id > 0)
@@ -2012,9 +2214,9 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 
 		// Set the variables
 		$selectoptions = array();
-		$options = array();
-		$position = false;
-		$fieldvalue = '';
+		$options       = array();
+		$position      = false;
+		$fieldvalue    = '';
 
 		if (isset($customfield->customfield_params))
 		{
@@ -2040,12 +2242,12 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 			{
 				$csvi_name = trim($selectoption->voption);
 
-				if ($selectoption->voption == 'clabels')
+				if ($selectoption->voption === 'clabels')
 				{
 					$csvi_name = trim($selectoption->clabel);
 				}
 
-				if ($csvi_name == $fieldname)
+				if ($csvi_name === $fieldname)
 				{
 					break;
 				}
@@ -2074,16 +2276,16 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	/**
 	 * Format a value to a number.
 	 *
-	 * @param   float  $fieldvalue  The value to format as number.
+	 * @param   float $fieldValue The value to format as number.
 	 *
 	 * @return  string  The formatted number.
 	 *
 	 * @since   6.0
 	 */
-	private function formatNumber($fieldvalue)
+	private function formatNumber($fieldValue)
 	{
 		return number_format(
-			$fieldvalue,
+			$fieldValue,
 			$this->template->get('export_price_format_decimal', 2, 'int'),
 			$this->template->get('export_price_format_decsep'),
 			$this->template->get('export_price_format_thousep')
@@ -2093,18 +2295,20 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	/**
 	 * Get parent image for a product.
 	 *
-	 * @param   int     $productParentId  The product ID to get the image.
-	 * @param   string  $fieldname        The fieldname to export.
+	 * @param   int    $productParentId The product ID to get the image.
+	 * @param   string $fieldName       The field name to export.
 	 *
 	 * @return  string image url .
 	 *
 	 * @since  6.3.0
+	 *
+	 * @throws  \RuntimeException
 	 */
-	private function getParentImage($productParentId, $fieldname)
+	private function getParentImage($productParentId, $fieldName)
 	{
 		$query = $this->db->getQuery(true);
 
-		if ($fieldname == 'picture_url_thumb')
+		if ($fieldName === 'picture_url_thumb')
 		{
 			$query->select(
 				'CASE WHEN ' . $this->db->quoteName('file_url_thumb') . ' = ' . $this->db->quote('') . '
@@ -2131,19 +2335,19 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 		$imageURL = $this->db->loadColumn();
 
 		// Debug log entry for query
-		$this->log->add(JText::_('COM_CSVI_FIND_PRODUCT_PARENT_IMAGE'), true);
+		$this->log->add(\JText::_('COM_CSVI_FIND_PRODUCT_PARENT_IMAGE'), true);
 
 		// Do the check till the image is retrieved from product anchestors
-		if (count($imageURL) == 0)
+		if (count($imageURL) === 0)
 		{
 			// Check if the product parent id is not 0
-			if (!is_null($productParentId))
+			if (null !== $productParentId)
 			{
 				// Get the next level parent id
-				$anchestorParentId = $this->getProductParentId($productParentId);
+				$ancestorParentId = $this->getProductParentId($productParentId);
 
 				// If current product has no image check the parent image
-				$this->getParentImage($anchestorParentId, $fieldname);
+				$this->getParentImage($ancestorParentId, $fieldName);
 			}
 			else
 			{
@@ -2158,13 +2362,14 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 	/**
 	 * Get the parent ID for a product.
 	 *
-	 * @param   int  $productId  The product ID to get the parent for
+	 * @param   int $productId The product ID to get the parent for
 	 *
 	 * @return  int  The parent product ID.
 	 *
 	 * @since   3.0
+	 *
+	 * @throws  \RuntimeException
 	 */
-
 	private function getProductParentId($productId)
 	{
 		$query = $this->db->getQuery(true)
@@ -2174,5 +2379,28 @@ class Com_VirtuemartModelExportProduct extends CsviModelExports
 		$this->db->setQuery($query);
 
 		return $this->db->loadResult();
+	}
+
+	/**
+	 * Get multi language fields for CF4ALL
+	 *
+	 * @return  void
+	 *
+	 * @since   7.5.0
+	 */
+	private function loadMultiLanguageCF4ALLFields()
+	{
+		$languages = $this->helper->getActiveLanguages();
+		$multiLangFields = array();
+
+		foreach ($languages as $language)
+		{
+			if ($language !== 'en-GB')
+			{
+				$multiLangFields[] = 'custom_param_' . strtolower(str_replace('-', '_', $language));
+			}
+		}
+
+		$this->multiLangFields = $multiLangFields;
 	}
 }

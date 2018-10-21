@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -153,7 +153,7 @@ class Com_VirtuemartHelperCategory extends RantaiImportEngine
 	 * categories will be imported.
 	 *
 	 * @param   integer  $product_id     Contains the product ID the category/categories belong to
-	 * @param   integer  $category_path  Contains the category/categories path for the product
+	 * @param   array    $category_path  Contains the category/categories path for the product
 	 * @param   integer  $category_id    Contains a single or array of category IDs
 	 * @param   integer  $ordering       The product order in the category
 	 * @param   integer  $vendor_id      The id of the vendor the category belongs to
@@ -162,8 +162,10 @@ class Com_VirtuemartHelperCategory extends RantaiImportEngine
 	 *
 	 * @since   3.0
 	 */
-	public function checkCategoryPath($product_id=false, $category_path=array(), $category_id=false, $ordering='NULL', $vendor_id = 1)
+	public function checkCategoryPath($product_id = 0, $category_path = array(), $category_id = 0, $ordering = 'NULL', $vendor_id = 1)
 	{
+		$productOrdering = explode('|', $ordering);
+
 		$this->log->add('Checking category', false);
 
 		// Check if there is a product ID
@@ -171,46 +173,47 @@ class Com_VirtuemartHelperCategory extends RantaiImportEngine
 		{
 			return false;
 		}
-		else
+
+		// If product_parent_id is true, we have a child product, child products do not have category paths
+		// We have a category path, need to find the ID
+		if (!$category_id)
 		{
-			// If product_parent_id is true, we have a child product, child products do not have category paths
-			// We have a category path, need to find the ID
+			// Use verifyCategory() method to confirm/add category tree for this product
+			// Modification: $category_id now is an array
+			$category_id = $this->verifyCategory($category_path, $vendor_id);
+
+			// Still no category ID? then we end here
 			if (!$category_id)
 			{
-				// Use verifyCategory() method to confirm/add category tree for this product
-				// Modification: $category_id now is an array
-				$category_id = $this->verifyCategory($category_path, $vendor_id);
+				return false;
 			}
+		}
 
-			// We have a category_id, no need to find the path
-			if ($category_id)
-			{
-				// Delete old entries only if the user wants us to
-				if (!$this->template->get('append_categories', false))
-				{
-					$query = $this->db->getQuery(true)
-						->delete($this->db->quoteName('#__virtuemart_product_categories'))
-						->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $product_id);
-					$this->db->setQuery($query)->execute();
-					$this->log->add('COM_CSVI_DELETE_OLD_CATEGORIES_XREF');
-				}
-				else
-				{
-					$this->log->add('Do not delete old category references, going to append the categories', false);
-				}
+		// Delete old entries only if the user wants us to
+		if (!$this->template->get('append_categories', false))
+		{
+			$query = $this->db->getQuery(true)
+				->delete($this->db->quoteName('#__virtuemart_product_categories'))
+				->where($this->db->quoteName('virtuemart_product_id') . ' = ' . (int) $product_id);
+			$this->db->setQuery($query)->execute();
+			$this->log->add('COM_CSVI_DELETE_OLD_CATEGORIES_XREF');
+		}
+		else
+		{
+			$this->log->add('Do not delete old category references, going to append the categories', false);
+		}
 
-				// Insert new product/category relationships
-				$category_xref_values = array('virtuemart_product_id' => $product_id, 'ordering' => $ordering);
+		// Insert new product/category relationships
+		$category_xref_values = array('virtuemart_product_id' => $product_id);
 
-				foreach ($category_id as $value)
-				{
-					$category_xref_values['virtuemart_category_id'] = $value;
-					$this->productCategoryXref->bind($category_xref_values);
-					$this->productCategoryXref->store();
-					$this->productCategoryXref->reset();
-					$category_xref_values['virtuemart_category_id'] = '';
-				}
-			}
+		foreach ($category_id as $key => $value)
+		{
+			$category_xref_values['virtuemart_category_id'] = $value;
+			$category_xref_values['ordering']               = array_key_exists($key, $productOrdering) ? $productOrdering[$key] : 0;
+			$this->productCategoryXref->bind($category_xref_values);
+			$this->productCategoryXref->store();
+			$this->productCategoryXref->reset();
+			$category_xref_values['virtuemart_category_id'] = '';
 		}
 
 		// Clean the tables
@@ -282,9 +285,9 @@ class Com_VirtuemartHelperCategory extends RantaiImportEngine
 		foreach ($category_path as $line)
 		{
 			// Explode slash delimited category tree into array
-			$category_list = explode($this->categorySeparator, $line);
-			$category_count = count($category_list);
-			$category_id = null;
+			$category_list      = explode($this->categorySeparator, $line);
+			$category_count     = count($category_list);
+			$category_id        = null;
 			$category_parent_id = '0';
 
 			// For each category in array

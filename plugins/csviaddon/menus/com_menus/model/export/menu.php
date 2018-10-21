@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  JoomlaMenu
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - [year] RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace menus\com_menus\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export Joomla Menus.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  JoomlaMenu
  * @since       6.3.0
  */
-class Com_MenusModelExportMenu extends CsviModelExports
+class Menu extends \CsviModelExports
 {
 	/**
 	 * List of core fields
@@ -110,15 +110,16 @@ class Com_MenusModelExportMenu extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -167,41 +168,45 @@ class Com_MenusModelExportMenu extends CsviModelExports
 								$fieldvalue = $this->db->loadResult();
 								break;
 							default:
-								// Check if the field is one of the parameters
-								$parameters = json_decode($record->params);
-
-								if (isset($parameters->$fieldname))
+								if (!empty($record->params))
 								{
-									$fieldvalue = $parameters->$fieldname;
+									// Check if the field is one of the parameters
+									$parameters = json_decode($record->params);
+
+									if (isset($parameters->$fieldname))
+									{
+										$fieldvalue = $parameters->$fieldname;
+									}
+
+									switch ($fieldname)
+									{
+										case 'show_page_heading':
+										case 'published':
+										case 'menu_text':
+											switch ($fieldvalue)
+											{
+												case 1:
+													$fieldvalue = 'Y';
+													break;
+												case 0:
+													$fieldvalue = 'N';
+													break;
+											}
+											break;
+										case 'secure':
+											switch ($fieldvalue)
+											{
+												case 1:
+													$fieldvalue = 'Y';
+													break;
+												case -1:
+													$fieldvalue = 'N';
+													break;
+											}
+											break;
+									}
 								}
 
-								switch ($fieldname)
-								{
-									case 'show_page_heading':
-									case 'published':
-									case 'menu_text':
-										switch ($fieldvalue)
-										{
-											case 1:
-												$fieldvalue = 'Y';
-												break;
-											case 0:
-												$fieldvalue = 'N';
-												break;
-										}
-										break;
-									case 'secure':
-										switch ($fieldvalue)
-										{
-											case 1:
-												$fieldvalue = 'Y';
-												break;
-											case -1:
-												$fieldvalue = 'N';
-												break;
-										}
-										break;
-								}
 								break;
 						}
 
@@ -218,7 +223,7 @@ class Com_MenusModelExportMenu extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent('COM_CSVI_NO_DATA_FOUND');
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();

@@ -3,15 +3,15 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
-defined('_JEXEC') or die;
+namespace virtuemart\com_virtuemart\model\export;
 
-require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
+defined('_JEXEC') or die;
 
 /**
  * Export VirtueMart shipping rates.
@@ -20,7 +20,7 @@ require_once JPATH_ADMINISTRATOR . '/components/com_csvi/models/exports.php';
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelExportShippingrate extends CsviModelExports
+class Shippingrate extends \CsviModelExports
 {
 	/**
 	 * Export the data.
@@ -29,7 +29,7 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 	 *
 	 * @since   6.0
 	 *
-	 * @throws  CsviException
+	 * @throws  \CsviException
 	 */
 	protected function exportBody()
 	{
@@ -40,7 +40,7 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 
 			if (!$language)
 			{
-				throw new CsviException(JText::_('COM_CSVI_NO_LANGUAGE_SET'));
+				throw new \CsviException(\JText::_('COM_CSVI_NO_LANGUAGE_SET'));
 			}
 
 			// Build something fancy to only get the fieldnames the user wants
@@ -112,6 +112,7 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 					case 'tax_id':
 					case 'tax':
 					case 'free_shipment':
+					case 'show_on_pdetails':
 						$userfields[] = $this->db->quoteName('#__virtuemart_shipmentmethods.shipment_params');
 
 						if (array_key_exists($field->field_name, $groupbyfields))
@@ -158,7 +159,7 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 
 			if ($publish_state !== '' && ($publish_state == 1 || $publish_state == 0))
 			{
-				$query->where($this->db->quoteName('#__virtuemart_manufacturers.published') . ' = ' . (int) $publish_state);
+				$query->where($this->db->quoteName('#__virtuemart_shipmentmethods.published') . ' = ' . (int) $publish_state);
 			}
 
 			// Group the fields
@@ -181,17 +182,18 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 			$limits = $this->getExportLimit();
 
 			// Execute the query
-			$this->csvidb->setQuery($query, $limits['offset'], $limits['limit']);
+			$this->db->setQuery($query, $limits['offset'], $limits['limit']);
+			$records = $this->db->getIterator();
 			$this->log->add('Export query' . $query->__toString(), false);
 
 			// Check if there are any records
-			$logcount = $this->csvidb->getNumRows();
+			$logcount = $this->db->getNumRows();
 
 			if ($logcount > 0)
 			{
 				$shipment_params = array();
 
-				while ($record = $this->csvidb->getRow())
+				foreach ($records as $record)
 				{
 					$this->log->incrementLinenumber();
 
@@ -303,6 +305,7 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 							case 'tax_id':
 							case 'package_fee':
 							case 'free_shipment':
+							case 'show_on_pdetails':
 								if ($fieldname == 'cost')
 								{
 									$fieldname = 'shipment_cost';
@@ -375,7 +378,7 @@ class Com_VirtuemartModelExportShippingrate extends CsviModelExports
 			}
 			else
 			{
-				$this->addExportContent(JText::_('COM_CSVI_NO_DATA_FOUND'));
+				$this->addExportContent(\JText::_('COM_CSVI_NO_DATA_FOUND'));
 
 				// Output the contents
 				$this->writeOutput();

@@ -3,11 +3,13 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
+
+namespace virtuemart\com_virtuemart\model\import;
 
 defined('_JEXEC') or die;
 
@@ -18,31 +20,40 @@ defined('_JEXEC') or die;
  * @subpackage  VirtueMart
  * @since       6.0
  */
-class Com_VirtuemartModelImportPrice extends RantaiImportEngine
+class Price extends \RantaiImportEngine
 {
 	/**
 	 * Price table.
 	 *
-	 * @var    VirtueMartTableProductPrice
+	 * @var    \VirtueMartTableProductPrice
 	 * @since  6.0
 	 */
-	private $productPriceTable = null;
+	private $productPriceTable;
 
 	/**
 	 * The addon helper
 	 *
-	 * @var    Com_VirtuemartHelperCom_Virtuemart
+	 * @var    \Com_VirtuemartHelperCom_Virtuemart
 	 * @since  6.0
 	 */
-	protected $helper = null;
+	protected $helper;
 
 	/**
 	 * CSVI fields
 	 *
-	 * @var    CsviHelperImportfields
+	 * @var    \CsviHelperImportfields
 	 * @since  6.0
 	 */
-	protected $fields = null;
+	protected $fields;
+
+	/**
+	 * Collect deleted product ids
+	 *
+	 * @var    array
+	 *
+	 * @since  7.7.0
+	 */
+	protected $deletedProductIds = array();
 
 	/**
 	 * Start the product import process.
@@ -74,6 +85,35 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 						break;
 					case 'product_currency':
 						$this->setState($name, $this->helper->getCurrencyId(strtoupper($value), $this->getState('virtuemart_vendor_id')));
+						break;
+					case 'product_override_price':
+						// Set the value only when there is one, else don't update even if its empty
+						if ($value && $value !== false)
+						{
+							$this->setState($name, $this->toPeriod($value));
+						}
+						break;
+					case 'override':
+						// Set the value only when there, else don't update even if its empty
+						if ($value || $value !== false)
+						{
+							switch (strtolower($value))
+							{
+								case 'y':
+								case 'yes':
+								case '1':
+									$value = 1;
+									break;
+								case '-1':
+									$value = '-1';
+									break;
+								default:
+									$value = 0;
+									break;
+							}
+
+							$this->setState($name, $value);
+						}
 						break;
 					case 'product_price':
 					case 'product_price_new':
@@ -108,7 +148,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 			{
 				if (strlen(trim($this->getState('shopper_group_name', ''))) > 0)
 				{
-					if ($this->getState('shopper_group_name') == '*')
+					if ($this->getState('shopper_group_name') === '*')
 					{
 						$this->setState('virtuemart_shoppergroup_id', 0);
 					}
@@ -129,6 +169,24 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 				$this->setState('product_currency', $this->helper->getVendorCurrency($this->getState('virtuemart_vendor_id')));
 			}
 
+			// Remove existing product prices if user wants to
+			if ($this->template->get('delete_existing_prices'))
+			{
+				$virtuemartProductId = $this->getState('virtuemart_product_id', false);
+
+				if ($virtuemartProductId
+					&& !in_array($virtuemartProductId, $this->deletedProductIds)
+				)
+				{
+					$query = $this->db->getQuery(true)
+						->delete($this->db->quotename('#__virtuemart_product_prices'))
+						->where($this->db->quotename('virtuemart_product_id') . ' = ' . (int) $this->getState('virtuemart_product_id', false));
+					$this->db->setQuery($query)->execute();
+					$this->log->add('Delete existing product prices to insert new ones');
+					$this->deletedProductIds[] = $this->getState('virtuemart_product_id', false);
+				}
+			}
+
 			// Bind the values
 			$this->productPriceTable->bind($this->state);
 
@@ -139,8 +197,8 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 				// Check if we have an existing item
 				if ($this->getState('virtuemart_product_price_id', 0) > 0 && !$this->template->get('overwrite_existing_data', true))
 				{
-					$this->log->add(JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
-					$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
+					$this->log->add(\JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
+					$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_CONTENT', $this->getState('product_sku')));
 					$this->loaded = false;
 				}
 				else
@@ -155,7 +213,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 		{
 			$this->loaded = false;
 
-			$this->log->addStats('skipped', JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
+			$this->log->addStats('skipped', \JText::_('COM_CSVI_MISSING_REQUIRED_FIELDS'));
 		}
 
 		return true;
@@ -164,7 +222,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 	/**
 	 * Process a record.
 	 *
-	 * @return  bool  Returns true if all is OK | Returns false if no product SKU or product ID can be found.
+	 * @return  boolean  Returns true if all is OK | Returns false if no product SKU or product ID can be found.
 	 *
 	 * @since   6.0
 	 */
@@ -175,7 +233,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 			if (!$this->getState('virtuemart_product_price_id', false) && $this->template->get('ignore_non_exist'))
 			{
 				// Do nothing for new rules when user chooses to ignore new rules
-				$this->log->addStats('skipped', JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('product_sku')));
+				$this->log->addStats('skipped', \JText::sprintf('COM_CSVI_DATA_EXISTS_IGNORE_NEW', $this->getState('product_sku')));
 			}
 			else
 			{
@@ -237,8 +295,8 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 				{
 					if (!$this->getState('virtuemart_product_id'))
 					{
-						$this->log->add(JText::sprintf('COM_CSVI_NO_PRODUCT_ID_FOUND', $this->getState('product_sku')));
-						$this->log->AddStats('skipped', JText::sprintf('COM_CSVI_NO_PRODUCT_ID_FOUND', $this->getState('product_sku')));
+						$this->log->add(\JText::sprintf('COM_CSVI_NO_PRODUCT_ID_FOUND', $this->getState('product_sku')));
+						$this->log->AddStats('skipped', \JText::sprintf('COM_CSVI_NO_PRODUCT_ID_FOUND', $this->getState('product_sku')));
 					}
 					elseif (!$this->getState('virtuemart_product_price_id', false) && !$this->getState('product_price'))
 					{
@@ -247,6 +305,9 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 					}
 					else
 					{
+						// Bind the values
+						$this->productPriceTable->bind($this->state);
+
 						// Check if we need to change the product price
 						if ($this->getState('product_price_new', false))
 						{
@@ -264,7 +325,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 
 						if ($shopper_group_name_new)
 						{
-							if ($shopper_group_name_new == '*')
+							if ($shopper_group_name_new === '*')
 							{
 								$this->productPriceTable->virtuemart_shoppergroup_id = 0;
 							}
@@ -283,7 +344,7 @@ class Com_VirtuemartModelImportPrice extends RantaiImportEngine
 						// Store the price
 						if (!$this->productPriceTable->store())
 						{
-							$this->log->addStats('incorrect', JText::sprintf('COM_CSVI_MULTIPLE_PRICES_NOT_ADDED', $this->productPriceTable->getError()));
+							$this->log->addStats('incorrect', \JText::sprintf('COM_CSVI_MULTIPLE_PRICES_NOT_ADDED', $this->productPriceTable->getError()));
 						}
 					}
 				}

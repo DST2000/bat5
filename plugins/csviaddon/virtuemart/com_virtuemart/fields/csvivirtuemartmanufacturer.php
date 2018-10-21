@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  VirtueMart
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,11 +37,29 @@ class JFormFieldCsviVirtuemartManufacturer extends JFormFieldCsviForm
 	 * @return  array  An array of customfields.
 	 *
 	 * @since   4.0
+	 *
+	 * @throws  RuntimeException
+	 *
+	 * @todo    Change to autoloader
 	 */
 	protected function getOptions()
 	{
-		$conf = JFactory::getConfig();
-		$lang = strtolower($this->form->getValue('orderproduct', '', str_replace('-', '_', $conf->get('language'))));
+		// Get the default language from virtuemart config
+		$templateId   = JFactory::getApplication()->input->get('csvi_template_id', 0, 'int');
+		$settings     = new CsviHelperSettings($this->db);
+		$log          = new CsviHelperLog($settings, $this->db);
+		$template     = new CsviHelperTemplate($templateId);
+		$fields       = new CsviHelperFields($template, $log, $this->db);
+		$languageCode = $template->get('language');
+
+		if (!$languageCode)
+		{
+			require_once JPATH_PLUGINS . '/csviaddon/virtuemart/com_virtuemart/helper/com_virtuemart.php';
+			$helperConfig = new Com_VirtuemartHelperCom_Virtuemart($template, $log, $fields, $this->db);
+			$languageCode = $helperConfig->getDefaultLanguage();
+		}
+
+		$lang = strtolower(str_replace('-', '_', $languageCode));
 
 		$query = $this->db->getQuery(true)
 			->select($this->db->quoteName('virtuemart_manufacturer_id', 'value') . ',' . $this->db->quoteName('mf_name', 'text'))
@@ -49,7 +67,7 @@ class JFormFieldCsviVirtuemartManufacturer extends JFormFieldCsviForm
 		$this->db->setQuery($query);
 		$options = $this->db->loadObjectList();
 
-		if (empty($options))
+		if (0 === count($options))
 		{
 			$options = array();
 		}

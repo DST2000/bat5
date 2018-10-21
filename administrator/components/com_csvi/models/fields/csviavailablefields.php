@@ -3,10 +3,10 @@
  * @package     CSVI
  * @subpackage  Fields
  *
- * @author      Roland Dalmulder <contact@csvimproved.com>
- * @copyright   Copyright (C) 2006 - 2016 RolandD Cyber Produksi. All rights reserved.
+ * @author      RolandD Cyber Produksi <contact@csvimproved.com>
+ * @copyright   Copyright (C) 2006 - 2018 RolandD Cyber Produksi. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        http://www.csvimproved.com
+ * @link        https://csvimproved.com
  */
 
 defined('_JEXEC') or die;
@@ -37,57 +37,57 @@ class JFormFieldCsviAvailableFields extends JFormFieldCsviForm
 	 * @return  array  An array of available fields.
 	 *
 	 * @throws  Exception
+	 * @throws  RuntimeException
 	 *
 	 * @since   4.3
 	 */
 	protected function getOptions()
 	{
-		$key = (isset($this->element['idfield'])) ? (string) $this->element['idfield'] : 'id';
+		$key = isset($this->element['idfield']) ? (string) $this->element['idfield'] : 'id';
 
 		$template_id = $this->jinput->getInt($key, $this->form->getValue('csvi_template_id', '', 0));
 
-		if ($template_id)
+		if (!$template_id)
 		{
-			// Load the selected template
-			$helper = new CsviHelperCsvi;
-			$template = new CsviHelperTemplate($template_id, $helper);
+			throw new RuntimeException(JText::_('COM_CSVI_NO_TEMPLATE_ID_FOUND'));
+		}
 
-			// Load the available fields
-			require_once JPATH_COMPONENT_ADMINISTRATOR . '/models/availablefields.php';
-			$availablefields_model = new CsviModelAvailablefields;
-			$fields = $availablefields_model->getAvailableFields(
-				$template->get('operation'),
-				$template->get('component'),
-				$template->get('action'),
-				'array'
+		// Load the selected template
+		$template = new CsviHelperTemplate($template_id);
+
+		// Call the Availablefields model
+		$model = JModelLegacy::getInstance('Availablefields', 'CsviModel', array('ignore_request' => true));
+
+		// Set a default filters
+		$model->setState('filter_order', 'csvi_name');
+		$model->setState('filter_order_Dir', 'DESC');
+		$model->setState('filter.component', $template->get('component'));
+		$model->setState('filter.operation', $template->get('operation'));
+		$model->setState('filter.action', $template->get('action'));
+		$model->setState('filter.idfields', 1);
+		$fields = $model->getItems();
+
+		if ((!is_array($fields) || empty($fields)) && $template->get('operation') !== 'custom')
+		{
+			throw new RuntimeException(
+				JText::sprintf(
+					'COM_CSVI_NO_AVAILABLE_FIELDS_FOUND_TEMPLATE',
+					$template->get('action'),
+					$template->get('component'),
+					$template->get('operation')
+				)
 			);
-
-			if ((!is_array($fields) || empty($fields)) && $template->get('operation') != 'custom')
-			{
-				throw new Exception(
-					JText::sprintf(
-						'COM_CSVI_NO_AVAILABLE_FIELDS_FOUND_TEMPLATE',
-						$template->get('action'),
-						$template->get('component'),
-						$template->get('operation')
-					)
-				);
-			}
-			else
-			{
-				$avfields = array();
-
-				foreach ($fields as $field)
-				{
-					$avfields[$field] = $field;
-				}
-			}
-
-			return array_merge(parent::getOptions(), $avfields);
 		}
 		else
 		{
-			throw new Exception(JText::_('COM_CSVI_NO_TEMPLATE_ID_FOUND'));
+			$avFields = array();
+
+			foreach ($fields as $field)
+			{
+				$avFields[$field->csvi_name] = $field->csvi_name;
+			}
 		}
+
+		return array_merge(parent::getOptions(), $avFields);
 	}
 }
