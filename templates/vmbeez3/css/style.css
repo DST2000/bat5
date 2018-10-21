@@ -4,7 +4,7 @@ html, body {
 	height: 100%;
 }
 body {
-	background: #fff;
+	background: #fff !important;
 	font-family: Open-Sans, sans-serif;
 	font-size: 16px;
 	font-weight: 400;
@@ -27,6 +27,10 @@ body {
 /* <  блок бренда */
 .brand-box {
 /*	border: 1px solid #fc000f;*/
+}
+
+.brandbox {
+	padding-bottom: 15px;
 }
 
 .brand-box >.row {
