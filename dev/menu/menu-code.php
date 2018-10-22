@@ -589,16 +589,22 @@
 		<div class="bottom-menu">
           <div id="bottom-menu" class="navbar navbar-fixed-bottom" role="navigation">
             <div class="container-fluid">
-              <div class="row">
-                <div id="button-arrow-to-top" class="col-md-1">
-                  <a href="#top"><i class="fas fa-angle-double-up"></i></a>
-                  </div>
-                <div class="col-md-10">
-                  
-                </div>
-                <div id="call-back" class="col-md-1" style="dispaly:none">
-                  <i class="fas fa-phone-volume large"></i>
-                  </div>
+            	<div class="row">
+					<div id="button-arrow-to-top" class="col-md-1">
+						<?php
+						$uri = JUri::getInstance(); 
+						//echo $uri->toString();
+						?>
+					  <a href="<?php echo $uri->toString();?>/#top"><i class="fas fa-angle-double-up"></i></a>
+					  </div>
+					<div class="col-md-10">
+
+					</div>
+
+					<div id="call-back" class="col-md-1" style="display:none">
+
+					  <i class="fas fa-phone-volume large"></i>
+					</div>
                 </div>
               </div>
           </div> <!-- /#bottom-menu -->

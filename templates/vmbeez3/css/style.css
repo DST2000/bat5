@@ -36,6 +36,10 @@ body {
 .brand-box >.row {
 	border: 1px solid #fc000f;
 }
+
+.brand > a {
+	color:black;
+}
 /* >  блок бренда */
 
 /* <  блок фильтра */
@@ -191,12 +195,12 @@ body {
 }
 
 .brand {
-	padding: 5px;
+	padding: 1px;
 	border: 1px solid #fff;
 	border-radius: 8px;
 	text-transform: uppercase;
 	height: 100%;
-	box-shadow: 0 0 3px rgba(0,0,0,0.5); /* Параметры тени */
+	box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Параметры тени */
 }
 
 .brandbox {
