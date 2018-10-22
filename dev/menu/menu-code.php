@@ -102,12 +102,12 @@
 					  					</div>
 					  					<div class="row">
 					  						<div class="col-md-4">
-					  							<h3>автолампы</h3>
+					  							<h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=20'); ?>">автолампы</a></h3>
 					  							<h3>щетки для стекол</h3>
 					  						</div>
 					  						<div class="col-md-8">
-					  							<h3>принадлежности для аккумуляторов</h3>
-					  							<h3>зарядные устройства / тестеры</h3>
+					  							<h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=81'); ?>">принадлежности для аккумуляторов</a></h3>
+					  							<h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=79'); ?>">зарядные устройства, тестеры</a></h3>
 					  						</div>
 					  						
 					  					</div>
@@ -163,9 +163,9 @@
 											</ul>
 									</div>
 									<div class="col-md-4">
-										<h4>принадлежности для аккумуляторов</h4>
-										<h4>зарядные устройства / тестеры</h4>
-										<h4>&#36; получить деньги за старый аккумулятор</h4>
+										<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=81'); ?>">принадлежности для аккумуляторов</a></h4>
+										<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=79'); ?>">зарядные устройства, тестеры</a></h4>
+										<h4><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=8'); ?>">&#36; получить деньги за старый аккумулятор</a></h4>
 									</div>
 								</div>
 							</div>
@@ -596,7 +596,7 @@
                 <div class="col-md-10">
                   
                 </div>
-                <div id="call-back" class="col-md-1">
+                <div id="call-back" class="col-md-1" style="dispaly:none">
                   <i class="fas fa-phone-volume large"></i>
                   </div>
                 </div>
