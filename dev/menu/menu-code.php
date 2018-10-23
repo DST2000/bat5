@@ -103,7 +103,7 @@
 					  					<div class="row">
 					  						<div class="col-md-4">
 					  							<h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=20'); ?>">автолампы</a></h3>
-					  							<h3>щетки для стекол</h3>
+					  							<h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=24'); ?>">щетки для стекол</a></h3>
 					  						</div>
 					  						<div class="col-md-8">
 					  							<h3><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=81'); ?>">принадлежности для аккумуляторов</a></h3>
