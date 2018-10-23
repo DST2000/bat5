@@ -319,7 +319,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#collapse2-1" data-parent="#accordion2" data-toggle="collapse">КАТАЛОГ &#8594;</a>
+							<a href="#collapse2-1" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">КАТАЛОГ &#8594;</a></a>
 						</h6>
 					</div>
 					<div id="collapse2-1" class="panel-collapse collapse">
@@ -512,7 +512,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#" data-parent="#accordion2" data-toggle="collapse">КОНТАКТЫ</a>
+							<a href="#" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>">КОНТАКТЫ</a></a>
 						</h6>
 					</div>
 					
@@ -520,7 +520,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#" data-parent="#accordion2" data-toggle="collapse">АКЦИИ</a>
+							<a href="#" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=11&Itemid=0'); ?>">АКЦИИ</a></a>
 						</h6>
 					</div>
 					
@@ -528,7 +528,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#" data-parent="#accordion2" data-toggle="collapse">НОВОСТИ</a>
+							<a href="#" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=10&Itemid=0'); ?>">НОВОСТИ</a></a>
 						</h6>
 					</div>
 					
@@ -536,7 +536,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#" data-parent="#accordion2" data-toggle="collapse">Техническая информация</a>
+							<a href="#" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=12&Itemid=0'); ?>">Техническая информация</a></a>
 						</h6>
 					</div>
 					
@@ -544,7 +544,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#" data-parent="#accordion2" data-toggle="collapse">Сдать старый аккумулятор</a>
+							<a href="#" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=8'); ?>">Сдать старый аккумулятор</a></a>
 						</h6>
 					</div>
 					
@@ -552,7 +552,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#" data-parent="#accordion2" data-toggle="collapse">Розничная сеть</a>
+							<a href="#" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=9'); ?>">Розничная сеть</a></a>
 						</h6>
 					</div>
 					
@@ -560,7 +560,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#collapse2-2" data-parent="#accordion2" data-toggle="collapse">ЛИЧНЫЙ КАБИНЕТ &#8594;</a>
+							<a href="#collapse2-2" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>">Оптовые покупатели (безнал.)</a></a>
 						</h6>
 					</div>
 					<div id="collapse2-2" class="panel-collapse collapse">
