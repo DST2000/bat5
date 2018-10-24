@@ -6,7 +6,7 @@
             <div class="container">
               <div class="row">
                 <div id="menu-button" class="col-md-1">
-                  <div class="dropdown">
+                  <div class="dropdown my-menu">
 					  <button class="btn dropdown-toggle btn-circle btn-xl btn-menu" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 						МЕНЮ
 					  </button>
@@ -120,7 +120,7 @@
                   
                   </div>
                 <div id="menu-akb" class="col-md-2">
-                	<div class="dropdown">
+                	<div class="dropdown my-menu">
 						<button class="btn btn-default dropdown-toggle " type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 							<i class="fas fa-battery-three-quarters"></i><br/>
 							Аккумуляторы
@@ -178,7 +178,7 @@
                  <a href="tel:+375297730830"> <i class="fas fa-phone-volume"></i>+375 29 773 08 30 (МТС)</a>
                   </div>
                 <div id="menu-oils" class="col-md-2">
-                  <div class="dropdown">
+                  <div class="dropdown my-menu">
 						<button class="btn btn-default dropdown-toggle " type="button" id="dropdownMenu3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 						 <i class="fas fa-tint"></i><br/>
 							Масла Q8

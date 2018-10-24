@@ -19,8 +19,8 @@ body {
 	display:none;
 }
 
-.test {
-	padding-top: 10px;
+.my-menu {
+	display: block !important;
 }
 /* > Тестовые страницы */
 
