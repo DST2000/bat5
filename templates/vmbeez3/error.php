@@ -9,6 +9,16 @@
 
 defined('_JEXEC') or die;
 
+/* // {DST */
+
+if (($this->error->getCode()) == '404') {
+header('Location: /index.php?option=com_content&view=article&id=17');
+exit;
+}
+
+/* // }DST */
+
+
 $showRightColumn = 0;
 $showleft        = 0;
 $showbottom      = 0;
@@ -158,7 +168,7 @@ $navposition = $params->get('navposition');
 				<p>
 					<?php echo JText::_('TPL_BEEZ3_POWERED_BY'); ?>
 					<a href="https://www.joomla.org/">
-						Joomla!&#174;
+						Joomla!  &#174;
 					</a>
 				</p>
 				</div><!-- end footer -->
