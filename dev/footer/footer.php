@@ -27,8 +27,9 @@
     			<div class="col-md-3">
     				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18&Itemid=117'); ?>">Аккумуляторы</a></h4>
     				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=61'); ?>">Масла</a></h4>
-    				<h4>Лампы автомобильные</h4>
-    				<h4>Щетки стеклочистительные</h4>
+    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=20'); ?>">Лампы автомобильные</a></h4>
+    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=24'); ?>">Щетки стеклочистительные</a></h4>
+					<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=81'); ?>">	Принадлежности для аккумуляторов</a></h4>
     			</div>
     			<div class="col-md-3">
     				<p>Карта сайта</p>
