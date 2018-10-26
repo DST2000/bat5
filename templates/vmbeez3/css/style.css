@@ -60,6 +60,15 @@ body {
 
 /*  > карточна товара */
 
+/* < Переопределенние virtuemart */
+input.addtocart-button {
+	background-color: #d9534f !important;
+	border-color: #d43f3a !important;
+	border: solid #00669a 1px !important; 
+	border-radius: 6px !important; 
+}
+
+/* > Переопределенние virtuemart */
 
 
 /* < Переопределенние Bootstrap */
