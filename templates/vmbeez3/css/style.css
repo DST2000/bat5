@@ -68,6 +68,25 @@ span.addtocart-button input.addtocart-button {
 	border-radius: 6px !important; 
 }
 
+.vm-product-media-container {
+	margin-bottom: 5px;
+}
+
+.vm3pr-2 .product-price {
+	min-height: 12px;
+}
+
+.product-price {
+	line-height: 10px;
+}
+.vm3pr-2 .vm-customfields-wrap {
+	min-height: 80px;
+}
+.horizontal-separator {
+	margin: 5px 0;
+}
+
+
 /* > Переопределенние virtuemart */
 
 
@@ -209,7 +228,7 @@ span.addtocart-button input.addtocart-button {
 	border-radius: 8px;
 	text-transform: uppercase;
 	height: 100%;
-	box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Параметры тени */
+	/* box-shadow: 0 0 20px rgba(0,0,0,0.5); */ /* Параметры тени */
 }
 
 .brandbox {
