@@ -28,6 +28,7 @@ body {
 
 p.city {
     color: #fc000f;
+	margin-bottom: -0.4em !important;
 }
 
 span.adr {
