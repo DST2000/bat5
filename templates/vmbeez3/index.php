@@ -63,7 +63,7 @@ $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/ju
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/style.css?v=6');
 // }DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
-$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css', 'text/css', 'screen');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css?v=1', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/print.css', 'text/css', 'print');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/general.css', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/' . htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '.css', 'text/css', 'screen');
@@ -120,6 +120,9 @@ require __DIR__ . '/jsstrings.php';
 		<meta name="HandheldFriendly" content="true" />
 		<meta name="apple-mobile-web-app-capable" content="YES" />
 		<jdoc:include type="head" />
+		<?php // {DST ?>
+		<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600&amp;subset=cyrillic-ext" rel="stylesheet">
+		<?php // }DST ?>
 		<!--[if IE 7]><link href="<?php echo $this->baseurl; ?>/templates/<?php echo $this->template; ?>/css/ie7only.css" rel="stylesheet" /><![endif]-->
 		<!--[if lt IE 9]><script src="<?php echo JUri::root(true); ?>/media/jui/js/html5.js"></script><![endif]-->
 	</head>
