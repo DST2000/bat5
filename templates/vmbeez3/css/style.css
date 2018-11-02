@@ -38,23 +38,7 @@ span.adr {
 /* > Список городов для акции */
 
 
-/* <  блок бренда */
-.brand-box {
-/*	border: 1px solid #fc000f;*/
-}
 
-.brandbox {
-	padding-bottom: 15px;
-}
-
-.brand-box >.row {
-	border: 1px solid #fc000f;
-}
-
-.brand > a {
-	color:black;
-}
-/* >  блок бренда */
 
 /* <  блок фильтра */
 .filter {
@@ -230,6 +214,31 @@ span.addtocart-button input.addtocart-button {
 /* > МЕНЮ*/
 
 /* < BRANDS */
+
+/* <  блок бренда */
+.brand-box {
+/*	border: 1px solid #fc000f;*/
+}
+
+.brandbox .brand a >ul {
+    padding: 0 3px 0px 3px !important;
+    margin: 0 3px 1.5em 3px !important;
+}
+
+.brandbox {
+	padding-bottom: 15px;
+}
+
+.brand-box >.row {
+	border: 1px solid #fc000f;
+}
+
+.brand > a {
+	color:black;
+}
+/* >  блок бренда */
+
+
 /* растягивающиеся блоки*/
 .row-flex {
   display: flex;
@@ -237,7 +246,7 @@ span.addtocart-button input.addtocart-button {
 }
 
 .brand {
-	padding: 1px;
+	padding: 4px 2px 2px 1px;
 	border: 1px solid #fff;
 	border-radius: 8px;
 	text-transform: uppercase;
