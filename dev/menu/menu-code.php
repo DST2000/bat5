@@ -23,7 +23,7 @@
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=8'); ?>">Сдать старый аккумулятор</a></h3></li>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=9'); ?>">Розничная сеть</a></h3></li>
 					  					<li role="separator" class="divider"></li>
-					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>">Оптовые покупатели (безнал.)</a></h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>">Оптовые покупатели </a></h3></li>
 					  				</ul>
 					  			</div>
 					  			<div class="col-md-8">
