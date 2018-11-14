@@ -578,9 +578,11 @@ body .nav-pills > li > a {
     border-radius: 0px;
     line-height: 1.5em;
 }
+/*  
 body a {
-    text-decoration: underline;
+   text-decoration: underline; 
 }
+*/
 body input[type="text"].search-query {
     line-height: 1.5em;
     height: auto;
