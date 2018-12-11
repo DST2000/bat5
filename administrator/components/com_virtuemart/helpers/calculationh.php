@@ -514,7 +514,92 @@ class calculationHelper {
 		}
 
 		$this->productPrices = array_merge($prices,$this->productPrices);
+		
+		/* {/DST basePrice  */
+		$user = JFactory::getUser();
+		$userid = $user->get('id');		 
 
+		if ($userid >  0) {
+//			$this->productPrices['salesPrice'] = '888';
+//			$this->productPrices['discountedPriceWithoutTax'] = '888';
+			
+			$product_sku = $product->get('product_sku');
+			if (strlen($product_sku) > 0) {
+				// Получен $product_sku
+				// Получение базы скидок для клиента
+				
+				$db = JFactory::getDBO();
+				$query = 'SELECT `discounts` '.' FROM `#__virtuemart_userinfos` '.' WHERE `virtuemart_user_id` = '.$userid;
+				$db->setQuery($query);
+				$result1 = $db->LoadResult();
+				$discounts_j_arr = explode("|", $result1);
+
+				foreach ($discounts_j_arr as $discounts_j) {
+					$discounts[] = json_decode($discounts_j, true);	
+				} 
+				$discount_id = '';
+				echo '<br/> product sku = '.$product_sku.'<br/>';
+				
+				if (count($discounts) > 0) {
+					//var_dump($discounts);
+					
+					$discount_value = 0;
+					foreach ($discounts as $discount) {
+						echo '<pre class="discount">';
+						print_r($discount);
+						
+						foreach ($discount as $key => $value) {
+							//echo ('$key '.$key .'<br/>');
+							if ($key=='id') {
+								if ($product_sku == $value) {
+									echo ('equivalent $product_sku = '.$product_sku
+										  .'<br/> id = '.$value
+										  .'<br/><br/>');
+									$discount_id = $value;
+								}
+							}
+						}
+						echo '</pre>';
+					}
+					if (strlen($discount_id) > 0) {
+						echo 'Discount id = '.$discount_id;
+						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])/1.33;
+						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']/1.55;
+					}
+					else {
+						// поиск по product_path товара <product_path>00000000007/00000000001</product_path>
+						// среди последних строк product_path скидок клиента "product_path":"00000000006/00000000003"
+						
+						}
+					}
+				}
+				
+				//$this->productPrices['discountedPriceWithoutTax'] = strlen($product_sku);
+				/*
+				$db = JFactory::getDBO();
+				$query = 'SELECT `discounts` '.' FROM `#__virtuemart_userinfos` '.' WHERE `virtuemart_user_id` = '.$userid;
+				$db->setQuery($query);
+				$result1 = $db->LoadResult();
+				$discounts_j_arr = explode("|", $result1);
+
+				foreach ($discounts_j_arr as $discounts_j) {
+					$discounts[] = json_decode($discounts_j, true);	
+				} 
+
+				if (count($discounts) > 0) {
+
+					foreach ($discounts as $key_a => $discount) {
+						foreach ($discount as $key => $value) {
+
+						}
+					}
+				}
+				*/
+				
+			}
+
+		/* }/DST basePrice */
+		
 		return $this->productPrices;
 	}
 
