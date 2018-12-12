@@ -524,6 +524,7 @@ class calculationHelper {
 //			$this->productPrices['discountedPriceWithoutTax'] = '888';
 			
 			$product_sku = $product->get('product_sku');
+			$product_id = $product->get('virtuemart_product_id');
 			if (strlen($product_sku) > 0) {
 				// Получен $product_sku
 				// Получение базы скидок для клиента
@@ -568,10 +569,10 @@ class calculationHelper {
 						}
 						echo '</pre>';
 						if ((strlen($discount_id) > 0) && (strlen($discount_id) > 0)) {
-							break;
+							//break; // unblock after 
 						}
 					}
-					if (strlen($discount_id) > 0) {
+					if (strlen($discount_id) > 1000) {
 						//echo 'Discount id = '.$discount_id;
 						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])/1.0;
 						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']/1.5;
@@ -579,33 +580,51 @@ class calculationHelper {
 					else {
 						// поиск по product_path товара <product_path>00000000007/00000000001</product_path>
 						// среди последних строк product_path скидок клиента "product_path":"00000000006/00000000003"
-						
+						$customfieldsModel = VmModel::getModel('Customfields');
+						$virtuemart_custom_id = (int)25;
+											
+						$db2 = JFactory::getDBO();
+						$query2 = 'SELECT `customfield_value`,`virtuemart_product_id` FROM `#__virtuemart_product_customfields` WHERE  
+						`#__virtuemart_product_customfields`.`virtuemart_product_id` LIKE '.$product_id
+						.' AND `#__virtuemart_product_customfields`.`virtuemart_custom_id` LIKE '.$virtuemart_custom_id;
+						$db2->setQuery($query2);
+						$result2 = $db2->LoadResult();
+						$product_paths = explode("/", $result2);
+						$product_paths_reversed = array_reverse($product_paths);
+						echo('<br/> product_path from product <br/>');
+						echo '<pre>';
+							print_r($product_paths_reversed);
+						echo '<br/>';			
+							echo($result2);
+						echo '</pre>';	
+						if (count($product_paths_reversed) > 0) {
+							foreach ($product_paths_reversed as $product_paths_compare) {
+								foreach ($discounts as $discount) {
+									foreach ($discount as $key => $value) {
+									//echo ('$key '.$key .'<br/>');
+									if ($key=='product_path') {
+										$product_patch_last = explode("/", $value);
+										print_r($product_patch_last); // Продолжить с этого места
+//										if ($product_paths_compare == $product_patch_last) {
+////											echo ('equivalent $product_sku = '.$product_sku
+////												  .'<br/> id = '.$value
+////												  .'<br/><br/>');
+////											$discount_id = $value;
+//										}
+									}
+//									if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
+//										echo ('discount value with $discount_id = '.$discount_id
+//												  .'<br/> value = '.$value
+//												  .'<br/><br/>');
+//										$discount_value = $value;
+//									}
+								}
+								}
+							}
 						}
 					}
-				}
-				
-				//$this->productPrices['discountedPriceWithoutTax'] = strlen($product_sku);
-				/*
-				$db = JFactory::getDBO();
-				$query = 'SELECT `discounts` '.' FROM `#__virtuemart_userinfos` '.' WHERE `virtuemart_user_id` = '.$userid;
-				$db->setQuery($query);
-				$result1 = $db->LoadResult();
-				$discounts_j_arr = explode("|", $result1);
-
-				foreach ($discounts_j_arr as $discounts_j) {
-					$discounts[] = json_decode($discounts_j, true);	
-				} 
-
-				if (count($discounts) > 0) {
-
-					foreach ($discounts as $key_a => $discount) {
-						foreach ($discount as $key => $value) {
-
-						}
 					}
-				}
-				*/
-				
+				}	
 			}
 
 		/* }/DST basePrice */
