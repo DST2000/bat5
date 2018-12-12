@@ -538,6 +538,7 @@ class calculationHelper {
 					$discounts[] = json_decode($discounts_j, true);	
 				} 
 				$discount_id = '';
+				$discount_value = 0;
 				echo '<br/> product sku = '.$product_sku.'<br/>';
 				
 				if (count($discounts) > 0) {
@@ -558,13 +559,22 @@ class calculationHelper {
 									$discount_id = $value;
 								}
 							}
+							if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
+								echo ('discount value with $discount_id = '.$discount_id
+										  .'<br/> value = '.$value
+										  .'<br/><br/>');
+								$discount_value = $value;
+							}
 						}
 						echo '</pre>';
+						if ((strlen($discount_id) > 0) && (strlen($discount_id) > 0)) {
+							break;
+						}
 					}
 					if (strlen($discount_id) > 0) {
-						echo 'Discount id = '.$discount_id;
-						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])/1.33;
-						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']/1.55;
+						//echo 'Discount id = '.$discount_id;
+						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])/1.0;
+						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']/1.5;
 					}
 					else {
 						// поиск по product_path товара <product_path>00000000007/00000000001</product_path>
