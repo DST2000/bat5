@@ -637,7 +637,6 @@ class calculationHelper {
 					}
 					if ($discount_value > 0) {
 						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])*((100-$discount_value)/100);
-						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']*((100-$discount_value)/100);
 					}
 				}	
 			}
