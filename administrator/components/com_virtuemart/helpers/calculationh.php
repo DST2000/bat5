@@ -539,45 +539,41 @@ class calculationHelper {
 					$discounts[] = json_decode($discounts_j, true);	
 				} 
 				$discount_id = '';
+				$discount_product_path = '';
 				$discount_value = 0;
-				echo '<br/> product sku = '.$product_sku.'<br/>';
-				
+//				echo '<br/> product sku = '.$product_sku.'<br/>';
 				if (count($discounts) > 0) {
-					//var_dump($discounts);
-					
-					$discount_value = 0;
 					foreach ($discounts as $discount) {
-						echo '<pre class="discount">';
-						print_r($discount);
-						
+//						echo '<pre class="discount">';
+//						echo '<pre>';
+//						print_r($discount);
+//						echo '</pre>';
 						foreach ($discount as $key => $value) {
-							//echo ('$key '.$key .'<br/>');
 							if ($key=='id') {
 								if ($product_sku == $value) {
-									echo ('equivalent $product_sku = '.$product_sku
+									/*echo ('equivalent $product_sku = '.$product_sku
 										  .'<br/> id = '.$value
-										  .'<br/><br/>');
+										  .'<br/><br/>');*/
 									$discount_id = $value;
 								}
 							}
 							if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
-								echo ('discount value with $discount_id = '.$discount_id
+								/*echo ('discount value with $discount_id = '.$discount_id
 										  .'<br/> value = '.$value
-										  .'<br/><br/>');
+										  .'<br/><br/>');*/
 								$discount_value = $value;
+								break; // unblock after
 							}
 						}
-						echo '</pre>';
-						if ((strlen($discount_id) > 0) && (strlen($discount_id) > 0)) {
-							//break; // unblock after 
+						//echo '</pre>';
+						
+					}
+					if ((strlen($discount_id) > 0) && ($discount_value > 0)) {
+//							echo '<pre> DISCOUNT VALUE by ID<br/>';
+//							echo ('Discount '.$discount_value.'<br/>');
+//							echo ('$discount_id '.$discount_id.'<br/>');					 
 						}
-					}
-					if (strlen($discount_id) > 1000) {
-						//echo 'Discount id = '.$discount_id;
-						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])/1.0;
-						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']/1.5;
-					}
-					else {
+					elseif ($discount_value == 0) {
 						// поиск по product_path товара <product_path>00000000007/00000000001</product_path>
 						// среди последних строк product_path скидок клиента "product_path":"00000000006/00000000003"
 						$customfieldsModel = VmModel::getModel('Customfields');
@@ -589,40 +585,59 @@ class calculationHelper {
 						.' AND `#__virtuemart_product_customfields`.`virtuemart_custom_id` LIKE '.$virtuemart_custom_id;
 						$db2->setQuery($query2);
 						$result2 = $db2->LoadResult();
+//						echo '<pre> product path from product<br/>';
+//						print_r($result2);
+//						echo '<br/>';
+//						echo '</pre>';
 						$product_paths = explode("/", $result2);
 						$product_paths_reversed = array_reverse($product_paths);
-						echo('<br/> product_path from product <br/>');
-						echo '<pre>';
-							print_r($product_paths_reversed);
-						echo '<br/>';			
-							echo($result2);
-						echo '</pre>';	
+//						echo('<br/> product_path from product <br/>');
+//						echo '<pre>';
+//							print_r($product_paths_reversed);
+//						echo '<br/>';
+//						echo '</pre>';	
 						if (count($product_paths_reversed) > 0) {
+//							echo '<br/> Start compare <br/>';
 							foreach ($product_paths_reversed as $product_paths_compare) {
 								foreach ($discounts as $discount) {
 									foreach ($discount as $key => $value) {
-									//echo ('$key '.$key .'<br/>');
-									if ($key=='product_path') {
-										$product_patch_last = explode("/", $value);
-										print_r($product_patch_last); // Продолжить с этого места
-//										if ($product_paths_compare == $product_patch_last) {
-////											echo ('equivalent $product_sku = '.$product_sku
-////												  .'<br/> id = '.$value
-////												  .'<br/><br/>');
-////											$discount_id = $value;
-//										}
-									}
-//									if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
-//										echo ('discount value with $discount_id = '.$discount_id
-//												  .'<br/> value = '.$value
-//												  .'<br/><br/>');
-//										$discount_value = $value;
-//									}
-								}
-								}
-							}
-						}
+										if ($key=='product_path') {
+											$product_patch_last = explode("/", $value);
+											$product_patch_last_reversed = array_reverse($product_patch_last);
+											if ($product_patch_last_reversed[0] == $product_paths_compare) {
+//												echo ('<pre> Product patch reversed[0] - matched<br/>');
+//												echo ('$product_patch_last_reversed[0] '.$product_patch_last_reversed[0].'<br/>');
+//												echo ('$product_paths_compare '.$product_paths_compare.'<br/>');
+//												echo '<br/> --- <br/>';
+//												echo '</pre>';
+												$discount_product_path = $value;	
+											}										
+											else {
+//												echo '<pre> $product_paths_compare not match<br/>';
+//												echo ('$product_patch_last_reversed[0] '.$product_patch_last_reversed[0].'<br/>');
+//												echo ('$product_paths_compare '.$product_paths_compare.'<br/>');
+//												echo '<br/> --- <br/>';
+//												echo '</pre>';
+											}
+										} // if ($key=='product_path')
+										if (($key=='value') && (strlen($discount_product_path) > 0) && ($discount_value==0)) {	
+												$discount_value = $value;
+//												echo '<pre> DISCOUNT VALUE by PRODUCT_PATH<br/>';
+//												echo ('Discount '.$discount_value.'<br/>');
+//												echo ('Product patch '.$discount_product_path.'<br/>');
+//												echo '</pre>';
+												break; // unblock after
+										} // if (($key=='value') && (strlen($discount_product_path) > 0))	
+									} // foreach ($discount as $key => $value) 
+								} // foreach ($discounts as $discount)
+								
+							} //foreach ($product_paths_reversed as $product_paths_compare)
+						} //if (count($product_paths_reversed) > 0)
 					}
+					}
+					if ($discount_value > 0) {
+						$this->productPrices['salesPrice'] = ($this->productPrices['salesPrice'])*((100-$discount_value)/100);
+						$this->productPrices['discountedPriceWithoutTax'] = $this->productPrices['discountedPriceWithoutTax']*((100-$discount_value)/100);
 					}
 				}	
 			}
