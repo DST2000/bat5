@@ -519,7 +519,8 @@ class calculationHelper {
 		$user = JFactory::getUser();
 		$userid = $user->get('id');		 
 
-		if ($userid >  0) {
+	if ($product->get('product_discontinued') < 1) {
+		if ($userid > 0) {
 //			$this->productPrices['salesPrice'] = '888';
 //			$this->productPrices['discountedPriceWithoutTax'] = '888';
 			
@@ -640,6 +641,7 @@ class calculationHelper {
 					}
 				}	
 			}
+	} //if ($product->get('product_discontinued') < 1) 
 
 		/* }/DST basePrice */
 		
