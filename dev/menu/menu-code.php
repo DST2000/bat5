@@ -173,9 +173,12 @@
                   	</div> <!-- /.dropdown-->
                   </div>
                 <div id="menu-phones" class="col-md-4"> 
+					
                  <a href="tel:+375175106060"> <i class="fas fa-phone-volume"></i>+375 17 510 60 60</a> <br/>
                  <a href="tel:+375293106010"> <i class="fas fa-phone-volume"></i>+375 29 310 60 10 (VELCOM)</a> <br/>
-                 <a href="tel:+375297730830"> <i class="fas fa-phone-volume"></i>+375 29 773 08 30 (МТС)</a>
+                 <a href="tel:+375297730830"> <i class="fas fa-phone-volume"></i>+375 29 773 08 30 (МТС)</a> <br/>
+				 <a href="tel:+375293514747"> <i class="fas fa-phone-volume"></i>+375 29 351 47 47 (VELCOM)</a> <br/>
+                 <a href="tel:+375333514747"> <i class="fas fa-phone-volume"></i>+375 33 351 47 47 (МТС)</a>
                   </div>
                 <div id="menu-oils" class="col-md-2">
                   <div class="dropdown my-menu">
