@@ -73,6 +73,9 @@ JHtml::_('behavior.keepalive');
 	<input type="hidden" name="task" value="user.login" />
 	<input type="hidden" name="return" value="<?php echo $return; ?>" />
 	<?php echo JHtml::_('form.token'); ?>
+	<?php // {DST ?>
+	<?php if (JComponentHelper::getParams('com_users')->get('allowUserRegistration')) : ?>	
+	<?php // }DST ?>
 	<ul>
 		<li>
 			<a href="<?php echo JRoute::_('index.php?option=com_users&view=reset'); ?>">
@@ -89,6 +92,9 @@ JHtml::_('behavior.keepalive');
 			</li>
 		<?php endif; ?>
 	</ul>
+	<?php // {DST ?>
+	<?php endif; ?>
+	<?php // }DST ?>	
 	<?php if ($params->get('posttext')) : ?>
 		<div class="posttext">
 			<p><?php echo $params->get('posttext'); ?></p>
