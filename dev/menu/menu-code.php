@@ -176,12 +176,9 @@
                   	</div> <!-- /.dropdown-->
                   </div>
                 <div id="menu-phones" class="col-md-4"> 
-					
-                 <a href="tel:+375175106060"> <i class="fas fa-phone-volume"></i>+375 17 510 60 60</a> <br/>
-                 <a href="tel:+375293106010"> <i class="fas fa-phone-volume"></i>+375 29 310 60 10 (VELCOM)</a> <br/>
-                 <a href="tel:+375297730830"> <i class="fas fa-phone-volume"></i>+375 29 773 08 30 (МТС)</a> <br/>
 				 <a href="tel:+375293514747"> <i class="fas fa-phone-volume"></i>+375 29 351 47 47 (VELCOM)</a> <br/>
-                 <a href="tel:+375333514747"> <i class="fas fa-phone-volume"></i>+375 33 351 47 47 (МТС)</a>
+                 <a href="tel:+375333514747"> <i class="fas fa-phone-volume"></i>+375 33 351 47 47 (МТС)</a>  <br/>
+				 <a href="tel:+375175106060"> <i class="fas fa-phone-volume"></i>+375 17 510 60 60 (опт)</a> <br/>
                   </div>
                 <div id="menu-oils" class="col-md-2">
                   <div class="dropdown my-menu">
@@ -316,7 +313,7 @@
          						<div class="panel-heading">
          							<h6 class="panel-title">
          								<a href="#collapse-1" data-parent="#accordion" data-toggle="collapse">Меню</a>
-         							</h6>
+									</h6>
          						</div>
          						<div id="collapse-1" class="panel-collapse collapse">
          							<div class="panel-body">
@@ -325,7 +322,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#collapse2-1" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">КАТАЛОГ &#8594;</a></a>
+							<a href="#collapse2-1" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">КАТАЛОГ <i class="fas fa-ellipsis-h"></i><i class="fas fa-arrow-right"></i></a></a>
 						</h6>
 					</div>
 					<div id="collapse2-1" class="panel-collapse collapse">
@@ -566,7 +563,7 @@
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h6 class="panel-title">
-							<a href="#collapse2-2" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>">Оптовые покупатели (безнал.)</a></a>
+							<a href="#collapse2-2" data-parent="#accordion2" data-toggle="collapse"><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>">Оптовые покупатели</a></a>
 						</h6>
 					</div>
 					<div id="collapse2-2" class="panel-collapse collapse">
@@ -584,8 +581,9 @@
 							
          					     					
          				</div>
-         				
-         				
+         				<div id="menu-basket-2" class="col-md-1">
+										<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=cart'); ?>"><i class="fas fa-shopping-cart"></i></a>             
+						</div>		
          			</div>     
           		</div>
           	</div>
