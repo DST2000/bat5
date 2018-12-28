@@ -111,7 +111,7 @@ span.addtocart-button input.addtocart-button {
 .dropdownMenu1 {
 	position: relative;
 	top: 5%;
-	left: -70%;
+	left: -23%;
 }
 /* прокрутка пунктов меню*/
 .dropdown-menu-scroll {
@@ -121,18 +121,40 @@ span.addtocart-button input.addtocart-button {
 .dropdownMenu2 {
 	position: relative;
 	top: 5%;
-	left: -90%;
+	left: -68%;
 }
 /* позиции открываемого меню - масла */
 .dropdownMenu3 {
 	position: relative;
 	top: 5%;
-	left: -430%;
+	left: -423%;
 }
+
+
+/*
+@media (min-width: @screen-md-min) and (max-width: @screen-md-max) {
+	.dropdownMenu1 {
+		left: -32%;
+	}
+	.dropdownMenu2 {
+		left: -73%;
+	}
+	.dropdownMenu3 {
+		left: -442%;
+	}
+}
+*/
+
 /*кнопка меню*/
 .btn-menu {
-	background: #fc000f;
-	border: 2px solid #000;
+	background: #fff; 
+	border: 5px solid #00ffdc;
+	color: #D83224;
+	box-shadow: 1px 1px 50px 5px rgba(0,0,0,0.5); /* Параметры тени */
+}
+.btn-menu.focus, .btn-menu:focus, .btn-menu:hover {
+	background: #D83224;
+	border: 5px solid #fff;
 	color: #fff;
 }
 
@@ -140,12 +162,55 @@ span.addtocart-button input.addtocart-button {
 .fa-battery-three-quarters, .fa-tint {
 	font-size: 34px;
 }
+
+#dropdownMenu2 {
+	background: #fff; 
+	border: 3px solid #00ffdc;
+	color: #D83224;
+	box-shadow: 1px 1px 5px 1px rgba(0,0,0,0.5); /* Параметры тени */
+}
+
+#dropdownMenu2.focus, #dropdownMenu2:focus, #dropdownMenu2:hover {
+	background: #D83224;
+	border: 3px solid #fff;
+	color: #fff;
+}
+/* Телефоны*/
+#menu-phones a{
+	color: #fff;
+	
+	text-shadow: 1px 1px 2px black, 0 0 1em red; /* Параметры тени */	
+}
+#menu-phones a span {
+	font-weight: bold;
+}
+
+/* Масла*/
+
+#dropdownMenu3 {
+	background: #fff; 
+	border: 3px solid #00ffdc;
+	color: #D83224;
+	box-shadow: 1px 1px 5px 1px rgba(0,0,0,0.5); /* Параметры тени */
+}
+
+#dropdownMenu3.focus, #dropdownMenu3:focus, #dropdownMenu3:hover {
+	background: #D83224;
+	border: 3px solid #fff;
+	color: #fff;
+}
+
 /* кнопка поиск*/
-.fa-search{
+#menu-search .fa-search{
 	position:absolute;
+	color: #fff;
 	padding: 2px;
 	font-size: 35px;
 	margin: -35px 0 0 -35px;
+}
+
+#menu-search input {
+	margin: 20px 0 0 10px;
 }
 /* кнопка корзина */
 .fa-shopping-cart{
@@ -153,7 +218,15 @@ span.addtocart-button input.addtocart-button {
 	font-size: 55px ;
 	text-align: right;
 	transform: scale(-1, 1);
+	color: #fff;
+	text-shadow: 1px 1px 2px red, 0 0 1em white; /* Параметры тени */
 }
+
+.fa-shopping-cart.focus, .fa-shopping-cart:focus, .fa-shopping-cart:hover {
+	color: yellow;
+	text-shadow: none; /* Параметры тени */
+}
+
 /* кнопка перейти вверх*/
 .fa-angle-double-up {
 	font-size: 45px;
@@ -171,7 +244,6 @@ span.addtocart-button input.addtocart-button {
 .fa-phone-volume.large:hover {
 	color: #D83224;
 }
-
 
 .btn-circle {
 	width: 30px;
@@ -194,8 +266,9 @@ span.addtocart-button input.addtocart-button {
 	width: 70px;
 	height: 70px;
 	padding: 10px 3px;
-	font-size: 19px;
-	line-height: 1.33;
+	font-size: 16px;
+	font-weight: bold;
+	line-height: 2.7;
 	border-radius: 50%;
 }
 .top-menu {
@@ -215,6 +288,9 @@ span.addtocart-button input.addtocart-button {
 }
 #top-menu p {
 	text-align: center;
+}
+#mymenutop {
+	background-color: #D83224; 
 }
 /* > МЕНЮ*/
 

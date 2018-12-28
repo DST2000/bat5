@@ -3,12 +3,12 @@
           <div id="top-menu" class="navbar navbar-fixed-top" role="navigation">
           
           <!-- <div id="top-menu" class="navbar navbar-fixed-top" role="navigation"> -->
-            <div class="container">
+            <div id="mymenutop" class="container">
               <div class="row">
                 <div id="menu-button" class="col-md-1">
                   <div class="dropdown my-menu">
 					  <button class="btn dropdown-toggle btn-circle btn-xl btn-menu" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-						МЕНЮ
+						 МЕНЮ
 					  </button>
 					  <div class="dropdown-menu dropdown-menu-scroll dropdownMenu1" aria-labelledby="dropdownMenu1">
 					  	<div class="container">
@@ -176,9 +176,9 @@
                   	</div> <!-- /.dropdown-->
                   </div>
                 <div id="menu-phones" class="col-md-4"> 
-				 <a href="tel:+375293514747"> <i class="fas fa-phone-volume"></i>+375 29 351 47 47 (VELCOM)</a> <br/>
-                 <a href="tel:+375333514747"> <i class="fas fa-phone-volume"></i>+375 33 351 47 47 (МТС)</a>  <br/>
-				 <a href="tel:+375175106060"> <i class="fas fa-phone-volume"></i>+375 17 510 60 60 (опт)</a> <br/>
+				 <a href="tel:+375293514747"> <i class="fas fa-phone-volume"></i>+375 29 <span>351 47 47</span> (VELCOM)</a> <br/>
+                 <a href="tel:+375333514747"> <i class="fas fa-phone-volume"></i>+375 33 <span>351 47 47</span> (МТС)</a>  <br/>
+				 <a href="tel:+375175106060"> <i class="fas fa-phone-volume"></i>+375 17 <span>510 60 60</span> (опт)</a> <br/>
                   </div>
                 <div id="menu-oils" class="col-md-2">
                   <div class="dropdown my-menu">
@@ -245,7 +245,7 @@
 					<div class="form-group">	
                 		<!-- <input type="search" class="form-control" name="search" id="search" placeholder="Найти..."> -->
 						
-                  		<input type="search" class="form-control" name="search" id="search" placeholder="Найти...">
+                  		<input type="search" class="form-control" name="search" id="search" placeholder="..">
                   		<i class="fas fa-search"></i>
                   		<!-- <i class="fa fa-search"></i>-->
 					</div>
