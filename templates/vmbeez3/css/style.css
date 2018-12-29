@@ -37,8 +37,13 @@ span.adr {
 
 /* > Список городов для акции */
 
+/* > цены товаров */
 
+span.PricesalesPrice {
+	font-size: 2.0em !important;	
+}
 
+/* < цены товаров */
 
 /* <  блок фильтра */
 .filter {
