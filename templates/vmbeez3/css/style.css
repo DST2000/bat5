@@ -53,6 +53,14 @@ span.PricesalesPrice {
 
 /* > заголовок категории */
 
+/* < название фильтра */
+
+span.cf_flt_header_text {
+    color: #D83224;
+}
+
+/* > название фильтра */
+
 /* <  блок фильтра */
 .filter {
 	border: 1px solid #fc000f;
