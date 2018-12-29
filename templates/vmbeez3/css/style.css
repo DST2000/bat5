@@ -45,6 +45,14 @@ span.PricesalesPrice {
 
 /* < цены товаров */
 
+/* < заголовок категории */
+
+.browse-view>h1 {
+    color: grey;
+}
+
+/* > заголовок категории */
+
 /* <  блок фильтра */
 .filter {
 	border: 1px solid #fc000f;
