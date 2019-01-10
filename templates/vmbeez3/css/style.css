@@ -128,6 +128,11 @@ span.addtocart-button input.addtocart-button {
     text-decoration: none;
 }
 
+/* выделенные пункты меню */
+.menu-item-text {
+	color: #d83224;
+}
+
 /* позиции открываемого меню - меню */
 .dropdownMenu1 {
 	position: relative;

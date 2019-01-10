@@ -26,7 +26,7 @@
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=8'); ?>">Сдать старый аккумулятор</a></h3></li>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=9'); ?>">Розничная сеть</a></h3></li>
 					  					<li role="separator" class="divider"></li>
-					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>">Оптовые покупатели </a></h3></li>
+					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>"  class="menu-item-text">Оптовые покупатели </a></h3></li>
 					  				</ul>
 					  			</div>
 					  			<div class="col-md-8">
@@ -176,9 +176,9 @@
                   	</div> <!-- /.dropdown-->
                   </div>
                 <div id="menu-phones" class="col-md-4"> 
-				 <a href="tel:+375293514747"> <i class="fas fa-phone-volume"></i>+375 29 <span>351 47 47</span> (VELCOM)</a> <br/>
-                 <a href="tel:+375333514747"> <i class="fas fa-phone-volume"></i>+375 33 <span>351 47 47</span> (МТС)</a>  <br/>
-				 <a href="tel:+375175106060"> <i class="fas fa-phone-volume"></i>+375 17 <span>510 60 60</span> (опт)</a> <br/>
+				 <a href="tel:+375293514747">Интернет магазин +375 <span>29 351 47 47</span></a> <br/>
+                 <a href="tel:+375333514747">Интернет магазин +375 <span>33 351 47 47</span></a>  <br/>
+				 <a href="tel:+375175106060">ОПТОВЫЕ ПОКУПАТЕЛИ +375 <span>17 510 60 60</span></a> <br/>
                   </div>
                 <div id="menu-oils" class="col-md-2">
                   <div class="dropdown my-menu">
