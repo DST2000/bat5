@@ -36,7 +36,7 @@
     				<p><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>">Контактная информация</a></p>
     				<p><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=319'); ?>">Сеть "АвтоБат" &trade;</a></p>
     				<br>
-    				<p><a href="<?php echo JRoute::_('index.php?option=com_content&view=featured&Itemid=101'); ?>"> 2018 bat.by &reg;</a></p>
+    				<p><a href="<?php echo JRoute::_('index.php?option=com_content&view=featured&Itemid=101'); ?>"> 2019 bat.by &reg;</a></p>
     			</div>
     		</div>
     	</div>
