@@ -327,6 +327,11 @@
 		.top-menu.hidden-md.hidden-lg {
 			padding-top: 38px;
 		}
+		.input-group-addon {
+			background-color: white;
+			border: 1px solid #fb0000;
+		}
+		#fff1f1
 	</style>
 	
 	<div id="top-menu-mobile" class="navbar navbar-fixed-top">

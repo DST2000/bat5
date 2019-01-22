@@ -25,6 +25,7 @@
 		}
 		div.mobile-basket {
 			background-color:black;
+
 		}
 		.mobile-basket  {
 			color:white;
@@ -49,11 +50,16 @@
 			padding-right: 11px;
 		}
 		img.phone-mobile {
-    		padding-left: 12px;
+			margin: 4px 9px 0px 9px;
+			width: 36%;
+		}
+		img.lines-menu-mobile {
+			padding: 0px 10px 0 10px;
 		}
 		.phone-mobile span {
-			padding-left: 10px;
-			font-size: 2em;
+			padding: 0 0 0 10px;
+			font-size: 1.8em;
+			line-height: 30px;
 		}
 		.shadow-menu-mobile {
 			box-shadow: 2px #red;
@@ -82,6 +88,10 @@
 			-moz-appearance: search;
 			appearance: search;
 		}
+		.input-group-addon {			
+			background-color: #fff;
+			border: 2px solid #f15a2c;
+		}
 	</style>
 	
 	<div id="top-menu-mobile" class="navbar navbar-fixed-top">
@@ -97,7 +107,7 @@
 				</div>	
 				<div class="col-xs-1">
 					<div class="operator-mobile">
-						<img class="phone-mobile" src="/dev/logo/cell-icons_vel_mts.svg" alt="mts vel">
+						<img class="phone-mobile" src="/dev/logo/cell-icons_vel_mts_2.svg" alt="mts vel">
 					</div>
 				</div>	
 				<div class="col-xs-6">
@@ -107,7 +117,7 @@
 				</div>
 				<div class="col-xs-2">
 					<div class="menu-mobile">
-						<img class="logo-mobile" src="/dev/logo/lines_menu.svg" alt="menu">
+						<img class="lines-menu-mobile" src="/dev/logo/lines_menu_2.svg" alt="menu">
 					</div>
 				</div>
 			</div>
@@ -137,7 +147,7 @@
 							<div class="col-xs-12">
 								<div class="input-group">
 									<input type="text" class="form-control" placeholder="Поиск..">
-									<span class="input-group-addon"><i class="fa fa-search"></i> Найти</span>
+									<span class="input-group-addon"> <i class="fa fa-search"></i> Найти</span>
 								</div>
 							</div>
 
