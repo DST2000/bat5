@@ -312,11 +312,16 @@
 			padding-right: 11px;
 		}
 		img.phone-mobile {
-    		padding-left: 12px;
+			margin: 4px 9px 0px 9px;
+			width: 36%;
+		}
+		img.lines-menu-mobile {
+			padding: 0px 10px 0 10px;
 		}
 		.phone-mobile span {
-			padding-left: 10px;
-			font-size: 2em;
+			padding: 0 0 0 10px;
+			font-size: 1.8em;
+			line-height: 30px;
 		}
 		.shadow-menu-mobile {
 			box-shadow: 2px #red;
@@ -327,17 +332,34 @@
 		.top-menu.hidden-md.hidden-lg {
 			padding-top: 38px;
 		}
-		.input-group-addon {
-			background-color: white;
-			border: 1px solid #fb0000;
+		li.mobile-menu-item {
+			list-style-type: none;
+			line-height: 43px;
+			color: #435860;
+			text-transform: uppercase;
+			font-family: 'Helvetica',sans-serif;
+			font-weight: 300;
+			border-bottom: 1px solid #e8e8e8;
+    		margin-left: -30px;
+    		padding-left: 40px;
 		}
-		#fff1f1
+		.header-mid__search input {
+			height: 36px;
+			padding-left: 15px;
+			-webkit-appearance: search;
+			-moz-appearance: search;
+			appearance: search;
+		}
+		.input-group-addon {			
+			background-color: #fff;
+			border: 2px solid #f15a2c;
+		}
 	</style>
 	
 	<div id="top-menu-mobile" class="navbar navbar-fixed-top">
 
 		<div class="container">
-		
+			
 			<div class="row">
 				
 				<div class="col-xs-3">
@@ -347,7 +369,7 @@
 				</div>	
 				<div class="col-xs-1">
 					<div class="operator-mobile">
-						<img class="phone-mobile" src="/dev/logo/cell-icons_vel_mts.svg" alt="mts vel">
+						<img class="phone-mobile" src="/dev/logo/cell-icons_vel_mts_2.svg" alt="mts vel">
 					</div>
 				</div>	
 				<div class="col-xs-6">
@@ -357,7 +379,7 @@
 				</div>
 				<div class="col-xs-2">
 					<div class="menu-mobile">
-						<img class="logo-mobile" src="/dev/logo/lines_menu.svg" alt="menu">
+						<img class="lines-menu-mobile" src="/dev/logo/lines_menu_2.svg" alt="menu">
 					</div>
 				</div>
 			</div>
@@ -377,6 +399,104 @@
 					<div class="mobile-basket">
 						<span>КОРЗИНА (0)</span>
 					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="header-mid__search" style="display: block;">
+					<form action="/search/" method="GET">
+						<div class="row">
+
+							<div class="col-xs-12">
+								<div class="input-group">
+									<input type="text" class="form-control" placeholder="Поиск..">
+									<span class="input-group-addon"> <i class="fa fa-search"></i> Найти</span>
+								</div>
+							</div>
+
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class="row">
+				<div class="header-mid__mobile-menu" style="display: none;">
+					<ul class="mobile-menu">
+						<a href="" class="mobile-menu-item">
+							<li class="mobile-menu-item">
+								<span>КАТАЛОГ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>КОНТАКТЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>АКЦИИ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>НОВОСТИ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>СДАТЬ СТАРЫЙ АККУМУЛЯТОР</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>РОЗНИЧНАЯ СЕТЬ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ОПТОВЫЕ ПОКУПАТЕЛИ</span>
+							</li>
+						</a>
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="header-mid__mobile-catalog" style="display: none;">
+					<ul class="mobile-menu">
+						<a href="" class="mobile-menu-item">
+							<li class="mobile-menu-item">
+								<span>АККУМУЛЯТОРЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>МАСЛА Q8</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>АВТОЛАМПЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ПРИНАДЛЕЖНОСТИ ДЛЯ АККУМУЛЯТОРОВ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ЗАРЯДНЫЕ УСТРОЙСТВА, ТЕСТЕРЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ЩЕТКИ ДЛЯ СТЕКОЛ</span>
+							</li>
+						</a>
+					</ul>
 				</div>
 			</div>
 		</div>
