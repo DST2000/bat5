@@ -59,9 +59,33 @@
 		.shadow-menu-mobile {
 			box-shadow: 2px #red;
 		}
+		div#top-menu-mobile {
+			background: white;
+		}
+		.top-menu.hidden-md.hidden-lg {
+			padding-top: 38px;
+		}
+		li.mobile-menu-item {
+			list-style-type: none;
+			line-height: 43px;
+			color: #435860;
+			text-transform: uppercase;
+			font-family: 'Helvetica',sans-serif;
+			font-weight: 300;
+			border-bottom: 1px solid #e8e8e8;
+    		margin-left: -30px;
+    		padding-left: 40px;
+		}
+		.header-mid__search input {
+			height: 36px;
+			padding-left: 15px;
+			-webkit-appearance: search;
+			-moz-appearance: search;
+			appearance: search;
+		}
 	</style>
 	
-	<div id="top-menu-mobile">
+	<div id="top-menu-mobile" class="navbar navbar-fixed-top">
 
 		<div class="container">
 			
@@ -104,6 +128,104 @@
 					<div class="mobile-basket">
 						<span>КОРЗИНА (0)</span>
 					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="header-mid__search" style="display: block;">
+					<form action="/search/" method="GET">
+						<div class="row">
+
+							<div class="col-xs-12">
+								<div class="input-group">
+									<input type="text" class="form-control" placeholder="Поиск..">
+									<span class="input-group-addon"><i class="fa fa-search"></i> Найти</span>
+								</div>
+							</div>
+
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class="row">
+				<div class="header-mid__mobile-menu" style="display: none;">
+					<ul class="mobile-menu">
+						<a href="" class="mobile-menu-item">
+							<li class="mobile-menu-item">
+								<span>КАТАЛОГ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>КОНТАКТЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>АКЦИИ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>НОВОСТИ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>СДАТЬ СТАРЫЙ АККУМУЛЯТОР</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>РОЗНИЧНАЯ СЕТЬ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ОПТОВЫЕ ПОКУПАТЕЛИ</span>
+							</li>
+						</a>
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="header-mid__mobile-catalog" style="display: none;">
+					<ul class="mobile-menu">
+						<a href="" class="mobile-menu-item">
+							<li class="mobile-menu-item">
+								<span>АККУМУЛЯТОРЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>МАСЛА Q8</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>АВТОЛАМПЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ПРИНАДЛЕЖНОСТИ ДЛЯ АККУМУЛЯТОРОВ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ЗАРЯДНЫЕ УСТРОЙСТВА, ТЕСТЕРЫ</span>
+							</li>
+						</a>
+						<a href="" >
+							<li class="mobile-menu-item">
+								<span>ЩЕТКИ ДЛЯ СТЕКОЛ</span>
+							</li>
+						</a>
+					</ul>
 				</div>
 			</div>
 		</div>
