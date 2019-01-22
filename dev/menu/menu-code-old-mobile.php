@@ -5,7 +5,6 @@
 			<div class="row">
 				<div class="col-md-12">
 
-
 					<div id="accordion" class="panel-group">
 						<div class="panel panel-default">
 							<div class="panel-heading">

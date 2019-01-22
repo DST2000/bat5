@@ -25,7 +25,6 @@
 		}
 		div.mobile-basket {
 			background-color:black;
-
 		}
 		.mobile-basket  {
 			color:white;
