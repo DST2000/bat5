@@ -101,8 +101,8 @@
 			<div class="row">
 				
 				<div class="col-xs-3">
-					<div class="logo-mobile">
-						<img class="logo-mobile" src="/dev/logo/logo_bat_auto_trade.svg" alt="logo bat">
+					<div id="logo-mobile" class="logo-mobile">
+						<img id="logo-mobile" class="logo-mobile" src="/dev/logo/logo_bat_auto_trade.svg" alt="logo bat">
 					</div>
 				</div>	
 				<div class="col-xs-1">
@@ -111,12 +111,12 @@
 					</div>
 				</div>	
 				<div class="col-xs-6">
-					<div class="phone-mobile">
+					<div id="phone-mobile" class="phone-mobile">
 						<span>351 47 47</span>
 					</div>
 				</div>
 				<div class="col-xs-2">
-					<div class="menu-mobile">
+					<div id="menu-mobile" class="menu-mobile">
 						<img class="lines-menu-mobile" src="/dev/logo/lines_menu_2.svg" alt="menu">
 					</div>
 				</div>
@@ -124,24 +124,24 @@
 			
 			<div class="row shadow-menu-mobile">
 				<div class="col-xs-5">
-					<div class="catalog-mobile">
+					<div id="catalog-mobile" class="catalog-mobile">
 						КАТАЛОГ ТОВАРОВ
 					</div>
 				</div>
 				<div class="col-xs-2">
-					<div class="mobile-search">
+					<div id="mobile-search" class="mobile-search">
 						<i class="fa fa-search"></i>
 					</div>
 				</div>
 				<div class="col-xs-5">
-					<div class="mobile-basket">
+					<div id="mobile-basket" class="mobile-basket">
 						<span>КОРЗИНА (0)</span>
 					</div>
 				</div>
 			</div>
 			<div class="row">
-				<div class="header-mid__search" style="display: block;">
-					<form action="/search/" method="GET">
+				<div class="header-mid__search" style="display: none;">
+					<form action="/catalog/" method="GET">
 						<div class="row">
 
 							<div class="col-xs-12">
@@ -242,3 +242,40 @@
 	</div>
 	<!-- /#top-menu-mobile -->
 </div> <!-- /.top-menu xs sm -->
+
+<script>
+	jQuery(function($){
+		function MyFuncHideMenu(){
+			$("div.header-mid__mobile-menu").css({
+				"display":"none"
+			});
+			$("div.header-mid__mobile-catalog").css({
+				"display":"none"
+			});
+			$("div.header-mid__search").css({
+				"display":"none"
+			});
+		};
+		$("div#menu-mobile").on("click", function(event){
+			MyFuncHideMenu(this); 
+			/*$("div.header-mid__mobile-menu").toggle("blind");*/
+			$("div.header-mid__mobile-menu").css({
+				"display":"block"
+			});
+		});
+		$("div#catalog-mobile").on("click", function(event){
+			MyFuncHideMenu(this);
+			/*$("div.header-mid__mobile-catalog").toggle("blind");*/
+			$("div.header-mid__mobile-catalog").css({
+				"display":"block"
+			});
+		});
+		$("div#mobile-search").on("click", function(event){
+			MyFuncHideMenu(this);
+			/*$("div.header-mid__search").toggle("blind");*/
+			$("div.header-mid__search").css({
+				"display":"block"
+			});
+		});
+	});
+</script>
