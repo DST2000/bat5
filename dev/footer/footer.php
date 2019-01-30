@@ -25,11 +25,11 @@
 					<p>Интернет-магазин аккумуляторов bat.by зарегистрирован в Торговом реестре: 17.10.2018, номер регистрации: 429375</p>
     			</div>
     			<div class="col-md-3">
-    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=18&Itemid=117'); ?>">Аккумуляторы</a></h4>
-    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=61'); ?>">Масла</a></h4>
-    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=20'); ?>">Лампы автомобильные</a></h4>
-    				<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=24'); ?>">Щетки стеклочистительные</a></h4>
-					<h4><a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=81'); ?>">	Принадлежности для аккумуляторов</a></h4>
+    				<h4><a href="<?php echo JRoute::_('catalog/filter/akkumulators/'); ?>">Аккумуляторы</a></h4>
+    				<h4><a href="<?php echo JRoute::_('catalog/filter/q8/'); ?>">Масла</a></h4>
+    				<h4><a href="<?php echo JRoute::_('catalog/lamps/'); ?>">Лампы автомобильные</a></h4>
+    				<h4><a href="<?php echo JRoute::_('catalog/schetki-stekloochistitelya/'); ?>">Щетки стеклочистительные</a></h4>
+					<h4><a href="<?php echo JRoute::_('catalog/zaryadnye-ustrojstva-i-aksessuary/'); ?>">	Зарядные устройства, тестеры, принадлежности для аккумуляторов</a></h4>
     			</div>
     			<div class="col-md-3">
     				<p>Карта сайта</p>
