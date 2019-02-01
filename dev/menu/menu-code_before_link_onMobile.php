@@ -240,21 +240,14 @@
                   	</div> <!-- /.dropdown-->
                 </div>
                 <div id="menu-search" class="col-md-2">
-					<form action="/catalog" method="get">
-						<div class="form-group">	
-							<!-- <input type="search" class="form-control" name="search" id="search" placeholder="Найти..."> -->
-
-							<input name="keyword" class="inputbox form-control" type="text" size="25" value="" placeholder="Вопрос">
-							<i class="fas fa-search"></i>
-							<input type="submit" value="Искать" class="button push" onclick="this.form.keyword.focus();">
-						<!-- input type="hidden" name="showsearch" value="true"/ -->
-						<input type="hidden" name="view" value="category">
-						<input type="hidden" name="option" value="com_virtuemart">
-						<input type="hidden" name="virtuemart_category_id" value="0">
-						<input type="hidden" name="Itemid" value="117">
-						</div>
-					</form>
-				</div>
+					<div class="form-group">	
+                		<!-- <input type="search" class="form-control" name="search" id="search" placeholder="Найти..."> -->
+						
+                  		<input type="search" class="form-control" name="search" id="search" placeholder="..">
+                  		<i class="fas fa-search"></i>
+                  		<!-- <i class="fa fa-search"></i>-->
+					</div>
+                  </div>
                 <div id="menu-basket" class="col-md-1">
 					<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=cart'); ?>"><i class="fas fa-shopping-cart"></i></a>             
                   </div>
@@ -266,7 +259,100 @@
   		</div> <!-- /.top-menu md xl-->
 
 <div class="top-menu hidden-md hidden-lg">
-	
+	<style type="text/css">
+		.logo-mobile {
+			margin-bottom: -3px;
+
+		}
+		.phone-mobile {
+			
+
+		}
+		.menu-mobile {
+			background-color: red;
+
+		}
+		.catalog-mobile {
+			background-color: red;
+			color:white;
+			text-align: center;
+			font-size: 0.8em;
+
+		}
+		.mobile-search {
+			border: 1px solid red;
+			text-align: center;
+		}
+		div.mobile-basket {
+			background-color:black;
+
+		}
+		.mobile-basket  {
+			color:white;
+			text-align: center;
+			font-size: 0.8em;
+		}
+		#top-menu-mobile {
+
+		}
+		
+		#top-menu-mobile > .container > .row >.col-xs-1,
+		#top-menu-mobile > .container > .row >.col-xs-2,
+		#top-menu-mobile > .container > .row >.col-xs-3,
+		#top-menu-mobile > .container > .row >.col-xs-4,
+		#top-menu-mobile > .container > .row >.col-xs-5,
+		#top-menu-mobile > .container > .row >.col-xs-6
+		{
+			padding: 0px 0px 0px 0px !important;
+		}
+		img.logo-mobile {
+			padding-left: 12px;
+			padding-right: 11px;
+		}
+		img.phone-mobile {
+			margin: 4px 9px 0px 9px;
+			width: 36%;
+		}
+		img.lines-menu-mobile {
+			padding: 0px 10px 0 10px;
+		}
+		.phone-mobile span {
+			padding: 0 0 0 10px;
+			font-size: 1.8em;
+			line-height: 30px;
+		}
+		.shadow-menu-mobile {
+			box-shadow: 2px #red;
+		}
+		div#top-menu-mobile {
+			background: white;
+		}
+		.top-menu.hidden-md.hidden-lg {
+			padding-top: 38px;
+		}
+		li.mobile-menu-item {
+			list-style-type: none;
+			line-height: 43px;
+			color: #435860;
+			text-transform: uppercase;
+			font-family: 'Helvetica',sans-serif;
+			font-weight: 300;
+			border-bottom: 1px solid #e8e8e8;
+    		margin-left: -30px;
+    		padding-left: 40px;
+		}
+		.header-mid__search input {
+			height: 36px;
+			padding-left: 15px;
+			-webkit-appearance: search;
+			-moz-appearance: search;
+			appearance: search;
+		}
+		.input-group-addon {			
+			background-color: #fff;
+			border: 2px solid #f15a2c;
+		}
+	</style>
 	
 	<div id="top-menu-mobile" class="navbar navbar-fixed-top">
 
@@ -308,30 +394,23 @@
 					</div>
 				</div>
 				<div class="col-xs-5">
-					<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=cart'); ?>">
 					<div id="mobile-basket" class="mobile-basket">
 						<span>КОРЗИНА (0)</span>
 					</div>
-					</a>
 				</div>
 			</div>
 			<div class="row">
 				<div class="header-mid__search" style="display: none;">
-					<form action="/catalog" method="GET">
+					<form action="/catalog/" method="GET">
 						<div class="row">
-							<div class="form-group">
-								<div class="col-xs-12">
-									<div class="input-group">
-										<input type="text" name="keyword" class="inputbox form-control" placeholder="Поиск..">
-										<span class="input-group-addon"> <i class="fa fa-search"></i> Найти</span>
-										<input type="submit" value="Искать" class="button push" onclick="this.form.keyword.focus();">
-									</div>
+
+							<div class="col-xs-12">
+								<div class="input-group">
+									<input type="text" class="form-control" placeholder="Поиск..">
+									<span class="input-group-addon"> <i class="fa fa-search"></i> Найти</span>
 								</div>
-								<input type="hidden" name="view" value="category">
-								<input type="hidden" name="option" value="com_virtuemart">
-								<input type="hidden" name="virtuemart_category_id" value="0">
-								<input type="hidden" name="Itemid" value="117">
 							</div>
+
 						</div>
 					</form>
 				</div>
@@ -339,42 +418,42 @@
 			<div class="row">
 				<div class="header-mid__mobile-menu" style="display: none;">
 					<ul class="mobile-menu">
-						<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>" class="mobile-menu-item">
+						<a href="" class="mobile-menu-item">
 							<li class="mobile-menu-item">
 								<span>КАТАЛОГ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>КОНТАКТЫ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=11&Itemid=0'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>АКЦИИ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=10&Itemid=0'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>НОВОСТИ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&view=category&id=12&Itemid=0'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=8'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>СДАТЬ СТАРЫЙ АККУМУЛЯТОР</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=9'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>РОЗНИЧНАЯ СЕТЬ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=10'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>ОПТОВЫЕ ПОКУПАТЕЛИ</span>
 							</li>
@@ -385,17 +464,17 @@
 			<div class="row">
 				<div class="header-mid__mobile-catalog" style="display: none;">
 					<ul class="mobile-menu">
-						<a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>" class="mobile-menu-item">
+						<a href="" class="mobile-menu-item">
 							<li class="mobile-menu-item">
 								<span>АККУМУЛЯТОРЫ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/filter/q8/'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>МАСЛА Q8</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/lamps/'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>АВТОЛАМПЫ</span>
 							</li>
@@ -405,12 +484,12 @@
 								<span>ПРИНАДЛЕЖНОСТИ ДЛЯ АККУМУЛЯТОРОВ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/filter/zaryadnye-ustrojstva-i-aksessuary/'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>ЗАРЯДНЫЕ УСТРОЙСТВА, ТЕСТЕРЫ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/filter/schetki-stekloochistitelya/'); ?>" >
+						<a href="" >
 							<li class="mobile-menu-item">
 								<span>ЩЕТКИ ДЛЯ СТЕКОЛ</span>
 							</li>
