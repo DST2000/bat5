@@ -397,7 +397,7 @@ img.lines-menu-mobile {
 	line-height: 30px;
 }
 .shadow-menu-mobile {
-	box-shadow: 2px #red;
+	box-shadow: 2px red;
 }
 div#top-menu-mobile {
 	background: white;
@@ -430,6 +430,17 @@ li.mobile-menu-item {
 
 
 /* > МЕНЮ*/
+
+/* < breadcrumbs */
+.breadcrumbs {
+	margin: 0 0 0 18px;
+}
+@media (min-width: 768px) {
+	.breadcrumbs {
+	margin: 55px 0 0 18px;
+	}
+}
+/* > breadcrumbs */
 
 /* < BRANDS */
 
