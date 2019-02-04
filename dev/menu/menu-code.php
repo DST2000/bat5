@@ -38,20 +38,20 @@
 					  									<div class="col-md-4">
 					  										<p>назначение</p>
 					  										<ul>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
-																<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-4">
 					  										<p>бренды</p>
 					  										<ul>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/varta/'); ?>">varta</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/banner/'); ?>">banner</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/varta/'); ?>">varta</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/banner/'); ?>">banner</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/akom/'); ?>">АКОМ</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/delta/'); ?>">Delta</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/delta/'); ?>">Delta</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>">Все бренды</a></li>
 					  										</ul>
 					  									</div>
@@ -69,17 +69,17 @@
 					  					<div class="row">
 					  						<div class="col-md-12">
 					  							<h2>масла Q8</h2>
-					  							<h3><a href="<?php echo JRoute::_('catalog/filter/q8/'); ?>">показать все масла</a></h3>
+					  							<h3><a href="<?php echo JRoute::_('catalog/q8/'); ?>">показать все масла</a></h3>
 					  								<div class="row">
 					  									<div class="col-md-6">
 					  										<p>назначение</p>
 					  										<ul>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/масла-для-грузовых-автомобилей/'); ?>">масла для грузовых авто</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/минеральные-масла-для-легковых-автомобилей/'); ?>">минеральные масла для легковых авто</a></li>
-																<li><a href="<?php echo JRoute::_('catalog/filter/полусинтетические-масла-для-легковых-автомобилей/'); ?>">полусинтетические масла для легковых авто</a></li>
-																<li><a href="<?php echo JRoute::_('catalog/filter/синтетические-масла-для-легковых-автомобилей/'); ?>">синтетические масла для легковых авто</a></li>
-																<li><a href="<?php echo JRoute::_('catalog/filter/масла-для-мото-и-садовой-техники/'); ?>">масла для мото и садовой техники</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/filter/трансмиссионные-масла,-смазки,-технические-жидкости/'); ?>">трансмиссионные масла, смазки, технические жидкости</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/масла-для-грузовых-автомобилей/'); ?>">масла для грузовых авто</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/минеральные-масла-для-легковых-автомобилей/'); ?>">минеральные масла для легковых авто</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/полусинтетические-масла-для-легковых-автомобилей/'); ?>">полусинтетические масла для легковых авто</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/синтетические-масла-для-легковых-автомобилей/'); ?>">синтетические масла для легковых авто</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/масла-для-мото-и-садовой-техники/'); ?>">масла для мото и садовой техники</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/трансмиссионные-масла,-смазки,-технические-жидкости/'); ?>">трансмиссионные масла, смазки, технические жидкости</a></li>
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-3">
@@ -106,10 +106,10 @@
 					  					<div class="row">
 					  						<div class="col-md-4">
 					  							<h3><a href="<?php echo JRoute::_('catalog/lamps/'); ?>">автолампы</a></h3>
-					  							<h3><a href="<?php echo JRoute::_('catalog/filter/schetki-stekloochistitelya/'); ?>">щетки для стекол</a></h3>
+					  							<h3><a href="<?php echo JRoute::_('catalog/schetki-stekloochistitelya/'); ?>">щетки для стекол</a></h3>
 					  						</div>
 					  						<div class="col-md-8">
-					  							<h3><a href="<?php echo JRoute::_('catalog/filter/zaryadnye-ustrojstva-i-aksessuary/'); ?>">зарядные устройства, тестеры, принадлежности для аккумуляторов</a></h3>
+					  							<h3><a href="<?php echo JRoute::_('catalog/zaryadnye-ustrojstva-i-aksessuary/'); ?>">зарядные устройства, тестеры, принадлежности для аккумуляторов</a></h3>
 					  						</div>
 					  						
 					  					</div>
@@ -139,21 +139,21 @@
 										<h3 class="akb"><a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>">показать все аккумуляторы</a></h3>
 										<p>назначение</p>
 											<ul>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
 											</ul>
 									</div>
 									<div class="col-md-2">
 										<p>бренды</p>
 											<ul>
-												<li><a href="<?php echo JRoute::_('catalog/filter/varta/'); ?>">varta</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/banner/'); ?>">banner</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akom/'); ?>">АКОМ</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/delta/'); ?>">Delta</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/'); ?>">Все бренды</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/varta/'); ?>">varta</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/banner/'); ?>">banner</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akom/'); ?>">АКОМ</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/delta/'); ?>">Delta</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>">Все бренды</a></li>
 											</ul>
 									</div>
 									<div class="col-md-2">
@@ -165,7 +165,7 @@
 											</ul>
 									</div>
 									<div class="col-md-4">
-										<h4><a href="<?php echo JRoute::_('catalog/filter/zaryadnye-ustrojstva-i-aksessuary/'); ?>">зарядные устройства, тестеры, принадлежности для аккумуляторов</a></h4>
+										<h4><a href="<?php echo JRoute::_('catalog/zaryadnye-ustrojstva-i-aksessuary/'); ?>">зарядные устройства, тестеры, принадлежности для аккумуляторов</a></h4>
 										<h4><a href="<?php echo JRoute::_('index.php?option=com_content&view=article&id=8'); ?>">&#36; получить деньги за старый аккумулятор</a></h4>
 									</div>
 								</div>
@@ -193,15 +193,15 @@
 								</div>
 								<div class="row">
 									<div class="col-md-5">
-										<h3><a href="<?php echo JRoute::_('catalog/filter/q8/'); ?>">показать все масла</a></h3>
+										<h3><a href="<?php echo JRoute::_('catalog/q8/'); ?>">показать все масла</a></h3>
 										<p>назначение</p>
 										<ul>
-											<li><a href="<?php echo JRoute::_('catalog/filter/масла-для-грузовых-автомобилей/'); ?>">масла для грузовых авто</a></li>
-											<li><a href="<?php echo JRoute::_('catalog/filter/минеральные-масла-для-легковых-автомобилей/'); ?>">минеральные масла для легковых авто</a></li>
-											<li><a href="<?php echo JRoute::_('catalog/filter/полусинтетические-масла-для-легковых-автомобилей/'); ?>">полусинтетические масла для легковых авто</a></li>
-											<li><a href="<?php echo JRoute::_('catalog/filter/синтетические-масла-для-легковых-автомобилей/'); ?>">синтетические масла для легковых авто</a></li>
-											<li><a href="<?php echo JRoute::_('catalog/filter/масла-для-мото-и-садовой-техники/'); ?>">масла для мото и садовой техники</a></li>
-											<li><a href="<?php echo JRoute::_('catalog/filter/трансмиссионные-масла,-смазки,-технические-жидкости/'); ?>">трансмиссионные масла, смазки, технические жидкости</a></li>
+											<li><a href="<?php echo JRoute::_('catalog/масла-для-грузовых-автомобилей/'); ?>">масла для грузовых авто</a></li>
+											<li><a href="<?php echo JRoute::_('catalog/минеральные-масла-для-легковых-автомобилей/'); ?>">минеральные масла для легковых авто</a></li>
+											<li><a href="<?php echo JRoute::_('catalog/полусинтетические-масла-для-легковых-автомобилей/'); ?>">полусинтетические масла для легковых авто</a></li>
+											<li><a href="<?php echo JRoute::_('catalog/синтетические-масла-для-легковых-автомобилей/'); ?>">синтетические масла для легковых авто</a></li>
+											<li><a href="<?php echo JRoute::_('catalog/масла-для-мото-и-садовой-техники/'); ?>">масла для мото и садовой техники</a></li>
+											<li><a href="<?php echo JRoute::_('catalog/трансмиссионные-масла,-смазки,-технические-жидкости/'); ?>">трансмиссионные масла, смазки, технические жидкости</a></li>
 										</ul>
 									</div>
 									<div class="col-md-3">
@@ -390,7 +390,7 @@
 								<span>АККУМУЛЯТОРЫ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/filter/q8/'); ?>" >
+						<a href="<?php echo JRoute::_('catalog/q8/'); ?>" >
 							<li class="mobile-menu-item">
 								<span>МАСЛА Q8</span>
 							</li>
@@ -405,12 +405,12 @@
 								<span>ПРИНАДЛЕЖНОСТИ ДЛЯ АККУМУЛЯТОРОВ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/filter/zaryadnye-ustrojstva-i-aksessuary/'); ?>" >
+						<a href="<?php echo JRoute::_('catalog/zaryadnye-ustrojstva-i-aksessuary/'); ?>" >
 							<li class="mobile-menu-item">
 								<span>ЗАРЯДНЫЕ УСТРОЙСТВА, ТЕСТЕРЫ</span>
 							</li>
 						</a>
-						<a href="<?php echo JRoute::_('catalog/filter/schetki-stekloochistitelya/'); ?>" >
+						<a href="<?php echo JRoute::_('catalog/schetki-stekloochistitelya/'); ?>" >
 							<li class="mobile-menu-item">
 								<span>ЩЕТКИ ДЛЯ СТЕКОЛ</span>
 							</li>

@@ -44,7 +44,7 @@ JLoader::register('BatbrandHelper', JPATH_ROOT . '/components/com_batbrands/help
 				<?php $middle_text = $item->middle_text; ?>
 				<?php $footer_text = $item->footer_text; ?>
 				<?php if (!empty($link)) : ?>
-					<a href="<?php echo $link; ?>" target="_blank" rel=""
+					<a href="<?php echo $link; ?>" target="_self" rel=""
 						title="<?php echo htmlspecialchars($item->name, ENT_QUOTES, 'UTF-8'); ?>">
 				<?php endif; ?>
 					<h2 class="header center">
