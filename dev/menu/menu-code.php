@@ -244,9 +244,9 @@
 						<div class="form-group">	
 							<!-- <input type="search" class="form-control" name="search" id="search" placeholder="Найти..."> -->
 
-							<input name="keyword" class="inputbox form-control" type="text" size="25" value="" placeholder="Вопрос">
+							<input name="keyword" class="inputbox form-control" type="text" size="25" value="" placeholder="Поиск..">
 							<i class="fas fa-search"></i>
-							<input type="submit" value="Искать" class="button push" onclick="this.form.keyword.focus();">
+							<input type="submit" value="Найти" class="button push" onclick="this.form.keyword.focus();">
 						<!-- input type="hidden" name="showsearch" value="true"/ -->
 						<input type="hidden" name="view" value="category">
 						<input type="hidden" name="option" value="com_virtuemart">
