@@ -16,7 +16,7 @@
 					  			<div class="col-md-4">
 					  				<ul>
 					  					<li><h3>
-											<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">Каталог <i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-ellipsis-h"></i><i class="fas fa-arrow-right"></i></a>
+											<a href="<?php echo JRoute::_('index.php?option=com_virtuemart&view=category&virtuemart_category_id=0&virtuemart_manufacturer_id=0'); ?>">Каталог <i class="fas fa-arrow-right"></i></a>
 											</h3>
 										</li>
 					  					<li><h3><a href="<?php echo JRoute::_('index.php?option=com_content&Itemid=317'); ?>">Контакты</a></h3></li>
@@ -36,8 +36,8 @@
 					  							<h3 class="akb"><a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>">показать все аккумуляторы</a></h3>
 					  								<div class="row">
 					  									<div class="col-md-4">
-					  										<p>назначение</p>
 					  										<ul>
+																<li><span>назначение</span></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
@@ -46,8 +46,8 @@
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-4">
-					  										<p>бренды</p>
 					  										<ul>
+																<li><span>бренды</span></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/varta/'); ?>">varta</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/banner/'); ?>">banner</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/akom/'); ?>">АКОМ</a></li>
@@ -56,8 +56,8 @@
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-4">
-					  										<p>подбор аккумулятора</p>
 					  										<ul>
+																<li><span>подбор аккумулятора</span></li>
 					  											<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
 					  											<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
 					  											<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
@@ -72,8 +72,8 @@
 					  							<h3><a href="<?php echo JRoute::_('catalog/q8/'); ?>">показать все масла</a></h3>
 					  								<div class="row">
 					  									<div class="col-md-6">
-					  										<p>назначение</p>
 					  										<ul>
+																<li><span>назначение</span></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/масла-для-грузовых-автомобилей/'); ?>">масла для грузовых авто</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/минеральные-масла-для-легковых-автомобилей/'); ?>">минеральные масла для легковых авто</a></li>
 																<li><a href="<?php echo JRoute::_('catalog/полусинтетические-масла-для-легковых-автомобилей/'); ?>">полусинтетические масла для легковых авто</a></li>
@@ -83,18 +83,19 @@
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-3">
-					  										<p>вязкость SAE</p>
 					  										<ul>
-					  											<li>0w30</li>
-					  											<li>5w30</li>
-					  											<li>5w35</li>
-					  											<li>5w40</li>
-					  											<li>10w40</li>
+																<li><span>Класс вязкости SAE</span></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=30572d3330'); ?>">0w-30</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=35572d3330'); ?>">5w-30</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=35572d3430'); ?>">5w-40</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=3130572d3430'); ?>">10w-40</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=3735572d3930'); ?>">75w-90</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/q8/'); ?>">Показать все классы вязкости</a></li>
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-3">
-					  										<p>подбор масел</p>
 					  										<ul>
+																<li><span>подбор масел</span></li>
 					  											<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
 					  											<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
 					  											<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
@@ -137,8 +138,8 @@
 								<div class="row">
 									<div class="col-md-4">
 										<h3 class="akb"><a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>">показать все аккумуляторы</a></h3>
-										<p>назначение</p>
 											<ul>
+												<li><span>назначение</span></li>
 												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
 												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
 												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
@@ -147,8 +148,8 @@
 											</ul>
 									</div>
 									<div class="col-md-2">
-										<p>бренды</p>
 											<ul>
+												<li><span>бренды</span></li>
 												<li><a href="<?php echo JRoute::_('catalog/varta/'); ?>">varta</a></li>
 												<li><a href="<?php echo JRoute::_('catalog/banner/'); ?>">banner</a></li>
 												<li><a href="<?php echo JRoute::_('catalog/akom/'); ?>">АКОМ</a></li>
@@ -157,8 +158,8 @@
 											</ul>
 									</div>
 									<div class="col-md-2">
-										<p>подбор аккумулятора</p>
 											<ul>
+												<li><span>подбор аккумулятора</span></li>
 												<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
 												<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
 												<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
@@ -194,8 +195,8 @@
 								<div class="row">
 									<div class="col-md-5">
 										<h3><a href="<?php echo JRoute::_('catalog/q8/'); ?>">показать все масла</a></h3>
-										<p>назначение</p>
 										<ul>
+											<li><span>назначение</span></li>
 											<li><a href="<?php echo JRoute::_('catalog/масла-для-грузовых-автомобилей/'); ?>">масла для грузовых авто</a></li>
 											<li><a href="<?php echo JRoute::_('catalog/минеральные-масла-для-легковых-автомобилей/'); ?>">минеральные масла для легковых авто</a></li>
 											<li><a href="<?php echo JRoute::_('catalog/полусинтетические-масла-для-легковых-автомобилей/'); ?>">полусинтетические масла для легковых авто</a></li>
@@ -205,19 +206,19 @@
 										</ul>
 									</div>
 									<div class="col-md-3">
-										<p>Класс вязкости SAE</p>
 											<ul>
-												<li>0w30</li>
-												<li>5w30</li>
-												<li>5w35</li>
-												<li>5w40</li>
-												<li>10w40</li>
-												<li>Показать все классы вязкости</li>
+												<li><span>Класс вязкости SAE</span></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=30572d3330'); ?>">0w-30</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=35572d3330'); ?>">5w-30</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=35572d3430'); ?>">5w-40</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=3130572d3430'); ?>">10w-40</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/q8/?custom_f_320[0]=3735572d3930'); ?>">75w-90</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/q8/'); ?>">Показать все классы вязкости</a></li>
 											</ul>
 									</div>
 									<div class="col-md-4">
-										<p>подбор масел</p>
 											<ul>
+												<li><span>подбор масел</span></li>
 												<li><i class="fa fa-car" aria-hidden="true"></i> легковые авто</li>
 												<li><i class="fa fa-motorcycle" aria-hidden="true"></i> мототехника</li>
 												<li><i class="fa fa-truck" aria-hidden="true"></i> грузовые авто</li>
