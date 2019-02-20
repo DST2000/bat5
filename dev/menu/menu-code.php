@@ -38,11 +38,11 @@
 					  									<div class="col-md-4">
 					  										<ul>
 																<li><span>назначение</span></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
-																<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
-					  											<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
+					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-4">
@@ -140,11 +140,11 @@
 										<h3 class="akb"><a href="<?php echo JRoute::_('catalog/akkumulators/'); ?>">показать все аккумуляторы</a></h3>
 											<ul>
 												<li><span>назначение</span></li>
-												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
-												<li><a href="<?php echo JRoute::_('catalog/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3133'); ?>"><i class="fa fa-car" aria-hidden="true"></i> АКБ для легкового авто</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3134'); ?>"><i class="fa fa-bus" aria-hidden="true"></i> <i class="fa fa-taxi" aria-hidden="true"></i> АКБ для микроавтобусов и фургонов</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
 											</ul>
 									</div>
 									<div class="col-md-2">
