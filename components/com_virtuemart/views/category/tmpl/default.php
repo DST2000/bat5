@@ -55,9 +55,15 @@ if ($this->show_store_desc and !empty($this->vendor->vendor_store_desc)) { ?>
 if (!empty($this->showcategory_desc) and empty($this->keyword)){
 	if(!empty($this->category)) {
 	?>
-<div class="category_description">
-	<?php echo $this->category->category_description; ?>
-</div>
+<?php
+// {DST
+//<div class="category_description">
+?>
+	<?php //echo $this->category->category_description; ?>
+<?php
+//</div>
+// }DST
+ ?>	
 <?php }
 	if(!empty($this->manu_descr)) {
 		?>
@@ -188,6 +194,15 @@ jQuery(".changeSendForm")
 
 <?php if (!empty($this->category->category_name)) { ?>
 <h1><?php echo vmText::_($this->category->category_name); ?></h1>
+<?php
+// {DST
+?>												   
+<div class="category_description">
+	<?php echo $this->category->category_description; ?>
+</div>												   
+<?php
+// }DST
+ ?>												  
 <?php } ?>
 
 	<?php
