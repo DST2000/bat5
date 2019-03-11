@@ -442,6 +442,14 @@ li.mobile-menu-item {
 }
 /* > breadcrumbs */
 
+/* < categoryes */
+
+.manufacturer-info, .manufacturer-info-productline {
+    font-size: 1.2em;
+}
+
+/* > categoryes */
+
 /* < BRANDS */
 
 /* <  блок бренда */
