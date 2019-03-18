@@ -578,7 +578,7 @@ class calculationHelper {
 						// поиск по product_path товара <product_path>00000000007/00000000001</product_path>
 						// среди последних строк product_path скидок клиента "product_path":"00000000006/00000000003"
 						$customfieldsModel = VmModel::getModel('Customfields');
-						$virtuemart_custom_id = (int)33;
+						$virtuemart_custom_id = (int)323; // product_path id
 											
 						$db2 = JFactory::getDBO();
 						$query2 = 'SELECT `customfield_value`,`virtuemart_product_id` FROM `#__virtuemart_product_customfields` WHERE  
