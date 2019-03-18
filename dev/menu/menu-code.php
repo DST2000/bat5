@@ -43,6 +43,7 @@
 					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
 																<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
 					  											<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
+																<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=313331'); ?>"><i class="fa fa-car" aria-hidden="true"></i> <i class="fa fa-battery-full" aria-hidden="true"></i></i></i> Высоковольтные батареи для гибридный автомобилей</a></li>
 					  										</ul>
 					  									</div>
 					  									<div class="col-md-4">
@@ -145,6 +146,7 @@
 												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3136'); ?>"><i class="fa fa-truck" aria-hidden="true"></i> АКБ для грузовой и спец. техники</a></li>
 												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3131'); ?>"><i class="fa fa-motorcycle" aria-hidden="true"></i> АКБ для мотоциклов, квадроциклов, скутеров</a></li>
 												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=3132'); ?>"><i class="fa fa-industry" aria-hidden="true"></i> АКБ для поломоечных машин, погрузчиков</a></li>
+												<li><a href="<?php echo JRoute::_('catalog/filter/akkumulators/?custom_f_321[0]=313331'); ?>"><i class="fa fa-car" aria-hidden="true"></i> <i class="fa fa-battery-full" aria-hidden="true"></i></i></i> Высоковольтные батареи для гибридный автомобилей</a></li>
 											</ul>
 									</div>
 									<div class="col-md-2">
