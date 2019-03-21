@@ -20,6 +20,12 @@
 
 defined ('_JEXEC') or die('Restricted access');
 
+/* /{DST */
+$user=JFactory::getUser();
+if($user->id>0){ 
+	$this->productsLayout = 'products_horizon';
+}  
+/* /}DST */
 if (vRequest::getInt('dynamic',false) and vRequest::getInt('virtuemart_product_id',false)) {
 	if (!empty($this->products)) {
 		if($this->fallback){
