@@ -60,7 +60,7 @@ $this->setHtml5(true);
 $this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
 // {DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/jui/bootstrap.min.css');
-$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/style.css?v=22');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/style.css?v=30');
 // }DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css?v=2', 'text/css', 'screen');
@@ -207,9 +207,11 @@ require __DIR__ . '/jsstrings.php';
 							<?php endif; ?>
 
 							<jdoc:include type="message" />
-							<!-- {DST 
-							 type="component" 
-							}DST -->
+							<?php 
+							/* {DST */ 
+							 //type="component" 
+							/* DST 	*/
+							?>
 							
 						</div><!-- end main -->
 					</div><!-- end wrapper -->

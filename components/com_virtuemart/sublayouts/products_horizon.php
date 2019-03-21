@@ -121,12 +121,24 @@ foreach ($viewData['products'] as $type => $products ) {
 
 
 			<?php //echo $rowsHeight[$row]['price'] ?>
-			<div class="vm3pr-<?php echo $rowsHeight[$row]['price'] ?>"> <?php
+			<?php /* 
+			{DST
+			//vm3pr
+			vm3pr-hr
+			}DST
+			*/?>
+			<div class="vm3pr-hr-<?php echo $rowsHeight[$row]['price'] ?>"> <?php
 				echo shopFunctionsF::renderVmSubLayout('prices',array('product'=>$product,'currency'=>$currency)); ?>
 				<div class="clear"></div>
 			</div>
 			<?php //echo $rowsHeight[$row]['customs'] ?>
-			<div class="vm3pr-<?php echo $rowsHeight[$row]['customfields'] ?>"> <?php
+			<?php /* 
+			{DST
+			//vm3pr
+			vm3pr-hr
+			}DST
+			*/?>
+			<div class="vm3pr-hr-<?php echo $rowsHeight[$row]['customfields'] ?>"> <?php
 				echo shopFunctionsF::renderVmSubLayout('addtocart',array('product'=>$product,'rowHeights'=>$rowsHeight[$row], 'position' => array('ontop', 'addtocart'))); ?>
 			</div>
 

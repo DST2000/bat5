@@ -450,6 +450,113 @@ li.mobile-menu-item {
 
 /* > categoryes */
 
+/* < products_horizon */
+
+/* Row heights */
+.vm3pr-hr-1 .product-price {
+  min-height: 28px;
+}
+
+.vm3pr-hr-2 .product-price {
+  min-height: 42px;
+}
+
+.vm3pr-hr-3 .product-price {
+  min-height: 36px;
+}
+
+.vm3pr-hr-4 .product-price {
+  min-height: 70px;
+}
+
+.vm3pr-hr-5 .product-price {
+  min-height: 84px;
+}
+
+.vm3pr-hr-6 .product-price {
+  min-height: 98px;
+}
+
+.vm3pr-hr-0 .addtocart-area {
+/*min-height: 36px;*/	
+  min-height: 1px;
+}
+
+.vm3pr-hr-1 .addtocart-area {
+  min-height: 66px;
+}
+
+.vm3pr-hr-2 .addtocart-area {
+  min-height: 114px;
+}
+
+.vm3pr-hr-3 .addtocart-area {
+  min-height: 162px;
+}
+
+.vm3pr-hr-4 .addtocart-area {
+  min-height: 210px;
+}
+
+.vm3pr-hr-5 .addtocart-area {
+  min-height: 258px;
+}
+
+.vm3pr-hr-0 .addtocart-bar {
+    margin: -36px 0px 0px 0px;
+	line-height: 10px;
+}
+.product.vm-products-horizon.vm-col.vm-col-3.vertical-separator {
+    margin: 0px 0px 0px 0px;
+}
+.vm3pr-hr-2 {
+    padding: 0px 0px 0px 0px;
+}
+
+.vm-products-horizon .vm-product-rating-container {
+    padding: 0px 3px 0px 0px;
+}
+
+.vm-products-horizon img.browseProductImage {
+    max-width: 50%;
+}
+
+.vm-products-horizon .vm-product-media-container {
+    margin: 0px -20px 0 -20px;
+}
+
+.vm-products-horizon .vm-product-descr-container-0 > h2 {
+    font-size: 16px;
+}
+
+/* row heights custom fields */
+
+.vm3pr-hr-0 .vm-customfields-wrap {
+	min-height: 0px;
+}
+
+.vm3pr-hr-1 .vm-customfields-wrap {
+	min-height: 65px;
+}
+
+.vm3pr-hr-2 .vm-customfields-wrap {
+	min-height: 118px;
+}
+
+.vm3pr-hr-3 .vm-customfields-wrap {
+	min-height: 159px;
+}
+
+.vm3pr-hr-4 .vm-customfields-wrap {
+	min-height: 206px;
+}
+
+.vm3pr-hr-5 .vm-customfields-wrap {
+	min-height: 253px;
+}
+
+/* > products_horizon */
+
 /* < BRANDS */
 
 /* <  блок бренда */
