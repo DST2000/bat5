@@ -69,6 +69,20 @@ span.cf_flt_header_text {
 .filter input {
 	margin: 0 0 5% 10%;
 }
+
+/* Дерево категорий */
+.cfLiLevel1 {
+    text-transform: uppercase;
+}
+
+.cfLiLevel2 {
+    text-transform: uppercase;
+}
+
+.cf_filters_list li {
+    line-height: 1.5em !important;
+}
+
 /* >  блок фильтра */
 
 
@@ -79,7 +93,7 @@ span.cf_flt_header_text {
 
 /*  > карточна товара */
 
-/* < Переопределенние virtuemart */
+/* < Переопределение virtuemart */
 span.addtocart-button input.addtocart-button {
 	background-color: #d9534f !important;
 	border-color: #d43f3a !important;
@@ -106,17 +120,17 @@ span.addtocart-button input.addtocart-button {
 }
 
 
-/* > Переопределенние virtuemart */
+/* > Переопределение virtuemart */
 
 
-/* < Переопределенние Bootstrap */
+/* < Переопределение Bootstrap */
 .panel-body {
     padding: 5px;
 }
 .panel-group {
     margin-bottom: 3px;
 }
-/* > Переопределенние Bootstrap */
+/* > Переопределение Bootstrap */
 
 /* < МЕНЮ*/
 /* #top-menu */
