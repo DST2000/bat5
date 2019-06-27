@@ -98,7 +98,7 @@ foreach ($this->cart->products as $pkey => $prow) {
 	<?php } ?>
 	<?php //{DST ?>
 	<?php 
-		$discountforSale = ((1-($prow->prices['salesPrice']) /($prow->prices['discountedPriceWithoutTaxTt']/$prow->quantity))*100); 
+		$discountforSale = round((1-($prow->prices['salesPrice']) /($prow->prices['discountedPriceWithoutTaxTt']/$prow->quantity))*100); 
 		$discountforSaleDisplay = ($discountforSale > 0) ? "$discountforSale" : "";
 	?>
 	<td class="vm-cart-item-discount" ><?php echo "<span class='priceColor2'>" . $this->currencyDisplay->createPriceDiv ('discountAmount', '', $prow->prices, FALSE, FALSE, $prow->quantity, false, true) . "</span>". $discountforSaleDisplay ?></td>
