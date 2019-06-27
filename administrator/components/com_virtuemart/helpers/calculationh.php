@@ -557,12 +557,12 @@ class calculationHelper {
 										  .'<br/><br/>');*/
 									$discount_id = $value;
 								}
-							}
+							}					
 							if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
 								/*echo ('discount value with $discount_id = '.$discount_id
 										  .'<br/> value = '.$value
 										  .'<br/><br/>');*/
-								$discount_value = $value;
+								$discount_value = (int)$value;
 								break; // unblock after
 							}
 						}
@@ -622,7 +622,7 @@ class calculationHelper {
 											}
 										} // if ($key=='product_path')
 										if (($key=='value') && (strlen($discount_product_path) > 0) && ($discount_value==0)) {	
-												$discount_value = $value;
+												$discount_value = (int)$value;
 //												echo '<pre> DISCOUNT VALUE by PRODUCT_PATH<br/>';
 //												echo ('Discount '.$discount_value.'<br/>');
 //												echo ('Product patch '.$discount_product_path.'<br/>');
