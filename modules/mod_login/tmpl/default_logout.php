@@ -19,6 +19,10 @@ JHtml::_('behavior.keepalive');
 	<?php else : ?>
 		<?php echo JText::sprintf('MOD_LOGIN_HINAME', htmlspecialchars($user->get('username'), ENT_COMPAT, 'UTF-8')); ?>
 	<?php endif; ?>
+	<?php //{DST ?>
+		<br/>
+		<a href="/catalog/orders/list"><button type="button" class="btn btn-default">История заказов</button></a>
+	<?php //{DST ?>	
 	</div>
 <?php endif; ?>
 <?php if ($params->get('profilelink', 0)) : ?>
