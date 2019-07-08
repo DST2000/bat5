@@ -550,31 +550,34 @@ class calculationHelper {
 //						print_r($discount);
 //						echo '</pre>';
 						foreach ($discount as $key => $value) {
-							if ($key=='id') {
-								if ($product_sku == $value) {
-									/*echo ('equivalent $product_sku = '.$product_sku
-										  .'<br/> id = '.$value
-										  .'<br/><br/>');*/
-									$discount_id = $value;
+							if (0 == $discount_value) {
+								if ($key=='id') {
+									if ($product_sku == $value) {
+										/*echo ('equivalent $product_sku = '.$product_sku
+											  .'<br/> id = '.$value
+											  .'<br/><br/>');*/
+										$discount_id = $value;
+									}
+								}					
+								if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
+									/*echo ('discount value with $discount_id = '.$discount_id
+											  .'<br/> value = '.$value
+											  .'<br/><br/>');*/
+									$discount_value = (int)$value;
+									//break; // unblock after
 								}
-							}					
-							if (($key=='value') && (strlen($discount_id) > 0) && ($product_sku == $discount_id)) {
-								/*echo ('discount value with $discount_id = '.$discount_id
-										  .'<br/> value = '.$value
-										  .'<br/><br/>');*/
-								$discount_value = (int)$value;
-								break; // unblock after
 							}
 						}
 						//echo '</pre>';
 						
 					}
 					if ((strlen($discount_id) > 0) && ($discount_value > 0)) {
-//							echo '<pre> DISCOUNT VALUE by ID<br/>';
-//							echo ('Discount '.$discount_value.'<br/>');
-//							echo ('$discount_id '.$discount_id.'<br/>');					 
+							/*echo '<pre> DISCOUNT VALUE by ID<br/>';
+							echo ('Discount '.$discount_value.'<br/>');
+							echo ('$discount_id '.$discount_id.'<br/>');*/
 						}
-					elseif ($discount_value == 0) {
+					
+					elseif (0 == $discount_value) {
 						// поиск по product_path товара <product_path>00000000007/00000000001</product_path>
 						// среди последних строк product_path скидок клиента "product_path":"00000000006/00000000003"
 						$customfieldsModel = VmModel::getModel('Customfields');
