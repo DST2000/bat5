@@ -13,9 +13,23 @@
  */
 // Check to ensure this file is included in Joomla!
 defined ('_JEXEC') or die('Restricted access');
-
+// {DST
+	$user = JFactory::getUser();
+		$userid = $user->get('id');	
+	if ($userid > 0) {
+if($viewData['orderable']) {
+	echo '<input type="submit" name="addtocart" class="addtocart-button" value="'.vmText::_( 'COM_VM_CART_ADD_TO' ).'" title="'.vmText::_( 'COM_VM_CART_ADD_TO' ).'" />';
+} else {
+	echo '<span name="addtocart" class="addtocart-button-disabled" title="'.vmText::_( 'COM_VIRTUEMART_ADDTOCART_CHOOSE_VARIANT' ).'" >'.vmText::_( 'COM_VIRTUEMART_ADDTOCART_CHOOSE_VARIANT' ).'</span>';
+}
+	}
+else {
+// }DST
 if($viewData['orderable']) {
 	echo '<input type="submit" name="addtocart" class="addtocart-button" value="'.vmText::_( 'COM_VIRTUEMART_CART_ADD_TO' ).'" title="'.vmText::_( 'COM_VIRTUEMART_CART_ADD_TO' ).'" />';
 } else {
 	echo '<span name="addtocart" class="addtocart-button-disabled" title="'.vmText::_( 'COM_VIRTUEMART_ADDTOCART_CHOOSE_VARIANT' ).'" >'.vmText::_( 'COM_VIRTUEMART_ADDTOCART_CHOOSE_VARIANT' ).'</span>';
 }
+// {DST
+}
+// }DST

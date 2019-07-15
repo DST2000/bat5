@@ -67,9 +67,15 @@ foreach ($viewData['products'] as $type => $products ) {
 			continue;
 		}
 		// Show the horizontal seperator
+		// {DST
+		if (false) {
+		// }DST
 		if ($col == 1 && $nb > $products_per_row) { ?>
 	<div class="horizontal-separator"></div>
 		<?php }
+		// {DST
+		}
+		// }DST
 
 		// this is an indicator wether a row needs to be opened or not
 		if ($col == 1) { ?>
@@ -96,18 +102,11 @@ foreach ($viewData['products'] as $type => $products ) {
 
 			</div>
 
-			<div class="vm-product-rating-container">
-				<?php echo shopFunctionsF::renderVmSubLayout('rating',array('showRating'=>$showRating, 'product'=>$product));
-				if ( VmConfig::get ('display_stock', 1)) { ?>
-					<span class="vmicon vm2-<?php echo $product->stock->stock_level ?>" title="<?php echo $product->stock->stock_tip ?>"></span>
-				<?php }
-				echo shopFunctionsF::renderVmSubLayout('stockhandle',array('product'=>$product));
-				?>
-			</div>
+			
 
 
 				<div class="vm-product-descr-container-<?php echo $rowsHeight[$row]['product_s_desc'] ?>">
-					<h2><?php echo JHtml::link ($product->link.$ItemidStr, $product->product_name); ?></h2>
+					<h4><?php echo JHtml::link ($product->link.$ItemidStr, $product->product_name); ?></h4>
 					<?php if(!empty($rowsHeight[$row]['product_s_desc'])){
 					?>
 					<p class="product_s_desc">
@@ -118,7 +117,7 @@ foreach ($viewData['products'] as $type => $products ) {
 					</p>
 			<?php  } ?>
 				</div>
-
+			
 
 			<?php //echo $rowsHeight[$row]['price'] ?>
 			<?php /* 
@@ -129,7 +128,17 @@ foreach ($viewData['products'] as $type => $products ) {
 			*/?>
 			<div class="vm3pr-hr-<?php echo $rowsHeight[$row]['price'] ?>"> <?php
 				echo shopFunctionsF::renderVmSubLayout('prices',array('product'=>$product,'currency'=>$currency)); ?>
+				<?php  
+				//{ DST
+				if (false) {
+				// }DST
+				?>
 				<div class="clear"></div>
+				<?php
+				//{ DST
+				}
+				// }DST
+				?>
 			</div>
 			<?php //echo $rowsHeight[$row]['customs'] ?>
 			<?php /* 
@@ -147,6 +156,41 @@ foreach ($viewData['products'] as $type => $products ) {
 				$link = empty($product->link)? $product->canonical:$product->link;
 				echo JHtml::link($link.$ItemidStr,vmText::_ ( 'COM_VIRTUEMART_PRODUCT_DETAILS' ), array ('title' => $product->product_name, 'class' => 'product-details' ) );
 				//echo JHtml::link ( JRoute::_ ( 'index.php?option=com_virtuemart&view=productdetails&virtuemart_product_id=' . $product->virtuemart_product_id . '&virtuemart_category_id=' . $product->virtuemart_category_id , FALSE), vmText::_ ( 'COM_VIRTUEMART_PRODUCT_DETAILS' ), array ('title' => $product->product_name, 'class' => 'product-details' ) );
+				?>
+			</div>
+			
+			<div class="vm-product-detail-info">
+				<?php echo shopFunctionsF::renderVmSubLayout('rating',array('showRating'=>$showRating, 'product'=>$product));
+				// {DST
+				echo '<span class="stock-level">'.$product->product_in_stock.'шт. </span>';
+				if (false) {
+				// }DST
+				if ( VmConfig::get ('display_stock', 1)) { ?>
+					<span class="vmicon vm2-<?php echo $product->stock->stock_level ?>" title="<?php echo $product->stock->stock_tip ?>"></span>
+				<?php 
+				// {DST									 
+				}
+				// }DST
+				?>
+				<?php }
+				// {DST
+		if (((int)$product->product_length > 0) &&
+			((int)$product->product_width > 0) &&
+			((int)$product->product_height > 0)
+			) {
+			echo '<span class="product-size">'.'Д-Ш-В ('.(int)$product->product_length.'-'.(int)$product->product_width.'-'.(int)$product->product_height.') </span>';
+		}
+		if (strlen($product->customfieldsSorted["normal"][21]->customfield_value)> 0 ) {
+			echo ' '.$product->customfieldsSorted["normal"][21]->customfield_value.'A ';
+		}
+				if ($product->allPrices[0][basePrice] <> $product->allPrices[0][salesPrice]) {
+					echo '<span class="product-discount"> Базовая '.$product->allPrices[0][basePrice].'р - '.((1-$product->allPrices[0][salesPrice]/$product->allPrices[0][basePrice])*100 ).'% ';
+				}
+				else {
+					echo '<span class="product-discount">'.' '; 	
+				}
+				// }DST
+				//echo shopFunctionsF::renderVmSubLayout('stockhandle',array('product'=>$product));
 				?>
 			</div>
 		<?php if($dynamic){

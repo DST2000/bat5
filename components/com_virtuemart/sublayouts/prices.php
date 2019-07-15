@@ -21,7 +21,23 @@ $product = $viewData['product'];
 $currency = $viewData['currency'];
 
 ?>
-<div class="product-price" id="productPrice<?php echo $product->virtuemart_product_id ?>" data-vm="product-prices">
+<?php
+// {DST
+$user = JFactory::getUser();
+		$userid = $user->get('id');	
+if ($userid > 0) { 
+// }DST
+?>
+	<div class="product-price-hr" id="productPrice<?php echo $product->virtuemart_product_id ?>" data-vm="product-prices">
+<?php
+// {DST
+	}
+else { ?>
+	<div class="product-price" id="productPrice<?php echo $product->virtuemart_product_id ?>" data-vm="product-prices"> 
+<?php
+}
+// }DST
+?>
 	<?php
 	if (!empty($product->prices['salesPrice'])) {
 		//echo '<div class="vm-cart-price">' . vmText::_ ('COM_VIRTUEMART_CART_PRICE') . '</div>';
