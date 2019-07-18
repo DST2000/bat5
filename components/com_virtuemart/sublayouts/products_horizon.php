@@ -184,7 +184,7 @@ foreach ($viewData['products'] as $type => $products ) {
 			echo ' '.$product->customfieldsSorted["normal"][21]->customfield_value.'A ';
 		}
 				if ($product->allPrices[0][basePrice] <> $product->allPrices[0][salesPrice]) {
-					echo '<span class="product-discount"> Базовая '.$product->allPrices[0][basePrice].'р - '.((1-$product->allPrices[0][salesPrice]/$product->allPrices[0][basePrice])*100 ).'% ';
+					echo '<span class="product-discount"> Базовая <s>'.$product->allPrices[0][basePrice].'</s> р - '.((1-$product->allPrices[0][salesPrice]/$product->allPrices[0][basePrice])*100 ).'% ';
 				}
 				else {
 					echo '<span class="product-discount">'.' '; 	
