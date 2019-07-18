@@ -63,7 +63,7 @@ $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/ju
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/style.css?v=33');
 // }DST
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
-$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css?v=2', 'text/css', 'screen');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css?v=4', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/print.css', 'text/css', 'print');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/general.css?v=1', 'text/css', 'screen');
 $this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/' . htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '.css', 'text/css', 'screen');
@@ -109,7 +109,7 @@ $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/template.js');
 // {DST
 $this->addScript($this->baseurl . '/templates/' . $this->template . '/js/jui/bootstrap.min.js');
-$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/scripts.js');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/js/scripts.js?v=2');
 // }DST
 require __DIR__ . '/jsstrings.php';
 ?>
@@ -175,7 +175,15 @@ require __DIR__ . '/jsstrings.php';
 					</div>
 					<div class="row">
 						<div class="col-md-4">
+							<div class="hidden-xs hidden-sm">
 							<jdoc:include type="modules" name="position-15" />
+							</div>
+							<div class="hidden-sm hidden-md hidden-lg">
+								<button type="button" id="filter-mobile" class="btn btn-success btn-lg btn-block">ФИЛЬТР</button>
+								<div id="filter-mobile-content" style="display:none">
+									<jdoc:include type="modules" name="position-15" />
+								</div>
+							</div>
 						</div>
 						<div class="col-md-8">
 							<jdoc:include type="component" />

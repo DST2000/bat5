@@ -401,11 +401,6 @@
 								<span>АВТОЛАМПЫ</span>
 							</li>
 						</a>
-						<a href="" >
-							<li class="mobile-menu-item">
-								<span>ПРИНАДЛЕЖНОСТИ ДЛЯ АККУМУЛЯТОРОВ</span>
-							</li>
-						</a>
 						<a href="<?php echo JRoute::_('catalog/zaryadnye-ustrojstva-i-aksessuary/'); ?>" >
 							<li class="mobile-menu-item">
 								<span>ЗАРЯДНЫЕ УСТРОЙСТВА, ТЕСТЕРЫ</span>
